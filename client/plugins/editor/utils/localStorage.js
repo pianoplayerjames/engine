@@ -5,7 +5,8 @@ const UI_SETTINGS_KEY = 'engine-ui-settings';
 const defaultUISettings = {
   panels: {
     rightPanelWidth: 304, // 256 + 48 for toolbar
-    bottomPanelHeight: 256,
+    bottomPanelHeight: 256, // Main bottom asset panel height
+    scenePropertiesHeight: 300, // Scene panel properties section height
     assetsLibraryWidth: 250,
     rightPropertiesMenuPosition: 'right', // 'right' | 'bottom'
   },
@@ -14,14 +15,14 @@ const defaultUISettings = {
       enabled: true,
       size: 100,
       cellSize: 1,
-      cellThickness: 0.5,
+      cellThickness: 1.0, // Increased from 0.5 for better visibility and less aliasing
       cellColor: '#6B7280',
       sectionSize: 10,
-      sectionThickness: 1,
+      sectionThickness: 2.0, // Increased from 1 for clearer section lines
       sectionColor: '#9CA3AF',
       position: [0, -1, 0],
-      fadeDistance: 100,
-      fadeStrength: 1,
+      fadeDistance: 50, // Reduced from 100 to keep lines crisp longer
+      fadeStrength: 0.5, // Reduced from 1 for more gradual fade
       infiniteGrid: true
     },
     viewportSettings: {
@@ -41,7 +42,7 @@ const defaultUISettings = {
       'scene', 'light', 'effects', 'folder', 'star', 'wifi', 'cloud', 'monitor'
     ],
     bottomTabOrder: [
-      'add', 'settings'
+      'add', 'settings', 'fullscreen'
     ]
   },
   topLeftMenu: {

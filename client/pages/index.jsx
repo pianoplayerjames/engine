@@ -1,6 +1,6 @@
 
 
-import React, { useRef, useEffect } from 'react'
+import React, { useRef, useEffect, useMemo } from 'react'
 import { useThree } from '@react-three/fiber'
 import RenderPlugin from '../plugins/render/index.jsx'
 import InputPlugin from '../plugins/input/index.jsx'
@@ -81,12 +81,26 @@ function SceneRenderer() {
 }
 
 export default function Index() {
-  const { contextMenuHandler } = useEditorStore();
+  const { 
+    contextMenuHandler,
+    rightPanelWidth,
+    bottomPanelHeight,
+    isScenePanelOpen,
+    isAssetPanelOpen
+  } = useEditorStore();
   
   // Log only once on mount
   useEffect(() => {
     console.log('Engine starting...')
   }, []);
+
+  // Calculate viewport bounds based on UI panels
+  const viewportBounds = {
+    top: 0,
+    left: 0,
+    right: isScenePanelOpen ? rightPanelWidth - 4 : 47, // Right panel width minus 4px or toolbar minus 1px for proper fit
+    bottom: isAssetPanelOpen ? bottomPanelHeight - 1 : 40 // Bottom panel height minus 1px to eliminate white space
+  };
 
   return (
     <>
@@ -100,7 +114,7 @@ export default function Index() {
       <EditorPlugin />
       
       {/* Render Plugin with Scene Content */}
-      <RenderPlugin onContextMenu={contextMenuHandler}>
+      <RenderPlugin onContextMenu={contextMenuHandler} viewportBounds={viewportBounds}>
         {/* Dynamic scene objects */}
         <SceneRenderer />
         

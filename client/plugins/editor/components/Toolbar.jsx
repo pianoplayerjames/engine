@@ -17,10 +17,11 @@ const defaultTools = [
 const defaultBottomTools = [
   { id: 'add', icon: Icons.PlusCircle, title: 'Add' },
   { id: 'settings', icon: Icons.Settings, title: 'Settings' },
+  { id: 'fullscreen', icon: Icons.Fullscreen, title: 'Fullscreen' },
 ];
 
 function Toolbar({ selectedTool, onToolSelect, scenePanelOpen, onScenePanelToggle }) {
-  const { toolbarTabOrder, toolbarBottomTabOrder, setToolbarTabOrder, setToolbarBottomTabOrder } = useEditorStore();
+  const { toolbarTabOrder, toolbarBottomTabOrder, setToolbarTabOrder, setToolbarBottomTabOrder, hydrateFromLocalStorage } = useEditorStore();
   
   // Create ordered tools based on stored order
   const getOrderedTools = () => {
@@ -36,19 +37,44 @@ function Toolbar({ selectedTool, onToolSelect, scenePanelOpen, onScenePanelToggl
       map[tool.id] = tool;
       return map;
     }, {});
-    return toolbarBottomTabOrder.map(id => toolsMap[id]).filter(Boolean);
+    
+    // Get tools from stored order
+    const orderedTools = toolbarBottomTabOrder.map(id => toolsMap[id]).filter(Boolean);
+    
+    // Add any new default tools that aren't in the stored order
+    const existingIds = new Set(toolbarBottomTabOrder);
+    const newTools = defaultBottomTools.filter(tool => !existingIds.has(tool.id));
+    
+    return [...orderedTools, ...newTools];
   };
   
-  const [tools, setTools] = useState(getOrderedTools());
-  const [bottomTools, setBottomTools] = useState(getOrderedBottomTools());
+  const [tools, setTools] = useState(() => getOrderedTools());
+  const [bottomTools, setBottomTools] = useState(() => getOrderedBottomTools());
   
   // Update tools when store order changes
   useEffect(() => {
-    setTools(getOrderedTools());
+    const toolsMap = defaultTools.reduce((map, tool) => {
+      map[tool.id] = tool;
+      return map;
+    }, {});
+    const orderedTools = toolbarTabOrder.map(id => toolsMap[id]).filter(Boolean);
+    setTools(orderedTools);
   }, [toolbarTabOrder]);
   
   useEffect(() => {
-    setBottomTools(getOrderedBottomTools());
+    const toolsMap = defaultBottomTools.reduce((map, tool) => {
+      map[tool.id] = tool;
+      return map;
+    }, {});
+    
+    // Get tools from stored order
+    const orderedTools = toolbarBottomTabOrder.map(id => toolsMap[id]).filter(Boolean);
+    
+    // Add any new default tools that aren't in the stored order
+    const existingIds = new Set(toolbarBottomTabOrder);
+    const newTools = defaultBottomTools.filter(tool => !existingIds.has(tool.id));
+    
+    setBottomTools([...orderedTools, ...newTools]);
   }, [toolbarBottomTabOrder]);
   
   const [dragState, setDragState] = useState({
@@ -67,22 +93,31 @@ function Toolbar({ selectedTool, onToolSelect, scenePanelOpen, onScenePanelToggl
     const dragElement = e.currentTarget.cloneNode(true);
     dragElement.style.position = 'absolute';
     dragElement.style.top = '-1000px';
+    dragElement.style.left = '-1000px';
     dragElement.style.background = 'linear-gradient(to bottom, rgb(51 65 85 / 0.95), rgb(15 23 42 / 0.98))';
     dragElement.style.border = '1px solid rgb(148 163 184 / 0.5)';
     dragElement.style.borderRadius = '8px';
     dragElement.style.padding = '8px';
-    dragElement.style.backdropFilter = 'blur(12px)';
     dragElement.style.boxShadow = '0 25px 50px -12px rgb(0 0 0 / 0.5)';
     dragElement.style.transform = 'scale(1.1)';
     dragElement.style.pointerEvents = 'none';
+    dragElement.style.zIndex = '9999';
+    
+    // Ensure icon colors are preserved
+    const icon = dragElement.querySelector('svg');
+    if (icon) {
+      icon.style.color = '#e2e8f0'; // light gray
+    }
     
     document.body.appendChild(dragElement);
     e.dataTransfer.setDragImage(dragElement, 24, 24);
     
     // Clean up drag image after a short delay
     setTimeout(() => {
-      document.body.removeChild(dragElement);
-    }, 0);
+      if (document.body.contains(dragElement)) {
+        document.body.removeChild(dragElement);
+      }
+    }, 100);
     
     setDragState({
       isDragging: true,
@@ -164,7 +199,7 @@ function Toolbar({ selectedTool, onToolSelect, scenePanelOpen, onScenePanelToggl
         
         // Persist to store
         const newOrder = newArray.map(tool => tool.id);
-        if (dragState.draggedFromBottom === isBottomArea && isBottomArea) {
+        if (isBottomArea) {
           setToolbarBottomTabOrder(newOrder);
         } else {
           setToolbarTabOrder(newOrder);
@@ -191,12 +226,34 @@ function Toolbar({ selectedTool, onToolSelect, scenePanelOpen, onScenePanelToggl
 
   const handleToolClick = (tool) => {
     if (!dragState.isDragging) {
+      // Handle fullscreen functionality
+      if (tool.id === 'fullscreen') {
+        toggleFullscreen();
+        return;
+      }
+      
+      
       if (!scenePanelOpen) {
         onScenePanelToggle();
       }
       onToolSelect(tool.id);
     }
   };
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      // Enter fullscreen
+      document.documentElement.requestFullscreen().catch(err => {
+        console.warn('Error attempting to enable fullscreen:', err);
+      });
+    } else {
+      // Exit fullscreen
+      document.exitFullscreen().catch(err => {
+        console.warn('Error attempting to exit fullscreen:', err);
+      });
+    }
+  };
+
 
   return (
     <div className="relative w-12 h-full bg-gradient-to-b from-slate-800/95 to-slate-900/98 backdrop-blur-md border-l border-slate-700/80 shadow-2xl shadow-black/30 flex flex-col py-2 pointer-events-auto no-select">
@@ -256,6 +313,8 @@ function Toolbar({ selectedTool, onToolSelect, scenePanelOpen, onScenePanelToggl
         }}
         onDrop={(e) => {
           e.preventDefault();
+          e.stopPropagation();
+          
           if (dragState.draggedTool) {
             const sourceArray = dragState.draggedFromBottom ? bottomTools : tools;
             const setSourceArray = dragState.draggedFromBottom ? setBottomTools : setTools;
@@ -314,7 +373,7 @@ function Toolbar({ selectedTool, onToolSelect, scenePanelOpen, onScenePanelToggl
               className={`p-2 rounded-lg transition-all duration-200 group relative select-none ${
                 isDragged 
                   ? 'opacity-50 cursor-grabbing scale-95' 
-                  : selectedTool === tool.id 
+                  : selectedTool === tool.id
                     ? 'bg-gradient-to-b from-blue-500 to-blue-700 text-white shadow-lg shadow-blue-600/40 scale-105 cursor-grab' 
                     : 'text-slate-400 hover:text-white hover:bg-gradient-to-b hover:from-slate-700/80 hover:to-slate-800/90 hover:shadow-md hover:shadow-black/30 hover:scale-102 cursor-grab'
               }`}

@@ -5,6 +5,14 @@ export const useRenderStore = create((set, get) => ({
   scene: null,
   renderer: null,
   
+  // Environment settings
+  environment: {
+    preset: null,
+    intensity: 1.0,
+    type: 'color', // 'color', 'hdr'
+    environmentType: null // 'room', 'preset'
+  },
+  
   // Camera settings
   camera: {
     position: [3, 3, 3],
@@ -89,6 +97,28 @@ export const useRenderStore = create((set, get) => ({
   updateSettings: (newSettings) => set(state => ({
     settings: { ...state.settings, ...newSettings }
   })),
+  
+  // Environment actions
+  setEnvironment: (preset, intensity = 1.0, type = 'hdr', environmentType = 'preset') => set(state => {
+    // Don't manipulate scene directly - let EnvironmentBackground component handle it
+    return {
+      environment: { preset, intensity, type, environmentType }
+    };
+  }),
+  
+  setEnvironmentIntensity: (intensity) => set(state => {
+    // Don't manipulate scene directly - let EnvironmentBackground component handle it
+    return {
+      environment: { ...state.environment, intensity }
+    };
+  }),
+  
+  clearEnvironment: () => set(state => {
+    // Don't manipulate scene directly - let EnvironmentBackground component handle it
+    return {
+      environment: { preset: null, intensity: 1.0, type: 'color', environmentType: null }
+    };
+  }),
   
   addEffect: (id, effect) => set(state => ({
     effects: new Map(state.effects).set(id, effect)

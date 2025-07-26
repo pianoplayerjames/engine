@@ -5,6 +5,8 @@ import SliderWithTooltip from './SliderWithTooltip';
 import CollapsibleSection from './CollapsibleSection';
 import ContextMenu from './ContextMenu';
 import { useEditorStore } from '../store.js';
+import { useRenderStore } from '../../render/store.js';
+import { HDR_ENVIRONMENTS, getHDREnvironment } from '../../render/environmentLoader.js';
 
 const parentNames = [
   'Urban Landscape', 'Natural Environment', 'Indoor Setting', 'Sci-Fi Outpost', 'Fantasy Kingdom',
@@ -57,7 +59,7 @@ const sceneObjects = [
 
 function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selectedTool, onToolSelect, onContextMenu }) {
   const [expandedItems, setExpandedItems] = useState(['scene']);
-  const { bottomPanelHeight, setBottomPanelHeight } = useEditorStore();
+  const { scenePropertiesHeight: bottomPanelHeight, setScenePropertiesHeight: setBottomPanelHeight } = useEditorStore();
   const [isResizing, setIsResizing] = useState(false);
   const [isTestToggleOn, setIsTestToggleOn] = useState(false);
   const [roughness, setRoughness] = useState(0.5);
@@ -1042,6 +1044,133 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
                       style={{ backgroundColor: '#ffffff' }}
                       title="White"
                     />
+                  </div>
+                </div>
+              </div>
+            </CollapsibleSection>
+
+            {/* Skybox Section */}
+            <CollapsibleSection title="Skybox" defaultOpen={false} index={2}>
+              <div className="space-y-4">
+                {/* Environment Presets */}
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">Environment</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => updateViewportSettings({ backgroundColor: '#87CEEB' })}
+                      className="flex items-center p-2 bg-slate-800 border border-slate-600 rounded-lg hover:border-blue-500 transition-colors text-left"
+                    >
+                      <div className="w-4 h-4 rounded mr-2" style={{ background: 'linear-gradient(to bottom, #87CEEB, #E0F6FF)' }}></div>
+                      <span className="text-xs text-slate-300">Blue Sky</span>
+                    </button>
+                    <button
+                      onClick={() => updateViewportSettings({ backgroundColor: '#FF6B35' })}
+                      className="flex items-center p-2 bg-slate-800 border border-slate-600 rounded-lg hover:border-blue-500 transition-colors text-left"
+                    >
+                      <div className="w-4 h-4 rounded mr-2" style={{ background: 'linear-gradient(to bottom, #FF6B35, #FFD700)' }}></div>
+                      <span className="text-xs text-slate-300">Sunset</span>
+                    </button>
+                    <button
+                      onClick={() => updateViewportSettings({ backgroundColor: '#1a1a2e' })}
+                      className="flex items-center p-2 bg-slate-800 border border-slate-600 rounded-lg hover:border-blue-500 transition-colors text-left"
+                    >
+                      <div className="w-4 h-4 rounded mr-2" style={{ background: 'linear-gradient(to bottom, #1a1a2e, #16213e)' }}></div>
+                      <span className="text-xs text-slate-300">Night</span>
+                    </button>
+                    <button
+                      onClick={() => updateViewportSettings({ backgroundColor: '#FFB6C1' })}
+                      className="flex items-center p-2 bg-slate-800 border border-slate-600 rounded-lg hover:border-blue-500 transition-colors text-left"
+                    >
+                      <div className="w-4 h-4 rounded mr-2" style={{ background: 'linear-gradient(to bottom, #FFB6C1, #FF69B4)' }}></div>
+                      <span className="text-xs text-slate-300">Dawn</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* HDR Environment Maps */}
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">HDR Environments</label>
+                  <div className="space-y-1">
+                    {HDR_ENVIRONMENTS.map((env) => (
+                      <button
+                        key={env.id}
+                        onClick={() => {
+                          try {
+                            const environment = getHDREnvironment(env.id);
+                            const { setEnvironment } = useRenderStore.getState();
+                            
+                            if (environment.type === 'room') {
+                              setEnvironment(null, 1.0, 'hdr', 'room');
+                            } else if (environment.preset) {
+                              setEnvironment(environment.preset, 1.0, 'hdr', 'preset');
+                            }
+                          } catch (error) {
+                            console.error('Failed to set HDR environment:', error);
+                          }
+                        }}
+                        className="w-full flex items-center p-2 bg-slate-800 border border-slate-600 rounded-lg hover:border-blue-500 transition-colors text-left"
+                      >
+                        <Icons.Image className="w-4 h-4 mr-2 text-slate-400" />
+                        <div className="flex flex-col">
+                          <span className="text-xs text-slate-300">{env.name}</span>
+                          <span className="text-xs text-slate-500">{env.description}</span>
+                        </div>
+                      </button>
+                    ))}
+                    
+                    {/* Clear Environment Button */}
+                    <button
+                      onClick={() => {
+                        const { clearEnvironment } = useRenderStore.getState();
+                        clearEnvironment();
+                        // Also reset the background color
+                        updateViewportSettings({ backgroundColor: '#1a202c' });
+                      }}
+                      className="w-full flex items-center p-2 bg-slate-800 border border-slate-600 rounded-lg hover:border-red-500 transition-colors text-left"
+                    >
+                      <Icons.XMark className="w-4 h-4 mr-2 text-red-400" />
+                      <span className="text-xs text-slate-300">Clear Environment</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Environment Intensity */}
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">Environment Intensity</label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="range"
+                      min="0"
+                      max="2"
+                      step="0.1"
+                      defaultValue="1"
+                      onChange={(e) => {
+                        const intensity = parseFloat(e.target.value);
+                        const { setEnvironmentIntensity } = useRenderStore.getState();
+                        setEnvironmentIntensity(intensity);
+                        // Update the display value
+                        const display = e.target.parentElement.querySelector('.intensity-display');
+                        if (display) display.textContent = intensity.toFixed(1);
+                      }}
+                      className="flex-1 h-2 bg-slate-700 rounded-lg appearance-none slider"
+                    />
+                    <span className="text-xs text-slate-400 w-8 intensity-display">1.0</span>
+                  </div>
+                </div>
+
+                {/* Custom Color Fallback */}
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">Custom Background</label>
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="color" 
+                      value={viewportSettings.backgroundColor} 
+                      onChange={(e) => updateViewportSettings({ backgroundColor: e.target.value })}
+                      className="w-10 h-10 rounded-lg border border-slate-600 bg-slate-800 cursor-pointer" 
+                    />
+                    <div className="flex-1 bg-slate-800/80 border border-slate-600 rounded-lg p-2">
+                      <div className="text-xs text-gray-300">{viewportSettings.backgroundColor.toUpperCase()}</div>
+                    </div>
                   </div>
                 </div>
               </div>

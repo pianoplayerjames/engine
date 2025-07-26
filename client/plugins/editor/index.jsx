@@ -23,8 +23,6 @@ import { useEditorStore } from './store.js';
 
 function EditorPlugin() {
   const [selectedTool, setSelectedTool] = useState('select');
-  const [isAssetPanelOpen, setIsAssetPanelOpen] = useState(true);
-  const [isScenePanelOpen, setIsScenePanelOpen] = useState(true);
   const [isResizingBottom, setIsResizingBottom] = useState(false);
   const [isResizingRight, setIsResizingRight] = useState(false);
   const [contextMenu, setContextMenu] = useState(null);
@@ -34,8 +32,17 @@ function EditorPlugin() {
     selectedTool: selectedRightTool, setSelectedTool: setSelectedRightTool,
     selectedBottomTab: activeTab, setSelectedBottomTab: setActiveTab,
     rightPanelWidth, setRightPanelWidth,
-    bottomPanelHeight, setBottomPanelHeight
+    bottomPanelHeight, setBottomPanelHeight,
+    isScenePanelOpen, setIsScenePanelOpen,
+    isAssetPanelOpen, setIsAssetPanelOpen,
+    setIsResizingPanels,
+    hydrateFromLocalStorage
   } = useEditorStore();
+
+  // Hydrate localStorage values on client mount (after SSR)
+  useEffect(() => {
+    hydrateFromLocalStorage();
+  }, [hydrateFromLocalStorage]);
 
   // Register context menu handler in store (after all functions are defined)
   useEffect(() => {
@@ -304,6 +311,7 @@ function EditorPlugin() {
 
   const handleBottomResizeMouseDown = (e) => {
     setIsResizingBottom(true);
+    setIsResizingPanels(true);
     document.body.classList.add('dragging-vertical');
     e.preventDefault();
   };
@@ -330,11 +338,13 @@ function EditorPlugin() {
 
   const handleBottomResizeMouseUp = () => {
     setIsResizingBottom(false);
+    setIsResizingPanels(false);
     document.body.classList.remove('dragging-vertical');
   };
 
   const handleRightResizeMouseDown = (e) => {
     setIsResizingRight(true);
+    setIsResizingPanels(true);
     document.body.classList.add('dragging-horizontal');
     e.preventDefault();
   };
@@ -360,6 +370,7 @@ function EditorPlugin() {
 
   const handleRightResizeMouseUp = () => {
     setIsResizingRight(false);
+    setIsResizingPanels(false);
     document.body.classList.remove('dragging-horizontal');
   };
 
@@ -405,6 +416,7 @@ function EditorPlugin() {
           width: isScenePanelOpen ? rightPanelWidth : 48,
           height: '100vh'
         }}
+        suppressHydrationWarning
       >
         {/* Resize Handle - shows on hover */}
         <div
@@ -417,6 +429,7 @@ function EditorPlugin() {
             zIndex: isScenePanelOpen ? 5 : 1
           }}
           onMouseDown={handleRightResizeMouseDown}
+          suppressHydrationWarning
         />
         
         {/* Right Toolbar - positioned within container */}
@@ -498,6 +511,7 @@ function EditorPlugin() {
           bottom: isAssetPanelOpen ? bottomPanelHeight : 40
         }}
         onMouseDown={handleBottomResizeMouseDown}
+        suppressHydrationWarning
       />
 
       {/* Bottom Panel with Resizing */}
@@ -509,6 +523,7 @@ function EditorPlugin() {
           right: isScenePanelOpen ? rightPanelWidth - 4 : 48, // Extend to eliminate gap
           height: isAssetPanelOpen ? bottomPanelHeight : 40
         }}
+        suppressHydrationWarning
       >
         <BottomTabs 
           activeTab={activeTab}

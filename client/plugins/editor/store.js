@@ -1,8 +1,9 @@
 import { create } from 'zustand'
-import { loadUISettings, saveUISettings, updateUISetting } from './utils/localStorage.js'
+import { loadUISettings, saveUISettings, updateUISetting, defaultUISettings } from './utils/localStorage.js'
 
-// Load initial UI settings from localStorage
-const initialUISettings = loadUISettings()
+// Always use defaults for initial render to prevent hydration mismatch
+// Will be hydrated after mount
+const initialUISettings = defaultUISettings;
 
 export const useEditorStore = create((set, get) => ({
   // Editor state
@@ -12,6 +13,7 @@ export const useEditorStore = create((set, get) => ({
   // UI Layout Settings (persisted)
   rightPanelWidth: initialUISettings.panels.rightPanelWidth,
   bottomPanelHeight: initialUISettings.panels.bottomPanelHeight,
+  scenePropertiesHeight: initialUISettings.panels.scenePropertiesHeight,
   assetsLibraryWidth: initialUISettings.panels.assetsLibraryWidth,
   rightPropertiesMenuPosition: initialUISettings.panels.rightPropertiesMenuPosition,
   selectedTool: initialUISettings.toolbar.selectedTool,
@@ -28,6 +30,13 @@ export const useEditorStore = create((set, get) => ({
     console: false,
     assets: false
   },
+  
+  // Panel open states (for layout calculations)
+  isScenePanelOpen: true,
+  isAssetPanelOpen: true,
+  
+  // Resize states (for disabling transitions during resize)
+  isResizingPanels: false,
   
   // Selection
   selectedEntity: null,
@@ -130,6 +139,11 @@ export const useEditorStore = create((set, get) => ({
     return { bottomPanelHeight: height };
   }),
 
+  setScenePropertiesHeight: (height) => set(state => {
+    updateUISetting('panels.scenePropertiesHeight', height);
+    return { scenePropertiesHeight: height };
+  }),
+
   setAssetsLibraryWidth: (width) => set(state => {
     updateUISetting('panels.assetsLibraryWidth', width);
     return { assetsLibraryWidth: width };
@@ -169,6 +183,36 @@ export const useEditorStore = create((set, get) => ({
     updateUISetting('topLeftMenu.selectedItem', item);
     return { topLeftMenuSelected: item };
   }),
+
+  // Panel state actions
+  setIsScenePanelOpen: (isOpen) => set({ isScenePanelOpen: isOpen }),
+  setIsAssetPanelOpen: (isOpen) => set({ isAssetPanelOpen: isOpen }),
+  setIsResizingPanels: (isResizing) => set({ isResizingPanels: isResizing }),
+
+  // Hydration action to load localStorage values on client
+  hydrateFromLocalStorage: () => {
+    if (typeof window !== 'undefined') {
+      const storedSettings = loadUISettings();
+      set({
+        rightPanelWidth: storedSettings.panels.rightPanelWidth,
+        bottomPanelHeight: storedSettings.panels.bottomPanelHeight,
+        scenePropertiesHeight: storedSettings.panels.scenePropertiesHeight,
+        assetsLibraryWidth: storedSettings.panels.assetsLibraryWidth,
+        rightPropertiesMenuPosition: storedSettings.panels.rightPropertiesMenuPosition,
+        selectedTool: storedSettings.toolbar.selectedTool,
+        selectedBottomTab: storedSettings.bottomTabs.selectedTab,
+        bottomTabOrder: storedSettings.bottomTabs.tabOrder,
+        toolbarTabOrder: storedSettings.toolbar.tabOrder,
+        toolbarBottomTabOrder: storedSettings.toolbar.bottomTabOrder,
+        topLeftMenuSelected: storedSettings.topLeftMenu.selectedItem,
+        gridSettings: storedSettings.settings.gridSettings,
+        viewportSettings: storedSettings.settings.viewportSettings,
+        // Panel states don't need persistence as they're UI state
+        isScenePanelOpen: true,
+        isAssetPanelOpen: true,
+      });
+    }
+  },
   
   addConsoleMessage: (message, type = 'info') => set(state => ({
     consoleMessages: [

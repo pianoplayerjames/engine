@@ -19,7 +19,7 @@ const defaultTabs = [
 ];
 
 function BottomTabs({ activeTab, onTabChange, isAssetPanelOpen, onToggleAssetPanel, rightPanelWidth, isScenePanelOpen }) {
-  const { bottomTabOrder, setBottomTabOrder } = useEditorStore();
+  const { bottomTabOrder, setBottomTabOrder, hydrateFromLocalStorage } = useEditorStore();
   
   // Create ordered tabs based on stored order
   const getOrderedTabs = () => {
@@ -261,7 +261,7 @@ function BottomTabs({ activeTab, onTabChange, isAssetPanelOpen, onToggleAssetPan
   }, []);
 
   return (
-    <div ref={containerRef} className="h-10 bg-slate-900 border-t border-slate-700 border-b border-slate-700 flex items-center relative z-50">
+    <div ref={containerRef} className="h-10 bg-slate-900 border-t border-slate-700 border-b border-slate-700 flex items-center relative z-50" suppressHydrationWarning>
       <div ref={tabsRef} className="flex flex-1 overflow-hidden">
         {visibleTabs.map((tab) => {
           const isDragged = dragState.draggedTab?.id === tab.id;
@@ -295,7 +295,7 @@ function BottomTabs({ activeTab, onTabChange, isAssetPanelOpen, onToggleAssetPan
               
               {/* Blue bottom border for active tab */}
               {activeTab === tab.id && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500"></div>
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" suppressHydrationWarning></div>
               )}
               
               {/* Drop indicator */}

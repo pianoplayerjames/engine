@@ -815,4 +815,41 @@ MinusCircle: (props) => (
     <path d="M8 12h8"/>
   </svg>
 ),
+
+// Chrome-style fullscreen icon
+Fullscreen: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    {/* Top-left corner arrow */}
+    <path d="M8 3H3v5"/>
+    <path d="M3 3l5 5"/>
+    
+    {/* Top-right corner arrow */}
+    <path d="M16 3h5v5"/>
+    <path d="M21 3l-5 5"/>
+    
+    {/* Bottom-left corner arrow */}
+    <path d="M8 21H3v-5"/>
+    <path d="M3 21l5-5"/>
+    
+    {/* Bottom-right corner arrow */}
+    <path d="M16 21h5v-5"/>
+    <path d="M21 21l-5-5"/>
+  </svg>
+),
+
+// Image icon for HDRI skyboxes
+Image: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+    <circle cx="9" cy="9" r="2"/>
+    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+  </svg>
+),
+
+// Check icon for checkboxes
+Check: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <polyline points="20,6 9,17 4,12"/>
+  </svg>
+),
 };

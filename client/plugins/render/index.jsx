@@ -1,9 +1,39 @@
-import React, { useRef, useEffect, useState } from 'react'
-import { Canvas } from '@react-three/fiber'
-import { OrbitControls, TransformControls, Grid, Stats } from '@react-three/drei'
+import React, { useRef, useEffect, useState, Suspense } from 'react'
+import { Canvas, useThree } from '@react-three/fiber'
+import { OrbitControls, TransformControls, Grid, Stats, Environment, GizmoHelper, GizmoViewport } from '@react-three/drei'
 import { useRenderStore } from './store.js'
 import { useEditorStore } from '../editor/store.js'
 import * as THREE from 'three'
+
+// Component to manage scene background and environment using drei's Environment
+const EnvironmentBackground = React.memo(() => {
+  const { environment } = useRenderStore()
+  const [currentPreset, setCurrentPreset] = useState(null)
+  
+  // Debounce preset changes to reduce flashing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setCurrentPreset(environment.preset && environment.type === 'hdr' ? environment.preset : null)
+    }, 50) // Small delay to batch rapid changes
+    
+    return () => clearTimeout(timer)
+  }, [environment.preset, environment.type])
+  
+  // Only render Environment component when we have a valid preset
+  // This prevents the cube map loading errors when preset is null
+  if (!currentPreset) {
+    return null
+  }
+  
+  return (
+    <Environment 
+      preset={currentPreset}
+      background
+      environmentIntensity={environment.intensity}
+      resolution={256} // Lower resolution for faster loading
+    />
+  )
+})
 
 function ViewportCanvas({ children, style = {}, onContextMenu }) {
   const orbitControlsRef = useRef()
@@ -25,6 +55,10 @@ function ViewportCanvas({ children, style = {}, onContextMenu }) {
     gridSettings,
     viewportSettings 
   } = useEditorStore()
+  
+  const { 
+    environment
+  } = useRenderStore()
   
   // Find mesh object by scene object ID
   const findMeshByObjectId = (objectId) => {
@@ -153,7 +187,12 @@ function ViewportCanvas({ children, style = {}, onContextMenu }) {
 
   return (
     <div 
-      style={{ width: '100%', height: '100%', ...style }}
+      style={{ 
+        width: '100%', 
+        height: '100%', 
+        backgroundColor: viewportSettings.backgroundColor, // Prevent white flash
+        ...style 
+      }}
       onMouseEnter={() => {
         // Ensure canvas regains focus when mouse enters viewport
         const canvas = document.querySelector('canvas');
@@ -175,7 +214,10 @@ function ViewportCanvas({ children, style = {}, onContextMenu }) {
           powerPreference: settings.powerPreference
         }}
         shadows={settings.shadows}
+        dpr={[1, 2]} // Use device pixel ratio up to 2x for crisp rendering
+        flat // Use flat shading for better performance with grid lines
         onCreated={handleCreated}
+        style={{ backgroundColor: viewportSettings.backgroundColor }}
         onContextMenu={(e) => {
           e.preventDefault();
           if (onContextMenu) {
@@ -199,6 +241,11 @@ function ViewportCanvas({ children, style = {}, onContextMenu }) {
           intensity={1}
           castShadow={settings.shadows}
         />
+        
+        {/* Environment and Background Management */}
+        <Suspense fallback={null}>
+          <EnvironmentBackground />
+        </Suspense>
         
         {/* Dynamic Grid */}
         {gridSettings.enabled && (
@@ -261,18 +308,43 @@ function ViewportCanvas({ children, style = {}, onContextMenu }) {
         
         {/* Performance Stats */}
         <Stats showPanel={0} />
+        
+        {/* Viewport Gizmo */}
+        <GizmoHelper
+          alignment="bottom-right"
+          margin={[80, 80]}
+        >
+          <GizmoViewport 
+            axisColors={['#ff4757', '#2ed573', '#3742fa']} // Red, Green, Blue
+            labelColor="white"
+            hideNegativeAxes={false}
+            hideAxisHeads={false}
+          />
+        </GizmoHelper>
       </Canvas>
     </div>
   )
 }
 
-export default function RenderPlugin({ children, embedded = false, style = {}, onContextMenu }) {
+export default function RenderPlugin({ children, embedded = false, style = {}, onContextMenu, viewportBounds }) {
   if (embedded) {
     return <ViewportCanvas style={style} onContextMenu={onContextMenu}>{children}</ViewportCanvas>
   }
 
+  // Use custom viewport bounds if provided, otherwise default to full screen
+  const defaultStyle = viewportBounds ? {
+    position: 'fixed',
+    top: viewportBounds.top || 0,
+    left: viewportBounds.left || 0,
+    right: viewportBounds.right || 0,
+    bottom: viewportBounds.bottom || 0,
+    width: 'auto',
+    height: 'auto'
+    // No transitions - viewport should resize immediately
+  } : { width: '100vw', height: '100vh' };
+
   return (
-    <ViewportCanvas style={{ width: '100vw', height: '100vh', ...style }} onContextMenu={onContextMenu}>
+    <ViewportCanvas style={{ ...defaultStyle, ...style }} onContextMenu={onContextMenu}>
       {children}
     </ViewportCanvas>
   )
