@@ -647,4 +647,172 @@ Trash: (props) => (
     <line x1="14" y1="11" x2="14" y2="17"/>
   </svg>
 ),
+
+Circle: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <circle cx="12" cy="12" r="10"/>
+  </svg>
+),
+
+Square: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <rect x="3" y="3" width="18" height="18" rx="2"/>
+  </svg>
+),
+
+LightBulb: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/>
+    <path d="M9 18h6"/>
+    <path d="M10 22h4"/>
+  </svg>
+),
+
+Flashlight: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <path d="M3 11l18-5V5L3 11v5l7-2v-4z"/>
+    <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>
+  </svg>
+),
+
+Capsule: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <path d="M8.5 2.5a5.5 5.5 0 0 0 0 11h7a5.5 5.5 0 0 0 0-11h-7z"/>
+    <path d="M8.5 10.5a5.5 5.5 0 0 0 0 11h7a5.5 5.5 0 0 0 0-11h-7z"/>
+  </svg>
+),
+
+Sparkles: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.582a.5.5 0 0 1 0 .962L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
+  </svg>
+),
+
+Water: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <path d="M12 22c5.523 0 10-4.477 10-10 0-5.4-4.4-9.8-9.8-10a9.8 9.8 0 0 0 0 20z"/>
+    <path d="M8 14s1.5-2 4-2 4 2 4 2"/>
+    <path d="M8 18s1.5-2 4-2 4 2 4 2"/>
+  </svg>
+),
+
+AdjustmentsVertical: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M12 8V2"/>
+    <path d="M12 22v-6"/>
+    <path d="M8 12H2"/>
+    <path d="M22 12h-6"/>
+  </svg>
+),
+
+PaintBrush: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <path d="M18.37 2.63 14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3Z"/>
+    <path d="M9 8c-2 3-4 3.5-7 4l8 10c2-1 6-5 6-7"/>
+    <path d="M14.5 17.5 4.5 15"/>
+  </svg>
+),
+
+ColorSwatch: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+    <path d="M12 4c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
+  </svg>
+),
+
+Clipboard: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+  </svg>
+),
+
+Search: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <circle cx="11" cy="11" r="8"/>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+  </svg>
+),
+
+Copy: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+  </svg>
+),
+
+DocumentDuplicate: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+    <path d="M9 13h6"/>
+    <path d="M9 16h6"/>
+  </svg>
+),
+
+Lightning: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+  </svg>
+),
+
+Mountain: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <path d="M8 21l5.5-11.5L19 21"/>
+    <path d="M2 21h20"/>
+    <path d="M12 9L8 21l4-12z"/>
+  </svg>
+),
+
+Rectangle: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <rect x="3" y="6" width="18" height="12" rx="2" ry="2"/>
+  </svg>
+),
+
+Square2Stack: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <path d="M5 8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8z"/>
+    <path d="M3 12a2 2 0 0 1 2-2h1"/>
+    <path d="M3 16h1a2 2 0 0 1 2 2v1"/>
+  </svg>
+),
+
+ArrowPath: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <path d="M4 12a8 8 0 0 1 8-8V2.5"/>
+    <path d="M12 4L9 7l3 3"/>
+    <path d="M20 12a8 8 0 0 1-8 8v1.5"/>
+    <path d="M12 20l3-3-3-3"/>
+  </svg>
+),
+
+ArrowUp: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <path d="M12 19V5"/>
+    <path d="M5 12l7-7 7 7"/>
+  </svg>
+),
+
+ArrowDown: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <path d="M12 5v14"/>
+    <path d="M19 12l-7 7-7-7"/>
+  </svg>
+),
+
+ArrowRight: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <path d="M5 12h14"/>
+    <path d="M12 5l7 7-7 7"/>
+  </svg>
+),
+
+MinusCircle: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <circle cx="12" cy="12" r="10"/>
+    <path d="M8 12h8"/>
+  </svg>
+),
 };

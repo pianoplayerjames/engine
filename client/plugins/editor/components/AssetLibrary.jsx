@@ -1,6 +1,7 @@
 // plugins/editor/components/AssetLibrary.jsx
 import React, { useState } from 'react';
 import { Icons } from './Icons';
+import { useEditorStore } from '../store.js';
 
 const assetCategories = [
   { id: '3d-models', label: '3D Models', count: 115, icon: Icons.Models },
@@ -32,8 +33,8 @@ function AssetLibrary() {
   const [selectedCategory, setSelectedCategory] = useState('3d-models');
   const [searchQuery, setSearchQuery] = useState('');
   const [hoveredItem, setHoveredItem] = useState(null);
-  const [categoryPanelWidth, setCategoryPanelWidth] = useState(160); // 40 * 4px = 160px
   const [isResizing, setIsResizing] = useState(false);
+  const { assetsLibraryWidth: categoryPanelWidth, setAssetsLibraryWidth: setCategoryPanelWidth } = useEditorStore();
 
   const filteredModels = models3D.filter(model =>
     model.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -80,9 +81,8 @@ function AssetLibrary() {
           onMouseDown={handleResizeMouseDown}
         />
         {/* Fixed Header */}
-        <div className="px-2 py-2 border-b border-slate-700">
-          <h3 className="text-xs font-medium text-white mb-1.5">Asset Library</h3>
-          <div className="relative">
+        <div className="px-2 py-2">
+          <div className="relative mt-1">
             <Icons.MagnifyingGlass className="w-3 h-3 absolute left-2 top-1.5 text-gray-400" />
             <input
               type="text"

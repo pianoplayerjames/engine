@@ -1,6 +1,7 @@
 // plugins/editor/components/VerticalToolMenu.jsx
 import React, { useState } from 'react';
 import { Icons } from './Icons';
+import { useEditorStore } from '../store.js';
 
 const tools = [
   { id: 'select', icon: Icons.Select, title: 'Select' },
@@ -17,6 +18,16 @@ const tools = [
 function VerticalToolMenu({ selectedTool, onToolSelect }) {
   const [tooltipState, setTooltipState] = useState({ visible: false, text: '', x: 0, y: 0 });
   const [flashingTool, setFlashingTool] = useState(null);
+  
+  const { transformMode, setTransformMode } = useEditorStore();
+  
+  // Use transformMode from store instead of selectedTool prop for transform tools
+  const getEffectiveSelectedTool = () => {
+    if (['select', 'move', 'rotate', 'scale'].includes(transformMode)) {
+      return transformMode;
+    }
+    return selectedTool;
+  };
 
   const showTooltip = (e, title) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -36,7 +47,8 @@ function VerticalToolMenu({ selectedTool, onToolSelect }) {
     <>
       <div className="absolute top-16 left-4 w-10 bg-gradient-to-b from-slate-800/95 to-slate-900/98 backdrop-blur-md border border-slate-700/80 rounded-xl shadow-2xl shadow-black/50 flex flex-col pointer-events-auto overflow-visible no-select">
         {tools.map((tool, index) => {
-          const isSelected = selectedTool === tool.id;
+          const effectiveSelectedTool = getEffectiveSelectedTool();
+          const isSelected = effectiveSelectedTool === tool.id;
           const isFirstGroup = index <= 3; // Select, Camera, Paint, Sculpt
           const isSecondGroup = index >= 4 && index <= 6; // Move, Rotate, Scale  
           const isThirdGroup = index >= 7; // Undo, Redo
@@ -56,6 +68,8 @@ function VerticalToolMenu({ selectedTool, onToolSelect }) {
                     console.log(`${tool.id} action triggered`);
                   } else {
                     onToolSelect(tool.id);
+                    // Update transform mode in store
+                    setTransformMode(tool.id);
                   }
                 }}
                 className={`w-full h-8 flex items-center justify-center transition-all duration-200 relative group ${

@@ -1,9 +1,11 @@
 // plugins/editor/components/TopLeftMenu.jsx
 import React, { useState } from 'react';
 import { Icons } from './Icons';
+import { useEditorStore } from '../store.js';
 
 function TopLeftMenu() {
   const [isOpen, setIsOpen] = useState(false);
+  const { topLeftMenuSelected, setTopLeftMenuSelected } = useEditorStore();
 
   const menuItems = [
     { id: 'new', label: 'New Scene', icon: Icons.Plus, shortcut: 'Ctrl+N' },
@@ -52,7 +54,9 @@ function TopLeftMenu() {
                       className="w-full px-4 py-2.5 text-left text-sm text-gray-300 hover:bg-gradient-to-r hover:from-blue-600/90 hover:to-blue-500/90 hover:text-white flex items-center justify-between transition-all duration-150 group relative rounded-md hover:shadow-lg"
                       onClick={() => {
                         setIsOpen(false);
-                        // Handle menu item click
+                        setTopLeftMenuSelected(item.id);
+                        // Handle menu item click based on item.id
+                        console.log('Menu item clicked:', item.id);
                       }}
                       title={item.label}
                     >

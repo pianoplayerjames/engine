@@ -7,18 +7,300 @@ import ScenePanel from './components/ScenePanel';
 import AssetLibrary from './components/AssetLibrary';
 import BottomTabs from './components/BottomTabs';
 import NodeEditor from './components/NodeEditor';
+import ScriptsPanel from './components/ScriptsPanel';
+import AnimationPanel from './components/AnimationPanel';
+import TimelinePanel from './components/TimelinePanel';
+import ConsolePanel from './components/ConsolePanel';
+import MaterialsPanel from './components/MaterialsPanel';
+import TerrainPanel from './components/TerrainPanel';
+import LightingPanel from './components/LightingPanel';
+import PhysicsPanel from './components/PhysicsPanel';
+import AudioPanel from './components/AudioPanel';
+import EffectsPanel from './components/EffectsPanel';
+import ContextMenu from './components/ContextMenu';
+import { Icons } from './components/Icons';
+import { useEditorStore } from './store.js';
 
 function EditorPlugin() {
   const [selectedTool, setSelectedTool] = useState('select');
-  const [selectedRightTool, setSelectedRightTool] = useState('scene');
-  const [selectedObject, setSelectedObject] = useState(null);
-  const [activeTab, setActiveTab] = useState('assets');
   const [isAssetPanelOpen, setIsAssetPanelOpen] = useState(true);
   const [isScenePanelOpen, setIsScenePanelOpen] = useState(true);
-  const [bottomPanelHeight, setBottomPanelHeight] = useState(256); // Default height
   const [isResizingBottom, setIsResizingBottom] = useState(false);
-  const [rightPanelWidth, setRightPanelWidth] = useState(304); // 256 + 48 for toolbar
   const [isResizingRight, setIsResizingRight] = useState(false);
+  const [contextMenu, setContextMenu] = useState(null);
+  
+  const { 
+    selectedObject, setSelectedObject, setContextMenuHandler, addSceneObject, removeSceneObject, setTransformMode,
+    selectedTool: selectedRightTool, setSelectedTool: setSelectedRightTool,
+    selectedBottomTab: activeTab, setSelectedBottomTab: setActiveTab,
+    rightPanelWidth, setRightPanelWidth,
+    bottomPanelHeight, setBottomPanelHeight
+  } = useEditorStore();
+
+  // Register context menu handler in store (after all functions are defined)
+  useEffect(() => {
+    setContextMenuHandler(handleContextMenu);
+  }, []);
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Delete selected object when Delete key is pressed
+      if (e.key === 'Delete' && selectedObject) {
+        removeSceneObject(selectedObject);
+        setSelectedObject(null);
+        setTransformMode('select');
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedObject, removeSceneObject, setSelectedObject, setTransformMode]);
+
+  // Handle object selection with automatic move gizmo
+  const handleObjectSelect = (objectId) => {
+    setSelectedObject(objectId);
+    if (objectId) {
+      setTransformMode('move');
+    }
+  };
+
+  const getContextMenuItems = (item, context) => {
+    if (item) {
+      // Scene object context menu - different items based on object type
+      const baseItems = [
+        { label: 'Rename', action: () => handleRename(item.id), icon: <Icons.Pencil className="w-4 h-4" />, shortcut: 'F2' },
+        { separator: true },
+        { label: 'Copy', action: () => handleCopy(item.id), icon: <Icons.Copy className="w-4 h-4" />, shortcut: 'Ctrl+C' },
+        { label: 'Duplicate', action: () => handleDuplicate(item.id), icon: <Icons.DocumentDuplicate className="w-4 h-4" />, shortcut: 'Ctrl+D' },
+        { label: 'Delete', action: () => handleDelete(item.id), icon: <Icons.Trash className="w-4 h-4" />, shortcut: 'Del' },
+        { separator: true },
+      ];
+
+      // Type-specific menu items
+      const typeSpecificItems = [];
+      
+      if (item.type === 'model' || item.type === 'mesh') {
+        typeSpecificItems.push(
+          { label: 'Add Material', action: () => handleAddMaterial(item.id), icon: <Icons.Cube className="w-4 h-4" /> },
+          { label: 'Add Script', action: () => handleAddScript(item.id), icon: <Icons.CodeBracket className="w-4 h-4" /> },
+          { label: 'Add Physics', action: () => handleAddPhysics(item.id), icon: <Icons.Lightning className="w-4 h-4" /> },
+        );
+      }
+
+      if (item.type === 'terrain') {
+        typeSpecificItems.push(
+          { label: 'Edit Terrain', action: () => handleEditTerrain(item.id), icon: <Icons.Mountain className="w-4 h-4" /> },
+          { label: 'Paint Texture', action: () => handlePaintTexture(item.id), icon: <Icons.PaintBrush className="w-4 h-4" /> },
+        );
+      }
+
+      const colorItems = [
+        { separator: true },
+        { label: 'Color Code', action: () => {}, icon: <Icons.ColorSwatch className="w-4 h-4" />, submenu: [
+          { label: 'Red', action: () => handleColorCode(item.id, 'red'), color: '#ef4444' },
+          { label: 'Orange', action: () => handleColorCode(item.id, 'orange'), color: '#f97316' },
+          { label: 'Yellow', action: () => handleColorCode(item.id, 'yellow'), color: '#eab308' },
+          { label: 'Green', action: () => handleColorCode(item.id, 'green'), color: '#22c55e' },
+          { label: 'Blue', action: () => handleColorCode(item.id, 'blue'), color: '#3b82f6' },
+          { label: 'Purple', action: () => handleColorCode(item.id, 'purple'), color: '#a855f7' },
+          { label: 'Clear', action: () => handleColorCode(item.id, null), icon: <Icons.XMark className="w-3 h-3" /> },
+        ]},
+      ];
+
+      return [...baseItems, ...typeSpecificItems, ...colorItems];
+    } else {
+      // General context menu for empty space
+      const baseGeneralItems = [
+        { label: 'Create Object', action: () => {}, icon: <Icons.PlusCircle className="w-4 h-4" />, submenu: [
+          { label: 'Cube', action: () => handleCreateObject('cube'), icon: <Icons.Cube className="w-4 h-4" /> },
+          { label: 'Sphere', action: () => handleCreateObject('sphere'), icon: <Icons.Circle className="w-4 h-4" /> },
+          { label: 'Cylinder', action: () => handleCreateObject('cylinder'), icon: <Icons.Rectangle className="w-4 h-4" /> },
+          { label: 'Plane', action: () => handleCreateObject('plane'), icon: <Icons.Square2Stack className="w-4 h-4" /> },
+          { separator: true },
+          { label: 'Light', action: () => handleCreateObject('light'), icon: <Icons.LightBulb className="w-4 h-4" /> },
+          { label: 'Camera', action: () => handleCreateObject('camera'), icon: <Icons.Camera className="w-4 h-4" /> },
+        ]},
+        { separator: true },
+        { label: 'Paste', action: () => handlePaste(), icon: <Icons.Clipboard className="w-4 h-4" />, shortcut: 'Ctrl+V' },
+        { separator: true },
+        { label: 'Undo', action: () => handleUndo(), icon: <Icons.Undo className="w-4 h-4" />, shortcut: 'Ctrl+Z' },
+        { label: 'Redo', action: () => handleRedo(), icon: <Icons.Redo className="w-4 h-4" />, shortcut: 'Ctrl+Y' },
+      ];
+
+      if (context === 'viewport') {
+        // Viewport-specific context menu
+        return [
+          ...baseGeneralItems,
+          { separator: true },
+          { label: 'Frame All', action: () => handleFrameAll(), icon: <Icons.ArrowsPointingOut className="w-4 h-4" />, shortcut: 'F' },
+          { label: 'Frame Selected', action: () => handleFocusSelected(), icon: <Icons.MagnifyingGlass className="w-4 h-4" />, shortcut: 'Shift+F' },
+          { separator: true },
+          { label: 'Reset View', action: () => handleResetView(), icon: <Icons.ArrowPath className="w-4 h-4" /> },
+          { label: 'Top View', action: () => handleSetView('top'), icon: <Icons.ArrowUp className="w-4 h-4" />, shortcut: 'Numpad 7' },
+          { label: 'Front View', action: () => handleSetView('front'), icon: <Icons.ArrowRight className="w-4 h-4" />, shortcut: 'Numpad 1' },
+          { label: 'Right View', action: () => handleSetView('right'), icon: <Icons.ArrowDown className="w-4 h-4" />, shortcut: 'Numpad 3' },
+        ];
+      } else {
+        // Scene panel context menu
+        return [
+          ...baseGeneralItems,
+          { separator: true },
+          { label: 'Select All', action: () => handleSelectAll(), icon: <Icons.CursorArrowRays className="w-4 h-4" />, shortcut: 'Ctrl+A' },
+          { label: 'Expand All', action: () => handleExpandAll(), icon: <Icons.PlusCircle className="w-4 h-4" /> },
+          { label: 'Collapse All', action: () => handleCollapseAll(), icon: <Icons.MinusCircle className="w-4 h-4" /> },
+        ];
+      }
+    }
+  };
+
+  // Action handlers
+  const handleRename = (itemId) => {
+    console.log('Rename', itemId);
+    // TODO: Implement rename functionality
+  };
+
+  const handleCopy = (itemId) => {
+    console.log('Copy', itemId);
+    // TODO: Implement copy functionality
+  };
+
+  const handleDuplicate = (itemId) => {
+    console.log('Duplicate', itemId);
+    // TODO: Implement duplicate functionality
+  };
+
+  const handleDelete = (itemId) => {
+    console.log('Delete', itemId);
+    removeSceneObject(itemId);
+  };
+
+  const handleAddMaterial = (itemId) => {
+    console.log('Add Material', itemId);
+    setSelectedRightTool('materials');
+  };
+
+  const handleAddScript = (itemId) => {
+    console.log('Add Script', itemId);
+    setActiveTab('scripts');
+  };
+
+  const handleAddPhysics = (itemId) => {
+    console.log('Add Physics', itemId);
+    setSelectedRightTool('physics');
+  };
+
+  const handleEditTerrain = (itemId) => {
+    console.log('Edit Terrain', itemId);
+    setSelectedRightTool('terrain');
+  };
+
+  const handlePaintTexture = (itemId) => {
+    console.log('Paint Texture', itemId);
+    setSelectedTool('paint');
+  };
+
+  const handleColorCode = (itemId, color) => {
+    console.log('Color Code', itemId, color);
+    // TODO: Implement color coding functionality
+  };
+
+  const handleCreateObject = (type) => {
+    const newObject = {
+      name: type.charAt(0).toUpperCase() + type.slice(1),
+      type: 'mesh',
+      position: [Math.random() * 4 - 2, 0, Math.random() * 4 - 2], // Random position
+      rotation: [0, 0, 0],
+      scale: [1, 1, 1],
+      geometry: type === 'cube' ? 'box' : type,
+      material: { 
+        color: `hsl(${Math.random() * 360}, 70%, 50%)` // Random color
+      },
+      visible: true
+    };
+    
+    const objectWithId = addSceneObject(newObject);
+    // Select the newly created object and show move gizmo
+    setSelectedObject(objectWithId.id);
+    setTransformMode('move');
+    
+    // Restore focus to canvas after object creation
+    setTimeout(() => {
+      const canvas = document.querySelector('canvas');
+      if (canvas) {
+        canvas.focus();
+      }
+    }, 100);
+  };
+
+  const handlePaste = () => {
+    console.log('Paste');
+    // TODO: Implement paste functionality
+  };
+
+  const handleUndo = () => {
+    console.log('Undo');
+    // TODO: Implement undo functionality
+  };
+
+  const handleRedo = () => {
+    console.log('Redo');
+    // TODO: Implement redo functionality
+  };
+
+  const handleSelectAll = () => {
+    console.log('Select All');
+    // TODO: Implement select all functionality
+  };
+
+  const handleFocusSelected = () => {
+    console.log('Focus Selected');
+    // TODO: Implement focus selected functionality
+  };
+
+  const handleFrameAll = () => {
+    console.log('Frame All');
+    // TODO: Implement frame all functionality
+  };
+
+  const handleResetView = () => {
+    console.log('Reset View');
+    // TODO: Implement reset view functionality
+  };
+
+  const handleSetView = (view) => {
+    console.log('Set View', view);
+    // TODO: Implement set view functionality
+  };
+
+  const handleExpandAll = () => {
+    console.log('Expand All');
+    // TODO: Implement expand all functionality
+  };
+
+  const handleCollapseAll = () => {
+    console.log('Collapse All');
+    // TODO: Implement collapse all functionality
+  };
+
+  const handleContextMenu = (e, item, context = 'scene') => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const { clientX: x, clientY: y } = e;
+    const menuItems = getContextMenuItems(item, context);
+
+    setContextMenu({
+      position: { x, y },
+      items: menuItems,
+    });
+  };
+
+  const closeContextMenu = () => {
+    setContextMenu(null);
+  };
 
   const handleBottomResizeMouseDown = (e) => {
     setIsResizingBottom(true);
@@ -41,7 +323,7 @@ function EditorPlugin() {
       setIsAssetPanelOpen(false);
       setIsResizingBottom(false);
     } else if (isAssetPanelOpen) {
-      const constrainedHeight = Math.max(100, Math.min(maxHeight, newHeight));
+      const constrainedHeight = Math.max(40, Math.min(maxHeight, newHeight));
       setBottomPanelHeight(constrainedHeight);
     }
   };
@@ -104,7 +386,7 @@ function EditorPlugin() {
   }, [isResizingRight]);
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-10">
+    <div className="fixed inset-0 pointer-events-none z-10" onContextMenu={(e) => handleContextMenu(e, null, 'viewport')}>
       {/* Top Left Menu */}
       <TopLeftMenu />
       
@@ -117,18 +399,20 @@ function EditorPlugin() {
       {/* Right Panels Container with Resize Handle */}
       <div 
         className={`absolute right-0 top-0 bottom-0 pointer-events-auto no-select z-20 ${
-          isResizingRight ? '' : 'transition-all duration-200'
+          isResizingRight ? '' : 'transition-all duration-300 ease-in-out'
         }`}
         style={{ 
           width: isScenePanelOpen ? rightPanelWidth : 48,
           height: '100vh'
         }}
       >
-        {/* Resize Handle - always visible */}
+        {/* Resize Handle - shows on hover */}
         <div
-          className={`absolute top-0 w-0.5 resize-handle ${isResizingRight ? 'dragging' : ''}`}
+          className={`absolute top-0 w-1 resize-handle cursor-col-resize transition-all duration-200 ${
+            isResizingRight ? 'bg-blue-500/75 opacity-100' : 'bg-slate-700/50 opacity-0 hover:opacity-100 hover:bg-blue-500/75'
+          }`}
           style={{ 
-            left: isScenePanelOpen ? '2px' : '-2px',
+            left: isScenePanelOpen ? '0px' : '-4px',
             bottom: isAssetPanelOpen ? bottomPanelHeight : '40px',
             zIndex: isScenePanelOpen ? 5 : 1
           }}
@@ -159,7 +443,7 @@ function EditorPlugin() {
           >
             <ScenePanel 
               selectedObject={selectedObject}
-              onObjectSelect={setSelectedObject}
+              onObjectSelect={handleObjectSelect}
               isOpen={isScenePanelOpen}
               onToggle={() => {
                 setIsScenePanelOpen(!isScenePanelOpen);
@@ -169,6 +453,7 @@ function EditorPlugin() {
               }}
               selectedTool={selectedRightTool}
               onToolSelect={setSelectedRightTool}
+              onContextMenu={handleContextMenu}
             />
           </div>
         )}
@@ -201,40 +486,69 @@ function EditorPlugin() {
         </div>
       )}
       
+      {/* Bottom Panel Resize Handle - positioned above the tabs */}
+      <div
+        className={`absolute left-0 pointer-events-auto h-1 z-50 cursor-row-resize ${
+          isResizingBottom 
+            ? 'bg-blue-500/75 opacity-100 transition-none' 
+            : 'bg-slate-700/50 opacity-0 hover:opacity-100 hover:bg-blue-500/75 transition-all duration-200'
+        }`}
+        style={{ 
+          right: isScenePanelOpen ? rightPanelWidth - 4 : 48,
+          bottom: isAssetPanelOpen ? bottomPanelHeight : 40
+        }}
+        onMouseDown={handleBottomResizeMouseDown}
+      />
+
       {/* Bottom Panel with Resizing */}
       <div 
         className={`absolute bottom-0 left-0 pointer-events-auto no-select z-10 ${
-          isResizingRight || isResizingBottom ? '' : 'transition-all duration-200'
+          isResizingRight || isResizingBottom ? '' : 'transition-all duration-300 ease-in-out'
         }`}
         style={{ 
-          right: isScenePanelOpen ? rightPanelWidth - 3 : 48, // Extend 1px more to eliminate gap
-          height: isAssetPanelOpen ? bottomPanelHeight : 'auto' 
+          right: isScenePanelOpen ? rightPanelWidth - 4 : 48, // Extend to eliminate gap
+          height: isAssetPanelOpen ? bottomPanelHeight : 40
         }}
       >
-        {/* Resize Handle - always visible */}
-        <div
-          className={`absolute top-0 left-0 right-0 h-0.5 resize-handle-vertical z-50 ${isResizingBottom ? 'dragging' : ''}`}
-          onMouseDown={handleBottomResizeMouseDown}
-        />
-        
         <BottomTabs 
           activeTab={activeTab}
-          onTabChange={setActiveTab}
+          onTabChange={(tabId) => {
+            setActiveTab(tabId);
+            if (!isAssetPanelOpen) {
+              setIsAssetPanelOpen(true);
+            }
+          }}
           isAssetPanelOpen={isAssetPanelOpen}
           onToggleAssetPanel={() => setIsAssetPanelOpen(!isAssetPanelOpen)}
+          rightPanelWidth={rightPanelWidth}
+          isScenePanelOpen={isScenePanelOpen}
         />
         
         {isAssetPanelOpen && (
           <div className="flex-1 bg-gray-900 overflow-hidden" style={{ height: bottomPanelHeight - 40 }}>
-            {activeTab === 'assets' && <AssetLibrary />}
-            {activeTab === 'scripts' && <div className="p-4 text-gray-400 scrollbar-thin overflow-y-auto h-full">Scripts panel coming soon...</div>}
-            {activeTab === 'animation' && <div className="p-4 text-gray-400 scrollbar-thin overflow-y-auto h-full">Animation panel coming soon...</div>}
+            {activeTab === 'assets' && <AssetLibrary onContextMenu={handleContextMenu} />}
+            {activeTab === 'scripts' && <ScriptsPanel />}
+            {activeTab === 'animation' && <AnimationPanel />}
             {activeTab === 'node-editor' && <NodeEditor />}
-            {activeTab === 'timeline' && <div className="p-4 text-gray-400 scrollbar-thin overflow-y-auto h-full">Timeline coming soon...</div>}
-            {activeTab === 'console' && <div className="p-4 text-gray-400 scrollbar-thin overflow-y-auto h-full">Console coming soon...</div>}
+            {activeTab === 'timeline' && <TimelinePanel />}
+            {activeTab === 'console' && <ConsolePanel />}
+            {activeTab === 'materials' && <MaterialsPanel />}
+            {activeTab === 'terrain' && <TerrainPanel />}
+            {activeTab === 'lighting' && <LightingPanel />}
+            {activeTab === 'physics' && <PhysicsPanel />}
+            {activeTab === 'audio' && <AudioPanel />}
+            {activeTab === 'effects' && <EffectsPanel />}
           </div>
         )}
       </div>
+
+      {contextMenu && (
+        <ContextMenu
+          items={contextMenu.items}
+          position={contextMenu.position}
+          onClose={closeContextMenu}
+        />
+      )}
     </div>
   );
 }
