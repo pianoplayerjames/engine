@@ -1,200 +1,242 @@
-import { useEffect } from 'react'
-import { useEditorStore } from './store.js'
-import { useInputStore } from '../input/store.js'
-import { useSceneStore } from '../scene/store.js'
-import { ViewportCanvas } from '../render/index.jsx'
+// plugins/editor/index.jsx
+import React, { useState, useEffect } from 'react';
+import TopLeftMenu from './components/TopLeftMenu';
+import VerticalToolMenu from './components/VerticalToolMenu';
+import Toolbar from './components/Toolbar';
+import ScenePanel from './components/ScenePanel';
+import AssetLibrary from './components/AssetLibrary';
+import BottomTabs from './components/BottomTabs';
+import NodeEditor from './components/NodeEditor';
 
-function HierarchyPanel() {
-  const entities = useSceneStore(state => state.entities)
-  const { selectedEntity, setSelectedEntity } = useEditorStore()
+function EditorPlugin() {
+  const [selectedTool, setSelectedTool] = useState('select');
+  const [selectedRightTool, setSelectedRightTool] = useState('scene');
+  const [selectedObject, setSelectedObject] = useState(null);
+  const [activeTab, setActiveTab] = useState('assets');
+  const [isAssetPanelOpen, setIsAssetPanelOpen] = useState(true);
+  const [isScenePanelOpen, setIsScenePanelOpen] = useState(true);
+  const [bottomPanelHeight, setBottomPanelHeight] = useState(256); // Default height
+  const [isResizingBottom, setIsResizingBottom] = useState(false);
+  const [rightPanelWidth, setRightPanelWidth] = useState(304); // 256 + 48 for toolbar
+  const [isResizingRight, setIsResizingRight] = useState(false);
+
+  const handleBottomResizeMouseDown = (e) => {
+    setIsResizingBottom(true);
+    document.body.classList.add('dragging-vertical');
+    e.preventDefault();
+  };
+
+  const handleBottomResizeMouseMove = (e) => {
+    if (!isResizingBottom) return;
+    e.preventDefault();
+    const newHeight = window.innerHeight - e.clientY;
+    const maxHeight = window.innerHeight * 0.85; // Allow up to 85% of viewport height
+    const snapThreshold = 80; // Snap to hidden when within 80px of bottom edge
+    const openThreshold = 120; // Snap to open when dragged up 120px
+    
+    if (!isAssetPanelOpen && newHeight > openThreshold) {
+      setIsAssetPanelOpen(true);
+      setBottomPanelHeight(Math.max(200, newHeight));
+    } else if (isAssetPanelOpen && newHeight < snapThreshold) {
+      setIsAssetPanelOpen(false);
+      setIsResizingBottom(false);
+    } else if (isAssetPanelOpen) {
+      const constrainedHeight = Math.max(100, Math.min(maxHeight, newHeight));
+      setBottomPanelHeight(constrainedHeight);
+    }
+  };
+
+  const handleBottomResizeMouseUp = () => {
+    setIsResizingBottom(false);
+    document.body.classList.remove('dragging-vertical');
+  };
+
+  const handleRightResizeMouseDown = (e) => {
+    setIsResizingRight(true);
+    document.body.classList.add('dragging-horizontal');
+    e.preventDefault();
+  };
+
+  const handleRightResizeMouseMove = (e) => {
+    if (!isResizingRight) return;
+    const newWidth = window.innerWidth - e.clientX;
+    const snapThreshold = 100; // Snap to hidden when within 100px of edge
+    const openThreshold = 150; // Snap to open when dragged left 150px
+    
+    if (!isScenePanelOpen && newWidth > openThreshold) {
+      setIsScenePanelOpen(true);
+      setRightPanelWidth(Math.max(200, newWidth));
+      setSelectedRightTool('scene'); // Activate scene tab when opening via resize
+    } else if (isScenePanelOpen && newWidth < snapThreshold) {
+      setIsScenePanelOpen(false);
+      setIsResizingRight(false);
+      setSelectedRightTool('select'); // Deactivate menu when closing via resize
+    } else if (isScenePanelOpen) {
+      setRightPanelWidth(Math.max(200, Math.min(600, newWidth)));
+    }
+  };
+
+  const handleRightResizeMouseUp = () => {
+    setIsResizingRight(false);
+    document.body.classList.remove('dragging-horizontal');
+  };
+
+  useEffect(() => {
+    if (isResizingBottom) {
+      document.addEventListener('mousemove', handleBottomResizeMouseMove);
+      document.addEventListener('mouseup', handleBottomResizeMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleBottomResizeMouseMove);
+        document.removeEventListener('mouseup', handleBottomResizeMouseUp);
+      };
+    }
+  }, [isResizingBottom]);
+
+  useEffect(() => {
+    if (isResizingRight) {
+      document.addEventListener('mousemove', handleRightResizeMouseMove);
+      document.addEventListener('mouseup', handleRightResizeMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleRightResizeMouseMove);
+        document.removeEventListener('mouseup', handleRightResizeMouseUp);
+      };
+    }
+  }, [isResizingRight]);
 
   return (
-    <div style={{
-      width: '250px',
-      background: '#2a2a2a',
-      border: '1px solid #444',
-      borderRadius: '4px',
-      padding: '8px'
-    }}>
-      <h3 style={{ margin: '0 0 8px 0', color: '#fff', fontSize: '14px' }}>Hierarchy</h3>
-      <div style={{ maxHeight: '200px', overflow: 'auto' }}>
-        {Array.from(entities.entries()).map(([id, entity]) => (
-          <div
-            key={id}
-            onClick={() => setSelectedEntity(id)}
-            style={{
-              padding: '4px 8px',
-              cursor: 'pointer',
-              background: selectedEntity === id ? '#4a4a4a' : 'transparent',
-              color: '#fff',
-              fontSize: '12px',
-              borderRadius: '2px',
-              marginBottom: '2px'
+    <div className="fixed inset-0 pointer-events-none z-10">
+      {/* Top Left Menu */}
+      <TopLeftMenu />
+      
+      {/* Vertical Tool Menu (below hamburger menu) */}
+      <VerticalToolMenu 
+        selectedTool={selectedTool}
+        onToolSelect={setSelectedTool}
+      />
+      
+      {/* Right Panels Container with Resize Handle */}
+      <div 
+        className={`absolute right-0 top-0 bottom-0 pointer-events-auto no-select z-20 ${
+          isResizingRight ? '' : 'transition-all duration-200'
+        }`}
+        style={{ 
+          width: isScenePanelOpen ? rightPanelWidth : 48,
+          height: '100vh'
+        }}
+      >
+        {/* Resize Handle - always visible */}
+        <div
+          className={`absolute top-0 w-0.5 resize-handle ${isResizingRight ? 'dragging' : ''}`}
+          style={{ 
+            left: isScenePanelOpen ? '2px' : '-2px',
+            bottom: isAssetPanelOpen ? bottomPanelHeight : '40px',
+            zIndex: isScenePanelOpen ? 5 : 1
+          }}
+          onMouseDown={handleRightResizeMouseDown}
+        />
+        
+        {/* Right Toolbar - positioned within container */}
+        <div 
+          className={`absolute top-0 bottom-0 w-12 ${isScenePanelOpen ? 'left-1' : 'left-0'}`}
+        >
+          <Toolbar 
+            selectedTool={selectedRightTool}
+            onToolSelect={setSelectedRightTool}
+            scenePanelOpen={isScenePanelOpen}
+            onScenePanelToggle={() => {
+              setIsScenePanelOpen(!isScenePanelOpen);
+              if (isScenePanelOpen) {
+                setSelectedRightTool('select'); // Reset to default tool when closing
+              }
+            }}
+          />
+        </div>
+        
+        {/* Right Scene Panel - positioned within container */}
+        {isScenePanelOpen && (
+          <div 
+            className="absolute left-13 right-0 top-0 bottom-0"
+          >
+            <ScenePanel 
+              selectedObject={selectedObject}
+              onObjectSelect={setSelectedObject}
+              isOpen={isScenePanelOpen}
+              onToggle={() => {
+                setIsScenePanelOpen(!isScenePanelOpen);
+                if (isScenePanelOpen) {
+                  setSelectedRightTool('select'); // Reset to default tool when closing
+                }
+              }}
+              selectedTool={selectedRightTool}
+              onToolSelect={setSelectedRightTool}
+            />
+          </div>
+        )}
+      </div>
+      
+      {/* Toggle button when scene panel is closed - positioned outside container */}
+      {!isScenePanelOpen && (
+        <div 
+          className="absolute top-1 w-6 pointer-events-auto z-50"
+          style={{ right: 47 }}
+        >
+          <button
+            onClick={() => setIsScenePanelOpen(true)}
+            className="w-6 h-8 text-gray-400 hover:text-blue-400 transition-colors flex items-center justify-center"
+            style={{ 
+              backgroundColor: '#1e293b',
+              borderLeft: '1px solid #475569',
+              borderTop: '1px solid #475569',
+              borderBottom: '1px solid #475569',
+              borderTopLeftRadius: '6px',
+              borderBottomLeftRadius: '6px'
             }}
           >
-            {entity.name}
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function InspectorPanel() {
-  const { selectedEntity } = useEditorStore()
-  const getEntity = useSceneStore(state => state.getEntity)
-  const getComponent = useSceneStore(state => state.getComponent)
-
-  const entity = selectedEntity ? getEntity(selectedEntity) : null
-  const transform = selectedEntity ? getComponent(selectedEntity, 'transform') : null
-
-  if (!entity) {
-    return (
-      <div style={{
-        width: '250px',
-        background: '#2a2a2a',
-        border: '1px solid #444',
-        borderRadius: '4px',
-        padding: '8px'
-      }}>
-        <h3 style={{ margin: '0 0 8px 0', color: '#fff', fontSize: '14px' }}>Inspector</h3>
-        <p style={{ color: '#999', fontSize: '12px' }}>No entity selected</p>
-      </div>
-    )
-  }
-
-  return (
-    <div style={{
-      width: '250px',
-      background: '#2a2a2a',
-      border: '1px solid #444',
-      borderRadius: '4px',
-      padding: '8px'
-    }}>
-      <h3 style={{ margin: '0 0 8px 0', color: '#fff', fontSize: '14px' }}>Inspector</h3>
-      <div style={{ color: '#fff', fontSize: '12px' }}>
-        <div style={{ marginBottom: '8px' }}>
-          <strong>Name:</strong> {entity.name}
-        </div>
-        <div style={{ marginBottom: '8px' }}>
-          <strong>ID:</strong> {entity.id}
-        </div>
-        <div style={{ marginBottom: '8px' }}>
-          <strong>Active:</strong> {entity.active ? 'Yes' : 'No'}
-        </div>
-        {transform && (
-          <div>
-            <strong>Transform:</strong>
-            <div style={{ marginLeft: '8px', marginTop: '4px' }}>
-              <div>Position: {transform.position?.join(', ')}</div>
-              <div>Rotation: {transform.rotation?.join(', ')}</div>
-              <div>Scale: {transform.scale?.join(', ')}</div>
+            <div className="w-3 h-3 flex items-center justify-center">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3">
+                <path d="m15 18-6-6 6-6"/>
+              </svg>
             </div>
+          </button>
+        </div>
+      )}
+      
+      {/* Bottom Panel with Resizing */}
+      <div 
+        className={`absolute bottom-0 left-0 pointer-events-auto no-select z-10 ${
+          isResizingRight || isResizingBottom ? '' : 'transition-all duration-200'
+        }`}
+        style={{ 
+          right: isScenePanelOpen ? rightPanelWidth - 3 : 48, // Extend 1px more to eliminate gap
+          height: isAssetPanelOpen ? bottomPanelHeight : 'auto' 
+        }}
+      >
+        {/* Resize Handle - always visible */}
+        <div
+          className={`absolute top-0 left-0 right-0 h-0.5 resize-handle-vertical z-50 ${isResizingBottom ? 'dragging' : ''}`}
+          onMouseDown={handleBottomResizeMouseDown}
+        />
+        
+        <BottomTabs 
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          isAssetPanelOpen={isAssetPanelOpen}
+          onToggleAssetPanel={() => setIsAssetPanelOpen(!isAssetPanelOpen)}
+        />
+        
+        {isAssetPanelOpen && (
+          <div className="flex-1 bg-gray-900 overflow-hidden" style={{ height: bottomPanelHeight - 40 }}>
+            {activeTab === 'assets' && <AssetLibrary />}
+            {activeTab === 'scripts' && <div className="p-4 text-gray-400 scrollbar-thin overflow-y-auto h-full">Scripts panel coming soon...</div>}
+            {activeTab === 'animation' && <div className="p-4 text-gray-400 scrollbar-thin overflow-y-auto h-full">Animation panel coming soon...</div>}
+            {activeTab === 'node-editor' && <NodeEditor />}
+            {activeTab === 'timeline' && <div className="p-4 text-gray-400 scrollbar-thin overflow-y-auto h-full">Timeline coming soon...</div>}
+            {activeTab === 'console' && <div className="p-4 text-gray-400 scrollbar-thin overflow-y-auto h-full">Console coming soon...</div>}
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }
 
-export default function EditorPlugin() {
-  const { isOpen, toggle, panels } = useEditorStore()
-  const keyPressed = useInputStore(state => state.keyPressed)
-
-  useEffect(() => {
-    // Check for Tab key press each frame
-    if (keyPressed['Tab']) {
-      console.log('Tab key detected, toggling editor')
-      toggle()
-    }
-  }, [keyPressed, toggle])
-  
-  // Debug logging
-  useEffect(() => {
-    console.log('Editor plugin mounted, isOpen:', isOpen)
-  }, [isOpen])
-
-  if (!isOpen) return null
-
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'transparent',
-      zIndex: 1000,
-      pointerEvents: 'none'
-    }}>
-      {/* Editor Header */}
-      <div style={{
-        height: '40px',
-        background: '#1a1a1a',
-        borderBottom: '1px solid #444',
-        display: 'flex',
-        alignItems: 'center',
-        padding: '0 12px',
-        justifyContent: 'space-between',
-        pointerEvents: 'auto'
-      }}>
-        <h2 style={{ margin: 0, color: '#fff', fontSize: '16px' }}>Engine Editor</h2>
-        <button
-          onClick={toggle}
-          style={{
-            background: '#444',
-            border: 'none',
-            color: '#fff',
-            padding: '4px 8px',
-            borderRadius: '2px',
-            cursor: 'pointer',
-            fontSize: '12px'
-          }}
-        >
-          Close (Tab)
-        </button>
-      </div>
-
-      {/* Editor Content */}
-      <div style={{
-        display: 'flex',
-        height: 'calc(100vh - 40px)'
-      }}>
-        {/* Left Panels */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px',
-          padding: '8px',
-          background: '#333',
-          pointerEvents: 'auto'
-        }}>
-          {panels.hierarchy && <HierarchyPanel />}
-        </div>
-
-        {/* Main Content Area - 3D Viewport */}
-        <div style={{
-          flex: 1,
-          background: 'transparent',
-          pointerEvents: 'none'
-        }}>
-        </div>
-
-        {/* Right Panels */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px',
-          padding: '8px',
-          background: '#333',
-          pointerEvents: 'auto'
-        }}>
-          {panels.inspector && <InspectorPanel />}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// Export the store for other plugins to use
-export { useEditorStore } from './store.js'
+export default EditorPlugin;
