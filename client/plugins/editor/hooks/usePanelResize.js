@@ -15,9 +15,15 @@ export const usePanelResize = (editorActions) => {
 
   // Bottom panel resize handlers
   const handleBottomResizeStart = useCallback(() => {
+    console.log('🔵 Bottom panel resize START');
     setIsResizingBottom(true);
     setIsResizingPanels(true);
     document.body.classList.add('dragging-vertical');
+    
+    // Cancel any pending auto-saves
+    import('@/plugins/core/AutoSaveManager.js').then(({ autoSaveManager }) => {
+      autoSaveManager.cancelPendingAutoSave()
+    })
   }, [setIsResizingPanels]);
 
   const handleBottomResizeMove = useCallback((e, { isAssetPanelOpen }) => {
@@ -42,6 +48,7 @@ export const usePanelResize = (editorActions) => {
   }, [isResizingBottom, setIsAssetPanelOpen, setBottomPanelHeight]);
 
   const handleBottomResizeEnd = useCallback(() => {
+    console.log('🔴 Bottom panel resize END');
     setIsResizingBottom(false);
     setIsResizingPanels(false);
     document.body.classList.remove('dragging-vertical');
@@ -49,9 +56,15 @@ export const usePanelResize = (editorActions) => {
 
   // Right panel resize handlers
   const handleRightResizeStart = useCallback(() => {
+    console.log('🟡 Right panel resize START');
     setIsResizingRight(true);
     setIsResizingPanels(true);
     document.body.classList.add('dragging-horizontal');
+    
+    // Cancel any pending auto-saves
+    import('@/plugins/core/AutoSaveManager.js').then(({ autoSaveManager }) => {
+      autoSaveManager.cancelPendingAutoSave()
+    })
   }, [setIsResizingPanels]);
 
   const handleRightResizeMove = useCallback((e, { isScenePanelOpen }) => {
@@ -75,6 +88,7 @@ export const usePanelResize = (editorActions) => {
   }, [isResizingRight, setIsScenePanelOpen, setRightPanelWidth, setSelectedRightTool]);
 
   const handleRightResizeEnd = useCallback(() => {
+    console.log('🟠 Right panel resize END');
     setIsResizingRight(false);
     setIsResizingPanels(false);
     document.body.classList.remove('dragging-horizontal');

@@ -90,7 +90,11 @@ export default function ProjectsPlugin() {
     
     // Set up auto-save interval (every 30 seconds)
     const autoSaveInterval = setInterval(() => {
-      projectManager.autoSaveCurrentProject()
+      // Use AutoSaveManager instead of direct ProjectManager call
+      // This respects panel resize states and other conditions
+      import('@/plugins/core/AutoSaveManager.js').then(({ autoSaveManager }) => {
+        autoSaveManager.performAutoSave()
+      })
     }, 30000)
     
     return () => {

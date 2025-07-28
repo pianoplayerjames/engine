@@ -188,6 +188,7 @@ function ViewportCanvas({ children, style = {}, onContextMenu }) {
         width: '100%', 
         height: '100%', 
         backgroundColor: viewportSettings.backgroundColor, // Prevent white flash
+        transition: 'none', // Ensure no CSS transitions interfere with resize
         ...style 
       }}
       onMouseEnter={() => {
@@ -213,6 +214,7 @@ function ViewportCanvas({ children, style = {}, onContextMenu }) {
         shadows={settings.shadows}
         dpr={[1, 2]} // Use device pixel ratio up to 2x for crisp rendering
         flat // Use flat shading for better performance with grid lines
+        resize={{ scroll: false, debounce: 0 }} // Immediate resize without debouncing
         onCreated={handleCreated}
         style={{ backgroundColor: viewportSettings.backgroundColor, outline: 'none' }}
         onContextMenu={(e) => {

@@ -44,6 +44,8 @@ class ProjectManager {
 
   // Start loading state
   startLoading(operation = 'loading') {
+    console.log('🚨 startLoading called with operation:', operation)
+    console.trace('Loading triggered from:')
     this.isCurrentlyLoading = true
     this.emitLoadingProgress(0, '', operation)
   }
@@ -609,7 +611,7 @@ class ProjectManager {
     }
   }
 
-  // Auto-save current project state (silent, no loading indicators)
+  // Auto-save current project state (completely silent, no loading indicators)
   async autoSaveCurrentProject() {
     if (!this.currentProjectName || !this.currentProjectPath) return
     
@@ -619,7 +621,7 @@ class ProjectManager {
       // Get all current store data from AutoSaveManager
       const allStoreData = autoSaveManager.getAllStoreData()
       
-      // Save to server (without triggering loading indicators)
+      // Save to server (completely silent - no loading progress events)
       const response = await fetch(`/api/projects/${this.currentProjectPath}/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -639,6 +641,7 @@ class ProjectManager {
       console.warn('⚠️ Auto-save failed:', error)
       // Don't throw error for auto-save failures
     }
+    // No loading progress events emitted - completely silent
   }
 
   // Getters

@@ -1,4 +1,6 @@
 import React, { useState, useEffect, createContext, useContext } from 'react'
+import { useSnapshot } from 'valtio'
+import { editorState } from '@/plugins/editor/store.js'
 import { projectManager } from '../projectManager.js'
 import AssetLoader from './AssetLoader.jsx'
 
@@ -20,12 +22,35 @@ export default function LoadingProvider({ children }) {
     currentAsset: '',
     operation: ''
   })
+  
+  // Get editor state to check for panel resizing
+  const { panels } = useSnapshot(editorState)
 
   useEffect(() => {
     // Subscribe to project manager loading events
     const handleLoadingUpdate = (state) => {
-      setLoadingState({
+      // Debug logging for all loading events
+      console.log('🔄 LoadingProvider received event:', {
         isLoading: state.isLoading,
+        operation: state.operation,
+        progress: state.progress,
+        asset: state.asset,
+        panelsResizing: panels.isResizingPanels
+      })
+      
+      // Auto-save operations should never emit loading events, but if they do, ignore them
+      const shouldShowLoading = state.isLoading && state.operation !== 'auto-saving'
+      
+      if (state.isLoading && !shouldShowLoading) {
+        console.log('🚫 Suppressing loading screen for operation:', state.operation)
+      }
+      
+      if (shouldShowLoading) {
+        console.log('✅ Showing loading screen for operation:', state.operation)
+      }
+      
+      setLoadingState({
+        isLoading: shouldShowLoading,
         progress: state.progress,
         currentAsset: state.asset,
         operation: state.operation
@@ -37,7 +62,7 @@ export default function LoadingProvider({ children }) {
     return () => {
       projectManager.removeLoadingListener(handleLoadingUpdate)
     }
-  }, [])
+  }, [panels.isResizingPanels])
 
   const contextValue = {
     ...loadingState,

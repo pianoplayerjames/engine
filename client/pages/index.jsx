@@ -1,6 +1,6 @@
 
 
-import React, { useRef, useEffect, useMemo } from 'react'
+import React, { useRef, useEffect, useMemo, useCallback } from 'react'
 import { useThree } from '@react-three/fiber'
 import RenderPlugin from '@/plugins/render/index.jsx'
 import InputPlugin from '@/plugins/input/index.jsx'
@@ -94,19 +94,22 @@ export default function Index() {
     console.log('Engine starting...')
   }, []);
 
-  const viewportBounds = {
+  const viewportBounds = useMemo(() => ({
     top: 0,
     left: 0,
     right: isScenePanelOpen ? rightPanelWidth - 4 : 47,
     bottom: isAssetPanelOpen ? bottomPanelHeight - 1 : 40
-  };
+  }), [isScenePanelOpen, rightPanelWidth, isAssetPanelOpen, bottomPanelHeight]);
+
+  // Memoize the callback to prevent engine restarts on every render
+  const handleLoadComplete = useCallback(() => {
+    console.log('🎮 Renzora Engine UI ready!')
+  }, []);
 
   return (
     <EngineLoader
       showSplash={false} // Disable splash for fastest loading
-      onLoadComplete={() => {
-        console.log('🎮 Renzora Engine UI ready!')
-      }}
+      onLoadComplete={handleLoadComplete}
     >
       <LoadingProvider>
         <InputPlugin />

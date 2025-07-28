@@ -1,11 +1,11 @@
 {
   "ui": {
-    "rightPanelWidth": 304,
-    "bottomPanelHeight": 368,
-    "scenePropertiesHeight": 300,
+    "rightPanelWidth": 384,
+    "bottomPanelHeight": 312,
+    "scenePropertiesHeight": 460,
     "assetsLibraryWidth": 250,
     "rightPropertiesMenuPosition": "right",
-    "selectedTool": "scene",
+    "selectedTool": "settings",
     "selectedBottomTab": "assets",
     "bottomTabOrder": [
       "assets",
@@ -61,7 +61,7 @@
       "cellColor": "#4a618c",
       "sectionSize": 5,
       "sectionThickness": 2,
-      "sectionColor": "#47ae58",
+      "sectionColor": "#34743f",
       "position": [
         0,
         -0.9,
@@ -72,7 +72,7 @@
       "infiniteGrid": true
     },
     "viewport": {
-      "backgroundColor": "#1a1a2e"
+      "backgroundColor": "#a3daf0"
     },
     "editor": {
       "gridSize": 1,
@@ -91,32 +91,5 @@
     "isAssetPanelOpen": true,
     "isResizingPanels": false
   },
-  "sceneObjects": [
-    {
-      "id": "mesh-1753704972661",
-      "name": "Cube",
-      "type": "mesh",
-      "position": [
-        4.570424182158828,
-        0,
-        0.9477025079422852
-      ],
-      "rotation": [
-        0,
-        0,
-        0,
-        "XYZ"
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ],
-      "geometry": "box",
-      "material": {
-        "color": "hsl(277.193105735241, 70%, 50%)"
-      },
-      "visible": true
-    }
-  ]
+  "sceneObjects": []
 }

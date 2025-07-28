@@ -129,11 +129,10 @@ const EditorLayout = () => {
         onResizeEnd={panelResize.handleRightResizeEnd}
         onResize={handleRightResize}
         position={{
-          left: isScenePanelOpen ? '0px' : '-4px',
+          right: isScenePanelOpen ? rightPanelWidth - 4 : 49,
           top: 0,
           bottom: isAssetPanelOpen ? bottomPanelHeight : '40px',
-          right: isScenePanelOpen ? rightPanelWidth - 1 : 47,
-          zIndex: isScenePanelOpen ? 5 : 1
+          zIndex: 30
         }}
         className="resize-handle"
       />

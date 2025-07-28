@@ -74,21 +74,6 @@ export default function AssetLoader({ isVisible, progress, currentAsset, onCompl
           </div>
         )}
 
-        {/* Loading Animation */}
-        <div className="flex justify-center mt-4">
-          <div className="flex space-x-1">
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"
-                style={{
-                  animationDelay: `${i * 0.2}s`,
-                  animationDuration: '1s'
-                }}
-              ></div>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   )
