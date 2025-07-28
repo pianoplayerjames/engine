@@ -1,0 +1,46 @@
+{
+  "camera": {
+    "position": [
+      5.310122894859424,
+      4.442194542966161,
+      7.698733453341395
+    ],
+    "rotation": [
+      0,
+      0,
+      0
+    ],
+    "fov": 60,
+    "near": 0.1,
+    "far": 1000,
+    "target": [
+      4.2686574764462675,
+      3.1265302679957023,
+      4.8864217247288435
+    ],
+    "aspect": 1.7777777777777777
+  },
+  "environment": {
+    "preset": null,
+    "intensity": 1,
+    "type": "color",
+    "environmentType": null
+  },
+  "lighting": {
+    "ambient": {
+      "intensity": 0.5,
+      "color": "#ffffff"
+    },
+    "shadowsEnabled": true
+  },
+  "settings": {
+    "shadows": true,
+    "antialias": true,
+    "alpha": false,
+    "powerPreference": "high-performance",
+    "physicallyCorrectLights": true,
+    "outputEncoding": "sRGB",
+    "toneMapping": "ACES",
+    "toneMappingExposure": 1
+  }
+}

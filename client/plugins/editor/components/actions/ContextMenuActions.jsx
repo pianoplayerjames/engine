@@ -3,7 +3,7 @@ import { Icons } from '@/plugins/editor/components/Icons';
 
 export const useContextMenuActions = (editorActions) => {
   const {
-    addSceneObject, removeSceneObject, setSelectedObject, setTransformMode,
+    addSceneObject, removeSceneObject, setSelectedEntity, setTransformMode,
     setSelectedTool: setSelectedRightTool, setSelectedBottomTab: setActiveTab
   } = editorActions;
 
@@ -164,7 +164,7 @@ export const useContextMenuActions = (editorActions) => {
     
     const objectWithId = addSceneObject(newObject);
     // Select the newly created object and show move gizmo
-    setSelectedObject(objectWithId.id);
+    setSelectedEntity(objectWithId.id);
     setTransformMode('move');
     
     // Restore focus to canvas after object creation

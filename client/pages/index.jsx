@@ -10,18 +10,20 @@ import ScenePlugin from '@/plugins/scene/index.jsx'
 import PhysicsPlugin from '@/plugins/physics/index.jsx'
 import AssetsPlugin from '@/plugins/assets/index.jsx'
 import EditorPlugin from '@/plugins/editor/index.jsx'
+import ProjectsPlugin from '@/plugins/projects/index.jsx'
+import LoadingProvider from '@/plugins/projects/components/LoadingProvider.jsx'
+import EngineLoader from '@/plugins/core/EngineLoader.jsx'
 import { useSnapshot } from 'valtio'
 import { editorState, editorActions } from '@/plugins/editor/store.js'
 
 function SceneObject({ sceneObj }) {
   const meshRef = useRef()
   const { selection, sceneObjects } = useSnapshot(editorState)
-  const { selectedObject } = selection
-  const { setSelectedObject, setTransformMode, updateSceneObject } = editorActions
+  const { entity: selectedObject } = selection
+  const { setSelectedEntity, setTransformMode, updateSceneObject } = editorActions
   
   const isSelected = selectedObject === sceneObj.id
   
-  // Store mesh reference for transform controls
   useEffect(() => {
     if (meshRef.current && sceneObj.id) {
       meshRef.current.userData.sceneObjectId = sceneObj.id;
@@ -30,11 +32,10 @@ function SceneObject({ sceneObj }) {
   
   const handleClick = (e) => {
     e.stopPropagation()
-    setSelectedObject(sceneObj.id)
+    setSelectedEntity(sceneObj.id)
     setTransformMode('move')
   }
   
-  // Create appropriate geometry based on type
   const getGeometry = () => {
     switch (sceneObj.geometry) {
       case 'box':
@@ -89,41 +90,43 @@ export default function Index() {
   const { rightPanelWidth, bottomPanelHeight } = ui;
   const { isScenePanelOpen, isAssetPanelOpen } = panels;
   
-  // Log only once on mount
   useEffect(() => {
     console.log('Engine starting...')
   }, []);
 
-  // Calculate viewport bounds based on UI panels
   const viewportBounds = {
     top: 0,
     left: 0,
-    right: isScenePanelOpen ? rightPanelWidth - 4 : 47, // Right panel width minus 4px or toolbar minus 1px for proper fit
-    bottom: isAssetPanelOpen ? bottomPanelHeight - 1 : 40 // Bottom panel height minus 1px to eliminate white space
+    right: isScenePanelOpen ? rightPanelWidth - 4 : 47,
+    bottom: isAssetPanelOpen ? bottomPanelHeight - 1 : 40
   };
 
   return (
-    <>
-      {/* Core Engine Plugins */}
-      <InputPlugin />
-      <AudioPlugin />
-      <TimePlugin />
-      <ScenePlugin />
-      <PhysicsPlugin />
-      <AssetsPlugin />
-      <EditorPlugin />
-      
-      {/* Render Plugin with Scene Content */}
-      <RenderPlugin onContextMenu={contextMenuHandler} viewportBounds={viewportBounds}>
-        {/* Dynamic scene objects */}
-        <SceneRenderer />
+    <EngineLoader
+      showSplash={false} // Disable splash for fastest loading
+      onLoadComplete={() => {
+        console.log('🎮 Renzora Engine UI ready!')
+      }}
+    >
+      <LoadingProvider>
+        <InputPlugin />
+        <AudioPlugin />
+        <TimePlugin />
+        <ScenePlugin />
+        <PhysicsPlugin />
+        <AssetsPlugin />
+        <EditorPlugin />
+        <ProjectsPlugin />
         
-        {/* Ground plane - not selectable */}
-        <mesh position={[0, -1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[10, 10]} />
-          <meshStandardMaterial color="#666666" />
-        </mesh>
-      </RenderPlugin>
-    </>
+        <RenderPlugin onContextMenu={contextMenuHandler} viewportBounds={viewportBounds}>
+          <SceneRenderer />
+          
+          <mesh position={[0, -1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[10, 10]} />
+            <meshStandardMaterial color="#666666" />
+          </mesh>
+        </RenderPlugin>
+      </LoadingProvider>
+    </EngineLoader>
   )
 }

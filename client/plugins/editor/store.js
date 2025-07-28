@@ -1,9 +1,55 @@
-import { proxy, subscribe, useSnapshot } from 'valtio'
-import { loadUISettings, saveUISettings, updateUISetting, defaultUISettings } from './utils/localStorage.js'
+import { proxy, useSnapshot } from 'valtio'
+import { autoSaveManager } from '@/plugins/core/AutoSaveManager.js'
+import { updateUISetting } from '@/plugins/editor/utils/localStorage.js'
 
-// Always use defaults for initial render to prevent hydration mismatch
-// Will be hydrated after mount
-const initialUISettings = defaultUISettings;
+// Default UI settings (no longer from localStorage)
+const defaultUISettings = {
+  panels: {
+    rightPanelWidth: 304,
+    bottomPanelHeight: 256,
+    scenePropertiesHeight: 300,
+    assetsLibraryWidth: 250,
+    rightPropertiesMenuPosition: 'right',
+  },
+  settings: {
+    gridSettings: {
+      enabled: true,
+      size: 100,
+      cellSize: 1,
+      cellThickness: 1.0,
+      cellColor: '#6B7280',
+      sectionSize: 10,
+      sectionThickness: 2.0,
+      sectionColor: '#9CA3AF',
+      position: [0, -1, 0],
+      fadeDistance: 50,
+      fadeStrength: 0.5,
+      infiniteGrid: true
+    },
+    viewportSettings: {
+      backgroundColor: '#1a202c'
+    }
+  },
+  bottomTabs: {
+    selectedTab: 'assets',
+    tabOrder: [
+      'assets', 'scripts', 'animation', 'node-editor', 'timeline', 'console',
+      'materials', 'terrain', 'lighting', 'physics', 'audio', 'effects'
+    ]
+  },
+  toolbar: {
+    selectedTool: 'scene',
+    tabOrder: [
+      'scene', 'light', 'effects', 'folder', 'star', 'wifi', 'cloud', 'monitor'
+    ],
+    bottomTabOrder: [
+      'add', 'settings', 'fullscreen'
+    ]
+  },
+  topLeftMenu: {
+    selectedItem: null
+  }
+}
 
 // Create the reactive state proxy
 export const editorState = proxy({
@@ -11,19 +57,27 @@ export const editorState = proxy({
   isOpen: false,
   mode: 'scene', // scene, assets, settings, console
   
-  // UI Layout Settings (persisted)
+  // UI Layout Settings (now auto-saved via AutoSaveManager)
   ui: {
-    rightPanelWidth: initialUISettings.panels.rightPanelWidth,
-    bottomPanelHeight: initialUISettings.panels.bottomPanelHeight,
-    scenePropertiesHeight: initialUISettings.panels.scenePropertiesHeight,
-    assetsLibraryWidth: initialUISettings.panels.assetsLibraryWidth,
-    rightPropertiesMenuPosition: initialUISettings.panels.rightPropertiesMenuPosition,
-    selectedTool: initialUISettings.toolbar.selectedTool,
-    selectedBottomTab: initialUISettings.bottomTabs.selectedTab,
-    bottomTabOrder: initialUISettings.bottomTabs.tabOrder,
-    toolbarTabOrder: initialUISettings.toolbar.tabOrder,
-    toolbarBottomTabOrder: initialUISettings.toolbar.bottomTabOrder,
-    topLeftMenuSelected: initialUISettings.topLeftMenu.selectedItem,
+    rightPanelWidth: defaultUISettings.panels.rightPanelWidth,
+    bottomPanelHeight: defaultUISettings.panels.bottomPanelHeight,
+    scenePropertiesHeight: defaultUISettings.panels.scenePropertiesHeight,
+    assetsLibraryWidth: defaultUISettings.panels.assetsLibraryWidth,
+    rightPropertiesMenuPosition: defaultUISettings.panels.rightPropertiesMenuPosition,
+    selectedTool: defaultUISettings.toolbar.selectedTool,
+    selectedBottomTab: defaultUISettings.bottomTabs.selectedTab,
+    bottomTabOrder: defaultUISettings.bottomTabs.tabOrder,
+    toolbarTabOrder: defaultUISettings.toolbar.tabOrder,
+    toolbarBottomTabOrder: defaultUISettings.toolbar.bottomTabOrder,
+    topLeftMenuSelected: defaultUISettings.topLeftMenu.selectedItem,
+  },
+
+  // Camera state (now persisted!)
+  camera: {
+    position: [0, 0, 5],
+    target: [0, 0, 0],
+    zoom: 1,
+    fov: 75
   },
   
   // Panel visibility
@@ -54,7 +108,7 @@ export const editorState = proxy({
       rotation: [0, 0, 0],
       scale: [1, 1, 1],
       geometry: 'box',
-      material: { color: 'orange' },
+      material: { color: '#FFA500' },
       visible: true
     },
     {
@@ -65,15 +119,15 @@ export const editorState = proxy({
       rotation: [0, 0, 0], 
       scale: [1, 1, 1],
       geometry: 'sphere',
-      material: { color: 'lightblue' },
+      material: { color: '#ADD8E6' },
       visible: true
     }
   ],
   
   // Editor settings
   settings: {
-    grid: initialUISettings.settings.gridSettings,
-    viewport: initialUISettings.settings.viewportSettings,
+    grid: defaultUISettings.settings.gridSettings,
+    viewport: defaultUISettings.settings.viewportSettings,
     editor: {
       gridSize: 1,
       snapToGrid: false,
@@ -154,87 +208,66 @@ export const editorActions = {
     updateUISetting('settings.viewportSettings', editorState.settings.viewport)
   },
 
-  // UI Layout Actions (with persistence)
+  // UI Layout Actions (auto-saved via AutoSaveManager)
   setRightPanelWidth: (width) => {
     editorState.ui.rightPanelWidth = width
-    updateUISetting('panels.rightPanelWidth', width)
   },
 
   setBottomPanelHeight: (height) => {
     editorState.ui.bottomPanelHeight = height
-    updateUISetting('panels.bottomPanelHeight', height)
   },
 
   setScenePropertiesHeight: (height) => {
     editorState.ui.scenePropertiesHeight = height
-    updateUISetting('panels.scenePropertiesHeight', height)
   },
 
   setAssetsLibraryWidth: (width) => {
     editorState.ui.assetsLibraryWidth = width
-    updateUISetting('panels.assetsLibraryWidth', width)
   },
 
   setRightPropertiesMenuPosition: (position) => {
     editorState.ui.rightPropertiesMenuPosition = position
-    updateUISetting('panels.rightPropertiesMenuPosition', position)
   },
 
   setSelectedTool: (tool) => {
     editorState.ui.selectedTool = tool
-    updateUISetting('toolbar.selectedTool', tool)
   },
 
   setSelectedBottomTab: (tab) => {
     editorState.ui.selectedBottomTab = tab
-    updateUISetting('bottomTabs.selectedTab', tab)
   },
 
   setBottomTabOrder: (tabOrder) => {
     editorState.ui.bottomTabOrder = tabOrder
-    updateUISetting('bottomTabs.tabOrder', tabOrder)
   },
 
   setToolbarTabOrder: (tabOrder) => {
     editorState.ui.toolbarTabOrder = tabOrder
-    updateUISetting('toolbar.tabOrder', tabOrder)
   },
 
   setToolbarBottomTabOrder: (tabOrder) => {
     editorState.ui.toolbarBottomTabOrder = tabOrder
-    updateUISetting('toolbar.bottomTabOrder', tabOrder)
   },
 
   setTopLeftMenuSelected: (item) => {
     editorState.ui.topLeftMenuSelected = item
-    updateUISetting('topLeftMenu.selectedItem', item)
   },
 
-  // Hydration action to load localStorage values on client
-  hydrateFromLocalStorage: () => {
-    if (typeof window !== 'undefined') {
-      const storedSettings = loadUISettings()
-      
-      // Direct assignment to Valtio proxy
-      editorState.ui.rightPanelWidth = storedSettings.panels.rightPanelWidth
-      editorState.ui.bottomPanelHeight = storedSettings.panels.bottomPanelHeight
-      editorState.ui.scenePropertiesHeight = storedSettings.panels.scenePropertiesHeight
-      editorState.ui.assetsLibraryWidth = storedSettings.panels.assetsLibraryWidth
-      editorState.ui.rightPropertiesMenuPosition = storedSettings.panels.rightPropertiesMenuPosition
-      editorState.ui.selectedTool = storedSettings.toolbar.selectedTool
-      editorState.ui.selectedBottomTab = storedSettings.bottomTabs.selectedTab
-      editorState.ui.bottomTabOrder = storedSettings.bottomTabs.tabOrder
-      editorState.ui.toolbarTabOrder = storedSettings.toolbar.tabOrder
-      editorState.ui.toolbarBottomTabOrder = storedSettings.toolbar.bottomTabOrder
-      editorState.ui.topLeftMenuSelected = storedSettings.topLeftMenu.selectedItem
-      
-      Object.assign(editorState.settings.grid, storedSettings.settings.gridSettings)
-      Object.assign(editorState.settings.viewport, storedSettings.settings.viewportSettings)
-      
-      // Panel states don't need persistence as they're UI state
-      editorState.panels.isScenePanelOpen = true
-      editorState.panels.isAssetPanelOpen = true
-    }
+  // Camera actions (now persisted!)
+  setCameraPosition: (position) => {
+    editorState.camera.position = position
+  },
+
+  setCameraTarget: (target) => {
+    editorState.camera.target = target
+  },
+
+  setCameraZoom: (zoom) => {
+    editorState.camera.zoom = zoom
+  },
+
+  setCameraFOV: (fov) => {
+    editorState.camera.fov = fov
   },
   
   // Console management
@@ -280,48 +313,25 @@ export const editorActions = {
   }
 }
 
-// Set up automatic persistence for UI changes
+// Register editor store with AutoSaveManager (no localStorage)
 if (typeof window !== 'undefined') {
-  try {
-    // Subscribe to the entire editor state for UI persistence
-    subscribe(editorState, () => {
-      // Batch persistence to avoid excessive localStorage writes
-      const scheduleUpdate = window.requestIdleCallback || ((fn) => setTimeout(fn, 0))
-      scheduleUpdate(() => {
-        try {
-          saveUISettings({
-            panels: {
-              rightPanelWidth: editorState.ui.rightPanelWidth,
-              bottomPanelHeight: editorState.ui.bottomPanelHeight,
-              scenePropertiesHeight: editorState.ui.scenePropertiesHeight,
-              assetsLibraryWidth: editorState.ui.assetsLibraryWidth,
-              rightPropertiesMenuPosition: editorState.ui.rightPropertiesMenuPosition,
-            },
-            toolbar: {
-              selectedTool: editorState.ui.selectedTool,
-              tabOrder: editorState.ui.toolbarTabOrder,
-              bottomTabOrder: editorState.ui.toolbarBottomTabOrder,
-            },
-            bottomTabs: {
-              selectedTab: editorState.ui.selectedBottomTab,
-              tabOrder: editorState.ui.bottomTabOrder,
-            },
-            topLeftMenu: {
-              selectedItem: editorState.ui.topLeftMenuSelected,
-            },
-            settings: {
-              gridSettings: editorState.settings.grid,
-              viewportSettings: editorState.settings.viewport,
-            }
-          })
-        } catch (error) {
-          console.warn('Failed to save UI settings:', error)
-        }
-      })
+  setTimeout(() => {
+    autoSaveManager.registerStore('editor', editorState, {
+      extractSaveData: () => ({
+        ui: { ...editorState.ui },
+        camera: { ...editorState.camera },
+        settings: { ...editorState.settings },
+        panels: { ...editorState.panels },
+        sceneObjects: [...editorState.sceneObjects]
+        // Don't save console messages, or selection state
+      }),
+      restoreData: (data) => {
+        if (data.ui) Object.assign(editorState.ui, data.ui)
+        if (data.camera) Object.assign(editorState.camera, data.camera)
+        if (data.settings) Object.assign(editorState.settings, data.settings)
+        if (data.panels) Object.assign(editorState.panels, data.panels)
+        if (data.sceneObjects) editorState.sceneObjects = data.sceneObjects
+      }
     })
-  } catch (error) {
-    console.warn('Failed to set up UI persistence:', error)
-  }
+  }, 100)
 }
-
-// editorState and editorActions are already exported above

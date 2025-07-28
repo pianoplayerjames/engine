@@ -79,7 +79,7 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
   
   const { sceneObjects, settings } = useSnapshot(editorState);
   const { grid: gridSettings, viewport: viewportSettings } = settings;
-  const { removeSceneObject, setSelectedObject, setTransformMode, updateSceneObject, updateGridSettings, updateViewportSettings } = editorActions;
+  const { removeSceneObject, setSelectedEntity, setTransformMode, updateSceneObject, updateGridSettings, updateViewportSettings } = editorActions;
   
   // Get selected object data
   const selectedObjectData = sceneObjects.find(obj => obj.id === selectedObject);
@@ -90,7 +90,7 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
     removeSceneObject(objectId);
     // Clear selection if deleted object was selected
     if (selectedObject === objectId) {
-      setSelectedObject(null);
+      setSelectedEntity(null);
       setTransformMode('select');
     }
   };

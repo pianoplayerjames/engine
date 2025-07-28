@@ -1,0 +1,122 @@
+{
+  "ui": {
+    "rightPanelWidth": 304,
+    "bottomPanelHeight": 368,
+    "scenePropertiesHeight": 300,
+    "assetsLibraryWidth": 250,
+    "rightPropertiesMenuPosition": "right",
+    "selectedTool": "scene",
+    "selectedBottomTab": "assets",
+    "bottomTabOrder": [
+      "assets",
+      "scripts",
+      "animation",
+      "node-editor",
+      "timeline",
+      "console",
+      "materials",
+      "terrain",
+      "lighting",
+      "physics",
+      "audio",
+      "effects"
+    ],
+    "toolbarTabOrder": [
+      "scene",
+      "light",
+      "effects",
+      "folder",
+      "star",
+      "wifi",
+      "cloud",
+      "monitor"
+    ],
+    "toolbarBottomTabOrder": [
+      "add",
+      "settings",
+      "fullscreen"
+    ],
+    "topLeftMenuSelected": "export-project"
+  },
+  "camera": {
+    "position": [
+      0,
+      0,
+      5
+    ],
+    "target": [
+      0,
+      0,
+      0
+    ],
+    "zoom": 1,
+    "fov": 75
+  },
+  "settings": {
+    "grid": {
+      "enabled": true,
+      "size": 100,
+      "cellSize": 1,
+      "cellThickness": 1,
+      "cellColor": "#4a618c",
+      "sectionSize": 5,
+      "sectionThickness": 2,
+      "sectionColor": "#47ae58",
+      "position": [
+        0,
+        -0.9,
+        0
+      ],
+      "fadeDistance": 50,
+      "fadeStrength": 0.5,
+      "infiniteGrid": true
+    },
+    "viewport": {
+      "backgroundColor": "#1a1a2e"
+    },
+    "editor": {
+      "gridSize": 1,
+      "snapToGrid": false,
+      "showGrid": true,
+      "showWireframe": false,
+      "cameraSpeed": 1
+    }
+  },
+  "panels": {
+    "hierarchy": true,
+    "inspector": true,
+    "console": false,
+    "assets": false,
+    "isScenePanelOpen": true,
+    "isAssetPanelOpen": true,
+    "isResizingPanels": false
+  },
+  "sceneObjects": [
+    {
+      "id": "mesh-1753704972661",
+      "name": "Cube",
+      "type": "mesh",
+      "position": [
+        4.570424182158828,
+        0,
+        0.9477025079422852
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        "XYZ"
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "geometry": "box",
+      "material": {
+        "color": "hsl(277.193105735241, 70%, 50%)"
+      },
+      "visible": true
+    }
+  ]
+}

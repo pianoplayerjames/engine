@@ -1,5 +1,6 @@
 import Fastify from 'fastify'
 import FastifyVite from '@fastify/vite'
+import projectRoutes from './server/routes/projects.js'
 
 const server = Fastify({
   logger: {
@@ -8,6 +9,9 @@ const server = Fastify({
     }
   }
 })
+
+// Register project routes
+await server.register(projectRoutes)
 
 await server.register(FastifyVite, {
   root: import.meta.dirname,

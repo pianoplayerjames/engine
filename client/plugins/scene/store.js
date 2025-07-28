@@ -1,4 +1,5 @@
-import { proxy, subscribe, useSnapshot } from 'valtio'
+import { proxy, useSnapshot } from 'valtio'
+import { autoSaveManager } from '@/plugins/core/AutoSaveManager.js'
 
 // Create the reactive scene state
 export const sceneState = proxy({
@@ -303,29 +304,43 @@ function boundsIntersect(a, b) {
            a.max.z < b.min.z || a.min.z > b.max.z)
 }
 
-// Set up automatic spatial index maintenance
+// Register scene store with AutoSaveManager (no localStorage)
 if (typeof window !== 'undefined') {
-  // Subscribe to the entire scene state to catch transform component changes
-  subscribe(sceneState, () => {
-    // Update spatial indices when transforms change
-    sceneState.components.transform.forEach((transform, entityId) => {
-      if (transform && transform.position && transform.scale) {
-        const bounds = {
-          min: {
-            x: transform.position[0] - transform.scale[0] / 2,
-            y: transform.position[1] - transform.scale[1] / 2,
-            z: transform.position[2] - transform.scale[2] / 2
-          },
-          max: {
-            x: transform.position[0] + transform.scale[0] / 2,
-            y: transform.position[1] + transform.scale[1] / 2,
-            z: transform.position[2] + transform.scale[2] / 2
-          }
+  setTimeout(() => {
+    autoSaveManager.registerStore('scene', sceneState, {
+      extractSaveData: () => ({
+        entities: Array.from(sceneState.entities.entries()),
+        entityCounter: sceneState.entityCounter,
+        sceneRoot: sceneState.sceneRoot,
+        selectedEntity: sceneState.selectedEntity,
+        components: Object.fromEntries(
+          Object.entries(sceneState.components).map(([key, componentMap]) => [
+            key,
+            Array.from(componentMap.entries())
+          ])
+        )
+      }),
+      restoreData: (data) => {
+        if (data.entities) {
+          sceneState.entities = new Map(data.entities)
         }
-        sceneActions.updateSpatialIndex(entityId, bounds)
+        if (data.entityCounter !== undefined) {
+          sceneState.entityCounter = data.entityCounter
+        }
+        if (data.sceneRoot !== undefined) {
+          sceneState.sceneRoot = data.sceneRoot
+        }
+        if (data.selectedEntity !== undefined) {
+          sceneState.selectedEntity = data.selectedEntity
+        }
+        if (data.components) {
+          Object.entries(data.components).forEach(([componentType, componentData]) => {
+            if (sceneState.components[componentType]) {
+              sceneState.components[componentType] = new Map(componentData)
+            }
+          })
+        }
       }
     })
-  })
+  }, 100)
 }
-
-// sceneState and sceneActions are already exported above

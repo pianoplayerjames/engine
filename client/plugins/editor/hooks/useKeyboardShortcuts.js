@@ -1,14 +1,14 @@
 import { useEffect } from 'react';
 
 export const useKeyboardShortcuts = (selectedObject, editorActions) => {
-  const { removeSceneObject, setSelectedObject, setTransformMode } = editorActions;
+  const { removeSceneObject, setSelectedEntity, setTransformMode } = editorActions;
 
   useEffect(() => {
     const handleKeyDown = (e) => {
       // Delete selected object when Delete key is pressed
       if (e.key === 'Delete' && selectedObject) {
         removeSceneObject(selectedObject);
-        setSelectedObject(null);
+        setSelectedEntity(null);
         setTransformMode('select');
       }
       
@@ -17,7 +17,7 @@ export const useKeyboardShortcuts = (selectedObject, editorActions) => {
         case 'Escape':
           // Deselect object
           if (selectedObject) {
-            setSelectedObject(null);
+            setSelectedEntity(null);
             setTransformMode('select');
           }
           break;
@@ -48,5 +48,5 @@ export const useKeyboardShortcuts = (selectedObject, editorActions) => {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedObject, removeSceneObject, setSelectedObject, setTransformMode]);
+  }, [selectedObject, removeSceneObject, setSelectedEntity, setTransformMode]);
 };

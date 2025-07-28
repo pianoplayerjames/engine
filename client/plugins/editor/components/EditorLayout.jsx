@@ -10,6 +10,7 @@ import { PanelToggleButton, ContextMenu } from '@/plugins/editor/components/ui';
 
 // Menu components
 import { TopLeftMenu, VerticalToolMenu } from '@/plugins/editor/components/menus';
+import ProjectIndicator from '@/plugins/projects/components/ProjectIndicator.jsx';
 
 // Hooks
 import { usePanelResize, useKeyboardShortcuts } from '../hooks';
@@ -20,16 +21,15 @@ const EditorLayout = () => {
   const [contextMenu, setContextMenu] = useState(null);
   
   const { selection, ui, panels } = useSnapshot(editorState);
-  const { selectedObject } = selection;
+  const { entity: selectedObject } = selection;
   const { selectedTool: selectedRightTool, selectedBottomTab: activeTab, rightPanelWidth, bottomPanelHeight } = ui;
   const { isScenePanelOpen, isAssetPanelOpen } = panels;
 
   // Get all editor actions
   const {
-    setSelectedObject, setContextMenuHandler, setTransformMode,
+    setSelectedEntity, setContextMenuHandler, setTransformMode,
     setSelectedTool: setSelectedRightTool, setSelectedBottomTab: setActiveTab,
-    setIsScenePanelOpen, setIsAssetPanelOpen,
-    hydrateFromLocalStorage
+    setIsScenePanelOpen, setIsAssetPanelOpen
   } = editorActions;
 
   // Custom hooks
@@ -39,14 +39,12 @@ const EditorLayout = () => {
   // Keyboard shortcuts
   useKeyboardShortcuts(selectedObject, editorActions);
 
-  // Hydrate localStorage values on client mount (after SSR)
-  useEffect(() => {
-    hydrateFromLocalStorage();
-  }, [hydrateFromLocalStorage]);
+  // State is now automatically restored by AutoSaveManager
+  // No manual hydration needed
 
   // Handle object selection with automatic move gizmo
   const handleObjectSelect = (objectId) => {
-    setSelectedObject(objectId);
+    setSelectedEntity(objectId);
     if (objectId) {
       setTransformMode('move');
     }
@@ -98,6 +96,9 @@ const EditorLayout = () => {
     <div className="fixed inset-0 pointer-events-none z-10" onContextMenu={(e) => handleContextMenu(e, null, 'viewport')}>
       {/* Top Left Menu */}
       <TopLeftMenu />
+      
+      {/* Project Indicator */}
+      <ProjectIndicator />
       
       {/* Vertical Tool Menu (below hamburger menu) */}
       <VerticalToolMenu 

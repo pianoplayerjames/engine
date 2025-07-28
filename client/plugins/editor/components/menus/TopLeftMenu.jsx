@@ -1,22 +1,56 @@
 // plugins/editor/components/TopLeftMenu.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Icons } from '@/plugins/editor/components/Icons';
 import { useSnapshot } from 'valtio';
 import { editorState, editorActions } from '@/plugins/editor/store.js';
+import ProjectManager from '@/plugins/projects/components/ProjectManager.jsx';
+import { autoSaveManager } from '@/plugins/core/AutoSaveManager.js';
 
 function TopLeftMenu() {
   const [isOpen, setIsOpen] = useState(false);
+  const [showProjectManager, setShowProjectManager] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const { ui } = useSnapshot(editorState);
   const { topLeftMenuSelected } = ui;
   const { setTopLeftMenuSelected } = editorActions;
 
+  // Manual save function
+  const handleSave = async () => {
+    if (isSaving) return;
+    
+    try {
+      setIsSaving(true);
+      console.log('💾 Manual save triggered');
+      await autoSaveManager.saveNow();
+      editorActions.addConsoleMessage('Project saved successfully', 'success');
+    } catch (error) {
+      console.error('Save failed:', error);
+      editorActions.addConsoleMessage('Failed to save project', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Keyboard shortcut handling
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        handleSave();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isSaving]);
+
   const menuItems = [
-    { id: 'new', label: 'New Scene', icon: Icons.Plus, shortcut: 'Ctrl+N' },
-    { id: 'open', label: 'Open Scene', icon: Icons.Folder, shortcut: 'Ctrl+O' },
-    { id: 'save', label: 'Save Scene', icon: Icons.Save, shortcut: 'Ctrl+S' },
+    { id: 'new-project', label: 'New Project', icon: Icons.Plus, shortcut: 'Ctrl+N' },
+    { id: 'open-project', label: 'Open Project', icon: Icons.Folder, shortcut: 'Ctrl+O' },
+    { id: 'save-project', label: 'Save Project', icon: Icons.Save, shortcut: 'Ctrl+S' },
+    { id: 'export-project', label: 'Export Project', icon: Icons.Download, shortcut: 'Ctrl+E' },
     { divider: true },
     { id: 'import', label: 'Import Model', icon: Icons.Upload, shortcut: 'Ctrl+I' },
-    { id: 'export', label: 'Export Scene', icon: Icons.Download, shortcut: 'Ctrl+E' },
     { divider: true },
     { id: 'settings', label: 'Settings', icon: Icons.Cog },
     { id: 'help', label: 'Help', icon: Icons.QuestionMark },
@@ -58,16 +92,29 @@ function TopLeftMenu() {
                       onClick={() => {
                         setIsOpen(false);
                         setTopLeftMenuSelected(item.id);
-                        // Handle menu item click based on item.id
-                        console.log('Menu item clicked:', item.id);
+                        
+                        // Handle project-related menu items
+                        if (['new-project', 'open-project', 'export-project'].includes(item.id)) {
+                          setShowProjectManager(true);
+                        } else if (item.id === 'save-project') {
+                          handleSave();
+                        } else {
+                          console.log('Menu item clicked:', item.id);
+                        }
                       }}
                       title={item.label}
                     >
                       <div className="flex items-center gap-3">
                         <span className="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-white">
-                          <item.icon className="w-4.5 h-4.5" />
+                          {item.id === 'save-project' && isSaving ? (
+                            <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <item.icon className="w-4.5 h-4.5" />
+                          )}
                         </span>
-                        <span className="font-normal">{item.label}</span>
+                        <span className="font-normal">
+                          {item.id === 'save-project' && isSaving ? 'Saving...' : item.label}
+                        </span>
                       </div>
                       {item.shortcut && (
                         <span className="text-xs text-gray-500">{item.shortcut}</span>
@@ -82,6 +129,16 @@ function TopLeftMenu() {
         </div>
       </div>
       
+      {/* Project Manager Modal */}
+      {showProjectManager && (
+        <ProjectManager
+          onProjectLoad={(name, path) => {
+            console.log(`Project loaded: ${name} at ${path}`)
+            editorActions.addConsoleMessage(`Project "${name}" loaded successfully`, 'success')
+          }}
+          onClose={() => setShowProjectManager(false)}
+        />
+      )}
     </>
   );
 }

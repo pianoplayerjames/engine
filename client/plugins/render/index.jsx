@@ -44,9 +44,26 @@ function ViewportCanvas({ children, style = {}, onContextMenu }) {
   const { camera, lighting, settings, environment } = useSnapshot(renderState)
   const { selection, settings: editorSettings } = useSnapshot(editorState)
   
-  const { selectedObject, transformMode } = selection
+  const { entity: selectedObject, transformMode } = selection
   const { grid: gridSettings, viewport: viewportSettings } = editorSettings
   const { ambient: ambientLight } = lighting
+
+  // Helper function to sync camera position to render store
+  const syncCameraPosition = () => {
+    const camera = orbitControlsRef.current?.object
+    if (camera) {
+      renderActions.setCameraPosition(camera.position.x, camera.position.y, camera.position.z)
+      renderActions.setCameraTarget(
+        orbitControlsRef.current.target.x,
+        orbitControlsRef.current.target.y,
+        orbitControlsRef.current.target.z
+      )
+      console.log('📷 Camera position synced:', {
+        position: [camera.position.x, camera.position.y, camera.position.z],
+        target: [orbitControlsRef.current.target.x, orbitControlsRef.current.target.y, orbitControlsRef.current.target.z]
+      })
+    }
+  }
   
   // Find mesh object by scene object ID
   const findMeshByObjectId = (objectId) => {
@@ -206,7 +223,7 @@ function ViewportCanvas({ children, style = {}, onContextMenu }) {
         }}
         onPointerMissed={() => {
           // Deselect object when clicking on empty space (no objects hit)
-          editorActions.setSelectedObject(null);
+          editorActions.setSelectedEntity(null);
         }}
         tabIndex={0}
       >
@@ -257,6 +274,8 @@ function ViewportCanvas({ children, style = {}, onContextMenu }) {
             RIGHT: null                 // Disable right button
           }}
           enabled={true}
+          onChange={syncCameraPosition}
+          onEnd={syncCameraPosition}
         />
         
         {selectedMesh && transformMode !== 'select' && (

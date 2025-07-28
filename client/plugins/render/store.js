@@ -1,4 +1,5 @@
 import { proxy, subscribe, useSnapshot } from 'valtio'
+import { autoSaveManager } from '@/plugins/core/AutoSaveManager.js'
 
 // Non-serializable objects stored outside proxy
 let renderRefs = {
@@ -251,4 +252,28 @@ if (typeof window !== 'undefined') {
   requestAnimationFrame(updatePerformanceStats)
 }
 
-// renderState and renderActions are already exported above
+// Register render store with AutoSaveManager (no localStorage)
+if (typeof window !== 'undefined') {
+  setTimeout(() => {
+    autoSaveManager.registerStore('render', renderState, {
+      extractSaveData: () => ({
+        camera: { ...renderState.camera },
+        environment: { ...renderState.environment },
+        lighting: {
+          ambient: { ...renderState.lighting.ambient },
+          shadowsEnabled: renderState.lighting.shadowsEnabled
+        },
+        settings: { ...renderState.settings }
+      }),
+      restoreData: (data) => {
+        if (data.camera) Object.assign(renderState.camera, data.camera)
+        if (data.environment) Object.assign(renderState.environment, data.environment)
+        if (data.lighting) {
+          if (data.lighting.ambient) Object.assign(renderState.lighting.ambient, data.lighting.ambient)
+          if (data.lighting.shadowsEnabled !== undefined) renderState.lighting.shadowsEnabled = data.lighting.shadowsEnabled
+        }
+        if (data.settings) Object.assign(renderState.settings, data.settings)
+      }
+    })
+  }, 100)
+}
