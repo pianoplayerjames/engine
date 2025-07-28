@@ -3,7 +3,7 @@ import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls, TransformControls, Grid, Stats, Environment, GizmoHelper, GizmoViewport } from '@react-three/drei'
 import { useSnapshot } from 'valtio'
 import { renderState, renderActions } from './store.js'
-import { editorState, editorActions } from '../editor/store.js'
+import { editorState, editorActions } from '@/plugins/editor/store.js'
 import * as THREE from 'three'
 
 // Component to manage scene background and environment using drei's Environment
@@ -115,7 +115,7 @@ function ViewportCanvas({ children, style = {}, onContextMenu }) {
         }
       }
       
-      if (statsPanel) {
+      if (statsPanel && statsPanel.style.position !== 'fixed') {
         statsPanel.style.position = 'fixed'
         statsPanel.style.top = '10px'
         statsPanel.style.left = '50%'
@@ -138,17 +138,9 @@ function ViewportCanvas({ children, style = {}, onContextMenu }) {
       subtree: true
     })
     
-    // Also try periodically
-    const interval = setInterval(() => {
-      if (repositionStats()) {
-        clearInterval(interval)
-      }
-    }, 100)
-    
     // Cleanup
     return () => {
       observer.disconnect()
-      clearInterval(interval)
     }
   }, [])
 

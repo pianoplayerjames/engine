@@ -33,4 +33,4 @@ export default function AssetsPlugin() {
 }
 
 // Export the store for other plugins to use
-export { assetsState, assetsActions } from './store.js'
+export { assetsState, assetsActions } from '@/plugins/assets/store.js'

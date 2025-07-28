@@ -53,4 +53,4 @@ export default function TimePlugin() {
 }
 
 // Export the store for other plugins to use
-export { timeState, timeActions } from './store.js'
+export { timeState, timeActions } from '@/plugins/time/store.js'

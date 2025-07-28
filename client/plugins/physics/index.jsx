@@ -23,4 +23,4 @@ export default function PhysicsPlugin() {
 }
 
 // Export the store for other plugins to use
-export { physicsState, physicsActions } from './store.js'
+export { physicsState, physicsActions } from '@/plugins/physics/store.js'

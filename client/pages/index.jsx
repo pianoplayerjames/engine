@@ -2,16 +2,16 @@
 
 import React, { useRef, useEffect, useMemo } from 'react'
 import { useThree } from '@react-three/fiber'
-import RenderPlugin from '../plugins/render/index.jsx'
-import InputPlugin from '../plugins/input/index.jsx'
-import AudioPlugin from '../plugins/audio/index.jsx'
-import TimePlugin from '../plugins/time/index.jsx'
-import ScenePlugin from '../plugins/scene/index.jsx'
-import PhysicsPlugin from '../plugins/physics/index.jsx'
-import AssetsPlugin from '../plugins/assets/index.jsx'
-import EditorPlugin from '../plugins/editor/index.jsx'
+import RenderPlugin from '@/plugins/render/index.jsx'
+import InputPlugin from '@/plugins/input/index.jsx'
+import AudioPlugin from '@/plugins/audio/index.jsx'
+import TimePlugin from '@/plugins/time/index.jsx'
+import ScenePlugin from '@/plugins/scene/index.jsx'
+import PhysicsPlugin from '@/plugins/physics/index.jsx'
+import AssetsPlugin from '@/plugins/assets/index.jsx'
+import EditorPlugin from '@/plugins/editor/index.jsx'
 import { useSnapshot } from 'valtio'
-import { editorState, editorActions } from '../plugins/editor/store.js'
+import { editorState, editorActions } from '@/plugins/editor/store.js'
 
 function SceneObject({ sceneObj }) {
   const meshRef = useRef()

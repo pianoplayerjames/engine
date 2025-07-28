@@ -11,7 +11,7 @@ import { inputState, inputActions } from '../plugins/input/store.js'
 import { assetsState, assetsActions } from '../plugins/assets/store.js'
 import { physicsState, physicsActions } from '../plugins/physics/store.js'
 import { audioState, audioActions } from '../plugins/audio/store.js'
-import { timeState, timeActions } from '../plugins/time/store.js'
+import { timeState, timeActions } from '@/plugins/time/store.js'
 
 // Export all states for direct access
 export {

@@ -81,4 +81,4 @@ export default function InputPlugin() {
 }
 
 // Export the store for other plugins to use
-export { inputState, inputActions } from './store.js'
+export { inputState, inputActions } from '@/plugins/input/store.js'

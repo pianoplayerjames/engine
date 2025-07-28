@@ -29,4 +29,4 @@ export default function AudioPlugin() {
 }
 
 // Export the store for other plugins to use
-export { audioState, audioActions } from './store.js'
+export { audioState, audioActions } from '@/plugins/audio/store.js'

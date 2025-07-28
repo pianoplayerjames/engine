@@ -1,11 +1,8 @@
-// plugins/editor/components/Icons.jsx
 import React from 'react';
 
 export const Icons = {
-  // Your existing AssetIcon patterns - copied exactly
   Cube3D: ({ isHovered = false, ...props }) => (
     <svg viewBox="0 0 24 24" fill="none" {...props}>
-      {/* 3D Cube Icon - flat design without shading */}
       <path
         d="M12 2L2 7v10l10 5 10-5V7l-10-5z"
         fill="#60A5FA"
@@ -80,7 +77,6 @@ export const Icons = {
           <stop offset="100%" stopColor="#D97706" />
         </linearGradient>
       </defs>
-      {/* Mesh/Wireframe Icon */}
       <path
         d="M4 4h16v16H4z"
         fill="url(#mesh-gradient)"
@@ -88,10 +84,8 @@ export const Icons = {
         strokeWidth="1"
         opacity="0.3"
       />
-      {/* Grid lines */}
       <path d="M4 8h16M4 12h16M4 16h16" stroke="#92400E" strokeWidth="1" />
       <path d="M8 4v16M12 4v16M16 4v16" stroke="#92400E" strokeWidth="1" />
-      {/* Corner highlights */}
       <circle cx="4" cy="4" r="1.5" fill="#FCD34D" />
       <circle cx="20" cy="4" r="1.5" fill="#FCD34D" />
       <circle cx="4" cy="20" r="1.5" fill="#FCD34D" />
@@ -101,7 +95,6 @@ export const Icons = {
 
   TerrainMaterial: (props) => (
     <svg viewBox="0 0 24 24" fill="none" {...props}>
-      {/* Terrain material icon */}
       <rect
         x="2" y="2" width="20" height="20" rx="2"
         fill="currentColor"
@@ -110,7 +103,6 @@ export const Icons = {
     </svg>
   ),
 
-  // Vertical tool menu icons (top-left menu below hamburger) - Enhanced quality
   Select: (props) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <path d="M3 3L9.5 20.5L12 13L20.5 9.5L3 3Z" strokeLinejoin="round"/>
@@ -157,7 +149,6 @@ export const Icons = {
     </svg>
   ),
 
-  // Enhanced icons for the other menu (vertical tool menu)
   Move: (props) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <path d="M12 3L12 21M3 12L21 12" strokeLinecap="round"/>
@@ -187,7 +178,6 @@ export const Icons = {
     </svg>
   ),
 
-  // Properties menu icons (right toolbar - larger, cleaner style) - Cube for scene
   Scene: (props) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
       <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
@@ -196,18 +186,13 @@ export const Icons = {
     </svg>
   ),
 
-  // Redesigned Light icon - proper lightbulb with dots and screw
   Light: (props) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
-      {/* Bulb shape */}
       <path d="M15 9A6 6 0 1 1 9 9C9 10.5 9.5 12 10 13H14C14.5 12 15 10.5 15 9Z" strokeLinejoin="round"/>
-      {/* Base/socket */}
       <rect x="10" y="18" width="4" height="4" rx="0.5" strokeLinejoin="round"/>
-      {/* Screw threads */}
       <line x1="9" y1="18" x2="15" y2="18"/>
       <line x1="9" y1="19.5" x2="15" y2="19.5"/>
       <line x1="9" y1="21" x2="15" y2="21"/>
-      {/* Light dots/rays inside bulb */}
       <circle cx="12" cy="8" r="0.5" fill="currentColor"/>
       <circle cx="10.5" cy="9.5" r="0.3" fill="currentColor"/>
       <circle cx="13.5" cy="9.5" r="0.3" fill="currentColor"/>
@@ -215,11 +200,9 @@ export const Icons = {
     </svg>
   ),
 
-  // Redesigned Effects icon with sparkles like screenshot
   Effects: (props) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
       <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" strokeLinejoin="round"/>
-      {/* Sparkles around the lightning */}
       <path d="M6 6L7 7L6 8L5 7L6 6Z" fill="currentColor"/>
       <path d="M19 4L20 5L19 6L18 5L19 4Z" fill="currentColor"/>
       <path d="M18 16L19 17L18 18L17 17L18 16Z" fill="currentColor"/>
@@ -236,7 +219,6 @@ export const Icons = {
     </svg>
   ),
 
-  // Redesigned Code icon with slash
   Code: (props) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
       <path d="M16 18L22 12L16 6"/>
@@ -296,7 +278,6 @@ export const Icons = {
     </svg>
   ),
 
-  // Redesigned Settings cog
   Settings: (props) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
       <circle cx="12" cy="12" r="3"/>
@@ -304,7 +285,6 @@ export const Icons = {
     </svg>
   ),
 
-  // Redesigned Nodes icon - 2 dots connected by angled line
   Nodes: (props) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
       <circle cx="6" cy="6" r="3"/>
@@ -313,7 +293,6 @@ export const Icons = {
     </svg>
   ),
 
-  // Navigation icons
   ChevronDown: (props) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
       <path d="m6 9 6 6 6-6"/>
@@ -361,7 +340,6 @@ export const Icons = {
     </svg>
   ),
 
-  // Enhanced top left menu icons
   Menu: (props) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <line x1="4" y1="6" x2="20" y2="6" strokeLinecap="round"/>
@@ -429,7 +407,6 @@ export const Icons = {
     </svg>
   ),
 
-  // Asset category icons (styled for sidebar)
   Models: (props) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
       <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
@@ -491,7 +468,6 @@ export const Icons = {
     </svg>
   ),
 
-// plugins/editor/components/Icons.jsx (continued)
 Character: (props) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -514,7 +490,6 @@ Tree: (props) => (
   </svg>
 ),
 
-// Bottom tab icons
 CodeBracket: (props) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
     <path d="m16 18 6-6-6-6"/>
@@ -522,7 +497,6 @@ CodeBracket: (props) => (
   </svg>
 ),
 
-// Animation icon is now a play button (redesigned)
 Play: (props) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
     <polygon points="5,3 19,12 5,21"/>
@@ -554,7 +528,6 @@ CommandLine: (props) => (
   </svg>
 ),
 
-// Legacy icons (kept for compatibility)
 CursorArrowRays: (props) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
     <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/>
@@ -816,28 +789,19 @@ MinusCircle: (props) => (
   </svg>
 ),
 
-// Chrome-style fullscreen icon
 Fullscreen: (props) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
-    {/* Top-left corner arrow */}
     <path d="M8 3H3v5"/>
     <path d="M3 3l5 5"/>
-    
-    {/* Top-right corner arrow */}
     <path d="M16 3h5v5"/>
     <path d="M21 3l-5 5"/>
-    
-    {/* Bottom-left corner arrow */}
     <path d="M8 21H3v-5"/>
     <path d="M3 21l5-5"/>
-    
-    {/* Bottom-right corner arrow */}
     <path d="M16 21h5v-5"/>
     <path d="M21 21l-5-5"/>
   </svg>
 ),
 
-// Image icon for HDRI skyboxes
 Image: (props) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
@@ -846,7 +810,6 @@ Image: (props) => (
   </svg>
 ),
 
-// Check icon for checkboxes
 Check: (props) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
     <polyline points="20,6 9,17 4,12"/>

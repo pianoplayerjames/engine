@@ -11,6 +11,11 @@ export default {
     viteFastifyReact(),
     tailwindcss()
   ],
+  resolve: {
+    alias: {
+      '@': resolve(import.meta.dirname, 'client')
+    }
+  },
   ssr: {
     external: [
       'use-sync-external-store'
