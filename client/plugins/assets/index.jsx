@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
-import { useAssetsStore } from './store.js'
+import { assetsActions } from './store.js'
 
 export default function AssetsPlugin() {
-  const { checkCacheSize } = useAssetsStore()
+  const { checkCacheSize } = assetsActions
 
   useEffect(() => {
     // Periodically check cache size and clean up if needed
@@ -18,7 +18,7 @@ export default function AssetsPlugin() {
   // Handle page unload to clean up resources
   useEffect(() => {
     const handleUnload = () => {
-      const { clearCache } = useAssetsStore.getState()
+      const { clearCache } = assetsActions
       clearCache()
     }
 
@@ -33,4 +33,4 @@ export default function AssetsPlugin() {
 }
 
 // Export the store for other plugins to use
-export { useAssetsStore } from './store.js'
+export { assetsState, assetsActions } from './store.js'

@@ -1,10 +1,11 @@
 import { useEffect } from 'react'
-import { usePhysicsStore } from './store.js'
-import { useTimeStore } from '../time/store.js'
+import { useSnapshot } from 'valtio'
+import { physicsActions } from './store.js'
+import { timeState } from '../time/store.js'
 
 export default function PhysicsPlugin() {
-  const { initPhysics, step } = usePhysicsStore()
-  const deltaTime = useTimeStore(state => state.deltaTime)
+  const { initPhysics, step } = physicsActions
+  const { deltaTime } = useSnapshot(timeState)
 
   useEffect(() => {
     // Initialize physics world
@@ -22,4 +23,4 @@ export default function PhysicsPlugin() {
 }
 
 // Export the store for other plugins to use
-export { usePhysicsStore } from './store.js'
+export { physicsState, physicsActions } from './store.js'

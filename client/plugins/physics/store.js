@@ -1,45 +1,67 @@
-import { create } from 'zustand'
+import { proxy, subscribe, useSnapshot } from 'valtio'
 
-export const usePhysicsStore = create((set, get) => ({
-  // Physics world
-  world: null,
-  gravity: [0, -9.81, 0],
-  timeStep: 1/60,
-  maxSubSteps: 10,
+// Create the reactive physics state
+export const physicsState = proxy({
+  // Physics world configuration
+  world: {
+    instance: null,
+    gravity: [0, -9.81, 0],
+    timeStep: 1/60,
+    maxSubSteps: 10,
+    enabled: true,
+    paused: false
+  },
   
-  // Physics bodies
+  // Physics bodies using Map for fine-grained reactivity
   bodies: new Map(),
   
-  // Collision detection
-  collisions: [],
-  collisionMatrix: new Map(),
+  // Collision detection and response
+  collisions: {
+    current: [],
+    matrix: new Map(), // collision masks/groups
+    callbacks: new Map() // collision event handlers
+  },
   
   // Physics settings
   settings: {
-    enabled: true,
     broadphase: 'naive', // naive, sap, grid
     solver: 'gs', // gs (GaussSeidel), split
     iterations: 10,
     tolerance: 1e-7,
     allowSleep: true,
     sleepSpeedLimit: 0.1,
-    sleepTimeLimit: 1
+    sleepTimeLimit: 1,
+    contactSkin: 0.05
   },
   
-  // Ray casting
-  raycastResults: [],
+  // Raycasting results
+  raycasting: {
+    results: [],
+    queries: new Map() // persistent ray queries
+  },
   
-  // Actions
+  // Performance metrics
+  performance: {
+    stepTime: 0,
+    bodyCount: 0,
+    constraintCount: 0,
+    collisionPairCount: 0
+  }
+})
+
+// Actions that mutate the state directly
+export const physicsActions = {
+  // World management
   initPhysics: () => {
-    // This would initialize a physics engine like Cannon.js or similar
-    // For now, we'll create a simple placeholder
+    // Create a simple physics world simulation
     const world = {
       bodies: [],
-      gravity: get().gravity,
+      gravity: physicsState.world.gravity,
       step: (timeStep) => {
-        // Simple physics step simulation
+        const startTime = performance.now()
+        
         world.bodies.forEach(body => {
-          if (!body.static && body.velocity) {
+          if (!body.static && body.velocity && physicsState.world.enabled) {
             // Apply gravity
             body.velocity[1] += world.gravity[1] * timeStep
             
@@ -51,156 +73,219 @@ export const usePhysicsStore = create((set, get) => ({
             // Simple ground collision
             if (body.position[1] < 0 && body.velocity[1] < 0) {
               body.position[1] = 0
-              body.velocity[1] *= -0.8 // bounce with damping
+              body.velocity[1] *= -body.material.restitution
+              
+              // Trigger collision callback
+              physicsActions._triggerCollision(body.entityId, 'ground')
             }
+            
+            // Apply damping
+            const damping = 0.99
+            body.velocity[0] *= damping
+            body.velocity[1] *= damping
+            body.velocity[2] *= damping
           }
         })
+        
+        // Update performance metrics
+        physicsState.performance.stepTime = performance.now() - startTime
+        physicsState.performance.bodyCount = world.bodies.length
       }
     }
     
-    set({ world })
+    physicsState.world.instance = world
   },
   
   setGravity: (x, y, z) => {
-    set({ gravity: [x, y, z] })
-    const world = get().world
-    if (world) {
-      world.gravity = [x, y, z]
+    physicsState.world.gravity[0] = x
+    physicsState.world.gravity[1] = y
+    physicsState.world.gravity[2] = z
+    
+    if (physicsState.world.instance) {
+      physicsState.world.instance.gravity = [x, y, z]
     }
   },
   
+  setEnabled: (enabled) => {
+    physicsState.world.enabled = enabled
+  },
+  
+  setPaused: (paused) => {
+    physicsState.world.paused = paused
+  },
+  
+  // Rigid body management
   createRigidBody: (entityId, options = {}) => {
     const body = {
       entityId,
-      position: options.position || [0, 0, 0],
-      rotation: options.rotation || [0, 0, 0],
-      velocity: options.velocity || [0, 0, 0],
-      angularVelocity: options.angularVelocity || [0, 0, 0],
+      position: options.position ? [...options.position] : [0, 0, 0],
+      rotation: options.rotation ? [...options.rotation] : [0, 0, 0],
+      velocity: options.velocity ? [...options.velocity] : [0, 0, 0],
+      angularVelocity: options.angularVelocity ? [...options.angularVelocity] : [0, 0, 0],
       mass: options.mass || 1,
       static: options.static || false,
-      shape: options.shape || 'box',
-      size: options.size || [1, 1, 1],
+      kinematic: options.kinematic || false,
+      shape: {
+        type: options.shape || 'box',
+        size: options.size ? [...options.size] : [1, 1, 1],
+        radius: options.radius || 0.5
+      },
       material: {
         friction: options.friction || 0.4,
         restitution: options.restitution || 0.3,
         density: options.density || 1
       },
+      collisionGroup: options.collisionGroup || 1,
+      collisionMask: options.collisionMask || -1,
       sleeping: false,
-      sleepTime: 0
+      sleepTime: 0,
+      forces: [],
+      impulses: []
     }
     
     // Add to physics world
-    const world = get().world
-    if (world) {
-      world.bodies.push(body)
+    if (physicsState.world.instance) {
+      physicsState.world.instance.bodies.push(body)
     }
     
-    set(state => ({
-      bodies: new Map(state.bodies).set(entityId, body)
-    }))
-    
+    physicsState.bodies.set(entityId, body)
     return body
   },
   
   removeRigidBody: (entityId) => {
-    const body = get().bodies.get(entityId)
+    const body = physicsState.bodies.get(entityId)
     if (!body) return
     
     // Remove from physics world
-    const world = get().world
-    if (world) {
-      const index = world.bodies.findIndex(b => b.entityId === entityId)
+    if (physicsState.world.instance) {
+      const index = physicsState.world.instance.bodies.findIndex(b => b.entityId === entityId)
       if (index >= 0) {
-        world.bodies.splice(index, 1)
+        physicsState.world.instance.bodies.splice(index, 1)
       }
     }
     
-    set(state => {
-      const newBodies = new Map(state.bodies)
-      newBodies.delete(entityId)
-      return { bodies: newBodies }
-    })
+    physicsState.bodies.delete(entityId)
   },
   
   updateRigidBody: (entityId, updates) => {
-    const body = get().bodies.get(entityId)
+    const body = physicsState.bodies.get(entityId)
     if (!body) return
     
-    const updatedBody = { ...body, ...updates }
-    
-    set(state => ({
-      bodies: new Map(state.bodies).set(entityId, updatedBody)
-    }))
+    // Direct mutation for Valtio reactivity
+    Object.assign(body, updates)
   },
   
-  getRigidBody: (entityId) => get().bodies.get(entityId),
+  getRigidBody: (entityId) => physicsState.bodies.get(entityId),
   
+  // Force application
   applyForce: (entityId, force, point) => {
-    const body = get().bodies.get(entityId)
+    const body = physicsState.bodies.get(entityId)
     if (!body || body.static) return
     
-    // Simple force application (F = ma, so a = F/m)
-    const acceleration = [
-      force[0] / body.mass,
-      force[1] / body.mass,
-      force[2] / body.mass
-    ]
-    
-    body.velocity[0] += acceleration[0]
-    body.velocity[1] += acceleration[1]
-    body.velocity[2] += acceleration[2]
+    body.forces.push({ force: [...force], point: point ? [...point] : null })
   },
   
   applyImpulse: (entityId, impulse, point) => {
-    const body = get().bodies.get(entityId)
+    const body = physicsState.bodies.get(entityId)
     if (!body || body.static) return
     
-    // Impulse directly changes velocity (J = m*v, so v = J/m)
+    // Immediate velocity change
     body.velocity[0] += impulse[0] / body.mass
     body.velocity[1] += impulse[1] / body.mass
     body.velocity[2] += impulse[2] / body.mass
   },
   
+  applyTorque: (entityId, torque) => {
+    const body = physicsState.bodies.get(entityId)
+    if (!body || body.static) return
+    
+    body.angularVelocity[0] += torque[0]
+    body.angularVelocity[1] += torque[1]
+    body.angularVelocity[2] += torque[2]
+  },
+  
+  // Direct property setters
   setVelocity: (entityId, velocity) => {
-    const body = get().bodies.get(entityId)
+    const body = physicsState.bodies.get(entityId)
     if (!body) return
     
-    body.velocity = [...velocity]
+    body.velocity[0] = velocity[0]
+    body.velocity[1] = velocity[1]
+    body.velocity[2] = velocity[2]
   },
   
   setPosition: (entityId, position) => {
-    const body = get().bodies.get(entityId)
+    const body = physicsState.bodies.get(entityId)
     if (!body) return
     
-    body.position = [...position]
+    body.position[0] = position[0]
+    body.position[1] = position[1]
+    body.position[2] = position[2]
+  },
+  
+  setRotation: (entityId, rotation) => {
+    const body = physicsState.bodies.get(entityId)
+    if (!body) return
+    
+    body.rotation[0] = rotation[0]
+    body.rotation[1] = rotation[1]
+    body.rotation[2] = rotation[2]
   },
   
   // Physics simulation step
   step: (deltaTime) => {
-    const { world, settings } = get()
-    if (!world || !settings.enabled) return
-    
-    const timeStep = Math.min(deltaTime, get().timeStep)
-    const steps = Math.ceil(deltaTime / timeStep)
-    const actualSteps = Math.min(steps, get().maxSubSteps)
-    
-    for (let i = 0; i < actualSteps; i++) {
-      world.step(timeStep)
+    if (!physicsState.world.instance || !physicsState.world.enabled || physicsState.world.paused) {
+      return
     }
     
+    const timeStep = Math.min(deltaTime, physicsState.world.timeStep)
+    const steps = Math.ceil(deltaTime / timeStep)
+    const actualSteps = Math.min(steps, physicsState.world.maxSubSteps)
+    
+    for (let i = 0; i < actualSteps; i++) {
+      physicsState.world.instance.step(timeStep)
+    }
+    
+    // Process accumulated forces and impulses
+    physicsActions._processForces()
+    
     // Update collision detection
-    get().detectCollisions()
+    physicsActions.detectCollisions()
   },
   
-  // Simple collision detection
+  // Internal force processing
+  _processForces: () => {
+    physicsState.bodies.forEach(body => {
+      if (body.static) return
+      
+      // Apply accumulated forces
+      body.forces.forEach(({ force, point }) => {
+        body.velocity[0] += (force[0] / body.mass) * physicsState.world.timeStep
+        body.velocity[1] += (force[1] / body.mass) * physicsState.world.timeStep
+        body.velocity[2] += (force[2] / body.mass) * physicsState.world.timeStep
+      })
+      
+      // Clear forces for next frame
+      body.forces.length = 0
+      body.impulses.length = 0
+    })
+  },
+  
+  // Collision detection
   detectCollisions: () => {
-    const bodies = Array.from(get().bodies.values())
+    const bodies = Array.from(physicsState.bodies.values())
     const collisions = []
     
     for (let i = 0; i < bodies.length; i++) {
       for (let j = i + 1; j < bodies.length; j++) {
         const bodyA = bodies[i]
         const bodyB = bodies[j]
+        
+        // Check collision masks
+        if (!(bodyA.collisionGroup & bodyB.collisionMask) || 
+            !(bodyB.collisionGroup & bodyA.collisionMask)) {
+          continue
+        }
         
         // Simple AABB collision detection
         const distance = Math.sqrt(
@@ -209,10 +294,10 @@ export const usePhysicsStore = create((set, get) => ({
           Math.pow(bodyA.position[2] - bodyB.position[2], 2)
         )
         
-        const minDistance = (bodyA.size[0] + bodyB.size[0]) / 2
+        const minDistance = (bodyA.shape.size[0] + bodyB.shape.size[0]) / 2
         
         if (distance < minDistance) {
-          collisions.push({
+          const collision = {
             bodyA: bodyA.entityId,
             bodyB: bodyB.entityId,
             distance,
@@ -220,27 +305,44 @@ export const usePhysicsStore = create((set, get) => ({
               (bodyB.position[0] - bodyA.position[0]) / distance,
               (bodyB.position[1] - bodyA.position[1]) / distance,
               (bodyB.position[2] - bodyA.position[2]) / distance
-            ]
-          })
+            ],
+            penetration: minDistance - distance
+          }
+          
+          collisions.push(collision)
+          physicsActions._triggerCollision(bodyA.entityId, bodyB.entityId, collision)
         }
       }
     }
     
-    set({ collisions })
+    physicsState.collisions.current = collisions
+    physicsState.performance.collisionPairCount = collisions.length
   },
   
-  // Ray casting
+  // Collision callbacks
+  _triggerCollision: (entityA, entityB, collision = null) => {
+    const callback = physicsState.collisions.callbacks.get(entityA)
+    if (callback) {
+      callback(entityA, entityB, collision)
+    }
+  },
+  
+  onCollision: (entityId, callback) => {
+    physicsState.collisions.callbacks.set(entityId, callback)
+  },
+  
+  offCollision: (entityId) => {
+    physicsState.collisions.callbacks.delete(entityId)
+  },
+  
+  // Raycasting
   raycast: (from, to, options = {}) => {
-    const bodies = Array.from(get().bodies.values())
+    const bodies = Array.from(physicsState.bodies.values())
     const results = []
     
-    // Simple ray-box intersection
     bodies.forEach(body => {
-      // This would be a proper ray-AABB intersection in a real implementation
+      // Simple ray-AABB intersection (placeholder)
       const center = body.position
-      const halfSize = body.size.map(s => s / 2)
-      
-      // Simplified intersection test
       const hit = {
         body: body.entityId,
         point: center,
@@ -258,11 +360,46 @@ export const usePhysicsStore = create((set, get) => ({
     // Sort by distance
     results.sort((a, b) => a.distance - b.distance)
     
-    set({ raycastResults: results })
+    physicsState.raycasting.results = results
     return results
   },
   
-  updateSettings: (newSettings) => set(state => ({
-    settings: { ...state.settings, ...newSettings }
-  }))
-}))
+  // Persistent ray queries
+  addRayQuery: (id, from, to, options = {}) => {
+    physicsState.raycasting.queries.set(id, { from, to, options, results: [] })
+  },
+  
+  removeRayQuery: (id) => {
+    physicsState.raycasting.queries.delete(id)
+  },
+  
+  updateRayQueries: () => {
+    physicsState.raycasting.queries.forEach((query, id) => {
+      query.results = physicsActions.raycast(query.from, query.to, query.options)
+    })
+  },
+  
+  // Settings updates
+  updateSettings: (newSettings) => {
+    Object.assign(physicsState.settings, newSettings)
+  },
+  
+  // Constraint system (basic)
+  createConstraint: (bodyA, bodyB, type, options = {}) => {
+    // Placeholder for constraint system
+    return { bodyA, bodyB, type, options }
+  }
+}
+
+// Set up automatic ray query updates
+if (typeof window !== 'undefined') {
+  // Update ray queries periodically if there are any
+  setInterval(() => {
+    if (physicsState.raycasting.queries.size > 0) {
+      physicsActions.updateRayQueries()
+    }
+  }, 16) // ~60fps
+}
+
+// Legacy compatibility hook
+// physicsState and physicsActions are already exported above

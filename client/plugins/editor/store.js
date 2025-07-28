@@ -1,49 +1,48 @@
-import { create } from 'zustand'
+import { proxy, subscribe, useSnapshot } from 'valtio'
 import { loadUISettings, saveUISettings, updateUISetting, defaultUISettings } from './utils/localStorage.js'
 
 // Always use defaults for initial render to prevent hydration mismatch
 // Will be hydrated after mount
 const initialUISettings = defaultUISettings;
 
-export const useEditorStore = create((set, get) => ({
+// Create the reactive state proxy
+export const editorState = proxy({
   // Editor state
   isOpen: false,
   mode: 'scene', // scene, assets, settings, console
   
   // UI Layout Settings (persisted)
-  rightPanelWidth: initialUISettings.panels.rightPanelWidth,
-  bottomPanelHeight: initialUISettings.panels.bottomPanelHeight,
-  scenePropertiesHeight: initialUISettings.panels.scenePropertiesHeight,
-  assetsLibraryWidth: initialUISettings.panels.assetsLibraryWidth,
-  rightPropertiesMenuPosition: initialUISettings.panels.rightPropertiesMenuPosition,
-  selectedTool: initialUISettings.toolbar.selectedTool,
-  selectedBottomTab: initialUISettings.bottomTabs.selectedTab,
-  bottomTabOrder: initialUISettings.bottomTabs.tabOrder,
-  toolbarTabOrder: initialUISettings.toolbar.tabOrder,
-  toolbarBottomTabOrder: initialUISettings.toolbar.bottomTabOrder,
-  topLeftMenuSelected: initialUISettings.topLeftMenu.selectedItem,
+  ui: {
+    rightPanelWidth: initialUISettings.panels.rightPanelWidth,
+    bottomPanelHeight: initialUISettings.panels.bottomPanelHeight,
+    scenePropertiesHeight: initialUISettings.panels.scenePropertiesHeight,
+    assetsLibraryWidth: initialUISettings.panels.assetsLibraryWidth,
+    rightPropertiesMenuPosition: initialUISettings.panels.rightPropertiesMenuPosition,
+    selectedTool: initialUISettings.toolbar.selectedTool,
+    selectedBottomTab: initialUISettings.bottomTabs.selectedTab,
+    bottomTabOrder: initialUISettings.bottomTabs.tabOrder,
+    toolbarTabOrder: initialUISettings.toolbar.tabOrder,
+    toolbarBottomTabOrder: initialUISettings.toolbar.bottomTabOrder,
+    topLeftMenuSelected: initialUISettings.topLeftMenu.selectedItem,
+  },
   
   // Panel visibility
   panels: {
     hierarchy: true,
     inspector: true,
     console: false,
-    assets: false
+    assets: false,
+    isScenePanelOpen: true,
+    isAssetPanelOpen: true,
+    isResizingPanels: false,
   },
   
-  // Panel open states (for layout calculations)
-  isScenePanelOpen: true,
-  isAssetPanelOpen: true,
-  
-  // Resize states (for disabling transitions during resize)
-  isResizingPanels: false,
-  
   // Selection
-  selectedEntity: null,
-  selectedObject: null, // 3D object reference for transform controls
-  
-  // Transform controls
-  transformMode: 'select', // 'select', 'move', 'rotate', 'scale'
+  selection: {
+    entity: null,
+    object: null, // 3D object reference for transform controls
+    transformMode: 'select', // 'select', 'move', 'rotate', 'scale'
+  },
   
   // Scene objects (3D objects in the viewport)
   sceneObjects: [
@@ -73,182 +72,256 @@ export const useEditorStore = create((set, get) => ({
   
   // Editor settings
   settings: {
-    gridSize: 1,
-    snapToGrid: false,
-    showGrid: true,
-    showWireframe: false,
-    cameraSpeed: 1.0
+    grid: initialUISettings.settings.gridSettings,
+    viewport: initialUISettings.settings.viewportSettings,
+    editor: {
+      gridSize: 1,
+      snapToGrid: false,
+      showGrid: true,
+      showWireframe: false,
+      cameraSpeed: 1.0
+    }
   },
-
-  // Grid settings (persisted)
-  gridSettings: initialUISettings.settings.gridSettings,
-
-  // Viewport settings (persisted)
-  viewportSettings: initialUISettings.settings.viewportSettings,
   
   // Console
-  consoleMessages: [],
-  
-  // Context menu
-  contextMenuHandler: null,
-  
-  // Actions
-  toggle: () => set(state => ({ isOpen: !state.isOpen })),
-  open: () => set({ isOpen: true }),
-  close: () => set({ isOpen: false }),
-  
-  setMode: (mode) => set({ mode }),
-  
-  togglePanel: (panel) => set(state => ({
-    panels: {
-      ...state.panels,
-      [panel]: !state.panels[panel]
-    }
-  })),
-  
-  setSelectedEntity: (entityId) => set({ selectedEntity: entityId }),
-  setSelectedObject: (object) => set({ selectedObject: object }),
-  setTransformMode: (mode) => set({ transformMode: mode }),
-  
-  updateSettings: (newSettings) => set(state => ({
-    settings: { ...state.settings, ...newSettings }
-  })),
+  console: {
+    messages: [],
+    handler: null,
+  },
+})
 
-  updateGridSettings: (newGridSettings) => set(state => {
-    const updatedGridSettings = { ...state.gridSettings, ...newGridSettings };
-    // Persist to localStorage
-    updateUISetting('settings.gridSettings', updatedGridSettings);
-    return { gridSettings: updatedGridSettings };
-  }),
+// Actions that mutate the state directly
+export const editorActions = {
+  // Basic editor actions
+  toggle: () => {
+    editorState.isOpen = !editorState.isOpen
+  },
+  
+  open: () => {
+    editorState.isOpen = true
+  },
+  
+  close: () => {
+    editorState.isOpen = false
+  },
+  
+  setMode: (mode) => {
+    editorState.mode = mode
+  },
+  
+  // Panel management
+  togglePanel: (panel) => {
+    editorState.panels[panel] = !editorState.panels[panel]
+  },
+  
+  setIsScenePanelOpen: (isOpen) => {
+    editorState.panels.isScenePanelOpen = isOpen
+  },
+  
+  setIsAssetPanelOpen: (isOpen) => {
+    editorState.panels.isAssetPanelOpen = isOpen
+  },
+  
+  setIsResizingPanels: (isResizing) => {
+    editorState.panels.isResizingPanels = isResizing
+  },
+  
+  // Selection
+  setSelectedEntity: (entityId) => {
+    editorState.selection.entity = entityId
+  },
+  
+  setSelectedObject: (object) => {
+    editorState.selection.object = object
+  },
+  
+  setTransformMode: (mode) => {
+    editorState.selection.transformMode = mode
+  },
+  
+  // Settings updates
+  updateEditorSettings: (newSettings) => {
+    Object.assign(editorState.settings.editor, newSettings)
+  },
 
-  updateViewportSettings: (newViewportSettings) => set(state => {
-    const updatedViewportSettings = { ...state.viewportSettings, ...newViewportSettings };
-    // Persist to localStorage
-    updateUISetting('settings.viewportSettings', updatedViewportSettings);
-    return { viewportSettings: updatedViewportSettings };
-  }),
+  updateGridSettings: (newGridSettings) => {
+    Object.assign(editorState.settings.grid, newGridSettings)
+    updateUISetting('settings.gridSettings', editorState.settings.grid)
+  },
+
+  updateViewportSettings: (newViewportSettings) => {
+    Object.assign(editorState.settings.viewport, newViewportSettings)
+    updateUISetting('settings.viewportSettings', editorState.settings.viewport)
+  },
 
   // UI Layout Actions (with persistence)
-  setRightPanelWidth: (width) => set(state => {
-    updateUISetting('panels.rightPanelWidth', width);
-    return { rightPanelWidth: width };
-  }),
+  setRightPanelWidth: (width) => {
+    editorState.ui.rightPanelWidth = width
+    updateUISetting('panels.rightPanelWidth', width)
+  },
 
-  setBottomPanelHeight: (height) => set(state => {
-    updateUISetting('panels.bottomPanelHeight', height);
-    return { bottomPanelHeight: height };
-  }),
+  setBottomPanelHeight: (height) => {
+    editorState.ui.bottomPanelHeight = height
+    updateUISetting('panels.bottomPanelHeight', height)
+  },
 
-  setScenePropertiesHeight: (height) => set(state => {
-    updateUISetting('panels.scenePropertiesHeight', height);
-    return { scenePropertiesHeight: height };
-  }),
+  setScenePropertiesHeight: (height) => {
+    editorState.ui.scenePropertiesHeight = height
+    updateUISetting('panels.scenePropertiesHeight', height)
+  },
 
-  setAssetsLibraryWidth: (width) => set(state => {
-    updateUISetting('panels.assetsLibraryWidth', width);
-    return { assetsLibraryWidth: width };
-  }),
+  setAssetsLibraryWidth: (width) => {
+    editorState.ui.assetsLibraryWidth = width
+    updateUISetting('panels.assetsLibraryWidth', width)
+  },
 
-  setRightPropertiesMenuPosition: (position) => set(state => {
-    updateUISetting('panels.rightPropertiesMenuPosition', position);
-    return { rightPropertiesMenuPosition: position };
-  }),
+  setRightPropertiesMenuPosition: (position) => {
+    editorState.ui.rightPropertiesMenuPosition = position
+    updateUISetting('panels.rightPropertiesMenuPosition', position)
+  },
 
-  setSelectedTool: (tool) => set(state => {
-    updateUISetting('toolbar.selectedTool', tool);
-    return { selectedTool: tool };
-  }),
+  setSelectedTool: (tool) => {
+    editorState.ui.selectedTool = tool
+    updateUISetting('toolbar.selectedTool', tool)
+  },
 
-  setSelectedBottomTab: (tab) => set(state => {
-    updateUISetting('bottomTabs.selectedTab', tab);
-    return { selectedBottomTab: tab };
-  }),
+  setSelectedBottomTab: (tab) => {
+    editorState.ui.selectedBottomTab = tab
+    updateUISetting('bottomTabs.selectedTab', tab)
+  },
 
-  setBottomTabOrder: (tabOrder) => set(state => {
-    updateUISetting('bottomTabs.tabOrder', tabOrder);
-    return { bottomTabOrder: tabOrder };
-  }),
+  setBottomTabOrder: (tabOrder) => {
+    editorState.ui.bottomTabOrder = tabOrder
+    updateUISetting('bottomTabs.tabOrder', tabOrder)
+  },
 
-  setToolbarTabOrder: (tabOrder) => set(state => {
-    updateUISetting('toolbar.tabOrder', tabOrder);
-    return { toolbarTabOrder: tabOrder };
-  }),
+  setToolbarTabOrder: (tabOrder) => {
+    editorState.ui.toolbarTabOrder = tabOrder
+    updateUISetting('toolbar.tabOrder', tabOrder)
+  },
 
-  setToolbarBottomTabOrder: (tabOrder) => set(state => {
-    updateUISetting('toolbar.bottomTabOrder', tabOrder);
-    return { toolbarBottomTabOrder: tabOrder };
-  }),
+  setToolbarBottomTabOrder: (tabOrder) => {
+    editorState.ui.toolbarBottomTabOrder = tabOrder
+    updateUISetting('toolbar.bottomTabOrder', tabOrder)
+  },
 
-  setTopLeftMenuSelected: (item) => set(state => {
-    updateUISetting('topLeftMenu.selectedItem', item);
-    return { topLeftMenuSelected: item };
-  }),
-
-  // Panel state actions
-  setIsScenePanelOpen: (isOpen) => set({ isScenePanelOpen: isOpen }),
-  setIsAssetPanelOpen: (isOpen) => set({ isAssetPanelOpen: isOpen }),
-  setIsResizingPanels: (isResizing) => set({ isResizingPanels: isResizing }),
+  setTopLeftMenuSelected: (item) => {
+    editorState.ui.topLeftMenuSelected = item
+    updateUISetting('topLeftMenu.selectedItem', item)
+  },
 
   // Hydration action to load localStorage values on client
   hydrateFromLocalStorage: () => {
     if (typeof window !== 'undefined') {
-      const storedSettings = loadUISettings();
-      set({
-        rightPanelWidth: storedSettings.panels.rightPanelWidth,
-        bottomPanelHeight: storedSettings.panels.bottomPanelHeight,
-        scenePropertiesHeight: storedSettings.panels.scenePropertiesHeight,
-        assetsLibraryWidth: storedSettings.panels.assetsLibraryWidth,
-        rightPropertiesMenuPosition: storedSettings.panels.rightPropertiesMenuPosition,
-        selectedTool: storedSettings.toolbar.selectedTool,
-        selectedBottomTab: storedSettings.bottomTabs.selectedTab,
-        bottomTabOrder: storedSettings.bottomTabs.tabOrder,
-        toolbarTabOrder: storedSettings.toolbar.tabOrder,
-        toolbarBottomTabOrder: storedSettings.toolbar.bottomTabOrder,
-        topLeftMenuSelected: storedSettings.topLeftMenu.selectedItem,
-        gridSettings: storedSettings.settings.gridSettings,
-        viewportSettings: storedSettings.settings.viewportSettings,
-        // Panel states don't need persistence as they're UI state
-        isScenePanelOpen: true,
-        isAssetPanelOpen: true,
-      });
+      const storedSettings = loadUISettings()
+      
+      // Direct assignment to Valtio proxy
+      editorState.ui.rightPanelWidth = storedSettings.panels.rightPanelWidth
+      editorState.ui.bottomPanelHeight = storedSettings.panels.bottomPanelHeight
+      editorState.ui.scenePropertiesHeight = storedSettings.panels.scenePropertiesHeight
+      editorState.ui.assetsLibraryWidth = storedSettings.panels.assetsLibraryWidth
+      editorState.ui.rightPropertiesMenuPosition = storedSettings.panels.rightPropertiesMenuPosition
+      editorState.ui.selectedTool = storedSettings.toolbar.selectedTool
+      editorState.ui.selectedBottomTab = storedSettings.bottomTabs.selectedTab
+      editorState.ui.bottomTabOrder = storedSettings.bottomTabs.tabOrder
+      editorState.ui.toolbarTabOrder = storedSettings.toolbar.tabOrder
+      editorState.ui.toolbarBottomTabOrder = storedSettings.toolbar.bottomTabOrder
+      editorState.ui.topLeftMenuSelected = storedSettings.topLeftMenu.selectedItem
+      
+      Object.assign(editorState.settings.grid, storedSettings.settings.gridSettings)
+      Object.assign(editorState.settings.viewport, storedSettings.settings.viewportSettings)
+      
+      // Panel states don't need persistence as they're UI state
+      editorState.panels.isScenePanelOpen = true
+      editorState.panels.isAssetPanelOpen = true
     }
   },
   
-  addConsoleMessage: (message, type = 'info') => set(state => ({
-    consoleMessages: [
-      ...state.consoleMessages,
-      {
-        id: Date.now(),
-        message,
-        type,
-        timestamp: new Date().toLocaleTimeString()
-      }
-    ]
-  })),
+  // Console management
+  addConsoleMessage: (message, type = 'info') => {
+    editorState.console.messages.push({
+      id: Date.now(),
+      message,
+      type,
+      timestamp: new Date().toLocaleTimeString()
+    })
+  },
   
-  clearConsole: () => set({ consoleMessages: [] }),
+  clearConsole: () => {
+    editorState.console.messages.length = 0
+  },
   
-  setContextMenuHandler: (handler) => set({ contextMenuHandler: handler }),
+  setContextMenuHandler: (handler) => {
+    editorState.console.handler = handler
+  },
   
   // Scene object management
   addSceneObject: (object) => {
     const objectWithId = { 
       id: `${object.type}-${Date.now()}`, 
       ...object 
-    };
-    set(state => ({
-      sceneObjects: [...state.sceneObjects, objectWithId]
-    }));
-    return objectWithId;
+    }
+    editorState.sceneObjects.push(objectWithId)
+    return objectWithId
   },
   
-  removeSceneObject: (id) => set(state => ({
-    sceneObjects: state.sceneObjects.filter(obj => obj.id !== id)
-  })),
+  removeSceneObject: (id) => {
+    const index = editorState.sceneObjects.findIndex(obj => obj.id === id)
+    if (index >= 0) {
+      editorState.sceneObjects.splice(index, 1)
+    }
+  },
   
-  updateSceneObject: (id, updates) => set(state => ({
-    sceneObjects: state.sceneObjects.map(obj => 
-      obj.id === id ? { ...obj, ...updates } : obj
-    )
-  }))
-}))
+  updateSceneObject: (id, updates) => {
+    const object = editorState.sceneObjects.find(obj => obj.id === id)
+    if (object) {
+      Object.assign(object, updates)
+    }
+  }
+}
+
+// Set up automatic persistence for UI changes
+if (typeof window !== 'undefined') {
+  try {
+    // Subscribe to the entire editor state for UI persistence
+    subscribe(editorState, () => {
+      // Batch persistence to avoid excessive localStorage writes
+      const scheduleUpdate = window.requestIdleCallback || ((fn) => setTimeout(fn, 0))
+      scheduleUpdate(() => {
+        try {
+          saveUISettings({
+            panels: {
+              rightPanelWidth: editorState.ui.rightPanelWidth,
+              bottomPanelHeight: editorState.ui.bottomPanelHeight,
+              scenePropertiesHeight: editorState.ui.scenePropertiesHeight,
+              assetsLibraryWidth: editorState.ui.assetsLibraryWidth,
+              rightPropertiesMenuPosition: editorState.ui.rightPropertiesMenuPosition,
+            },
+            toolbar: {
+              selectedTool: editorState.ui.selectedTool,
+              tabOrder: editorState.ui.toolbarTabOrder,
+              bottomTabOrder: editorState.ui.toolbarBottomTabOrder,
+            },
+            bottomTabs: {
+              selectedTab: editorState.ui.selectedBottomTab,
+              tabOrder: editorState.ui.bottomTabOrder,
+            },
+            topLeftMenu: {
+              selectedItem: editorState.ui.topLeftMenuSelected,
+            },
+            settings: {
+              gridSettings: editorState.settings.grid,
+              viewportSettings: editorState.settings.viewport,
+            }
+          })
+        } catch (error) {
+          console.warn('Failed to save UI settings:', error)
+        }
+      })
+    })
+  } catch (error) {
+    console.warn('Failed to set up UI persistence:', error)
+  }
+}
+
+// editorState and editorActions are already exported above

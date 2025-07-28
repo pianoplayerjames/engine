@@ -10,11 +10,14 @@ import ScenePlugin from '../plugins/scene/index.jsx'
 import PhysicsPlugin from '../plugins/physics/index.jsx'
 import AssetsPlugin from '../plugins/assets/index.jsx'
 import EditorPlugin from '../plugins/editor/index.jsx'
-import { useEditorStore } from '../plugins/editor/store.js'
+import { useSnapshot } from 'valtio'
+import { editorState, editorActions } from '../plugins/editor/store.js'
 
 function SceneObject({ sceneObj }) {
   const meshRef = useRef()
-  const { selectedObject, setSelectedObject, setTransformMode, updateSceneObject } = useEditorStore()
+  const { selection, sceneObjects } = useSnapshot(editorState)
+  const { selectedObject } = selection
+  const { setSelectedObject, setTransformMode, updateSceneObject } = editorActions
   
   const isSelected = selectedObject === sceneObj.id
   
@@ -69,7 +72,7 @@ function SceneObject({ sceneObj }) {
 }
 
 function SceneRenderer() {
-  const { sceneObjects } = useEditorStore()
+  const { sceneObjects } = useSnapshot(editorState)
   
   return (
     <>
@@ -81,13 +84,10 @@ function SceneRenderer() {
 }
 
 export default function Index() {
-  const { 
-    contextMenuHandler,
-    rightPanelWidth,
-    bottomPanelHeight,
-    isScenePanelOpen,
-    isAssetPanelOpen
-  } = useEditorStore();
+  const { console: consoleState, ui, panels } = useSnapshot(editorState);
+  const { contextMenuHandler } = consoleState;
+  const { rightPanelWidth, bottomPanelHeight } = ui;
+  const { isScenePanelOpen, isAssetPanelOpen } = panels;
   
   // Log only once on mount
   useEffect(() => {

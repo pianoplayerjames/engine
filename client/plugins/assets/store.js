@@ -1,336 +1,354 @@
-import { create } from 'zustand'
+import { proxy, subscribe, useSnapshot } from 'valtio'
 
-export const useAssetsStore = create((set, get) => ({
-  // Asset storage
-  textures: new Map(),
-  models: new Map(),
-  sounds: new Map(),
-  materials: new Map(),
-  animations: new Map(),
-  fonts: new Map(),
+// Create the reactive assets state
+export const assetsState = proxy({
+  // Asset storage using Maps for fine-grained reactivity
+  assets: {
+    textures: new Map(),
+    models: new Map(),
+    sounds: new Map(),
+    materials: new Map(),
+    animations: new Map(),
+    fonts: new Map(),
+  },
   
-  // Loading state
-  loading: new Map(),
-  loaded: new Map(),
-  errors: new Map(),
+  // Loading state tracking
+  loading: {
+    active: new Map(), // id -> loading info
+    queue: [], // pending loads
+    progress: {
+      total: 0,
+      loaded: 0,
+      percentage: 0
+    }
+  },
   
-  // Cache settings
+  // Asset metadata and caching
+  metadata: {
+    loaded: new Map(), // id -> asset metadata
+    errors: new Map(), // id -> error message
+    dependencies: new Map(), // id -> [dependent asset ids]
+  },
+  
+  // Cache management
   cache: {
     maxSize: 100 * 1024 * 1024, // 100MB
     currentSize: 0,
-    enabled: true
-  },
-  
-  // Progress tracking
-  loadingProgress: {
-    total: 0,
-    loaded: 0,
-    percentage: 0
-  },
-  
-  // Actions
-  loadTexture: async (id, url, options = {}) => {
-    if (get().textures.has(id)) {
-      return get().textures.get(id)
+    enabled: true,
+    strategy: 'lru' // 'lru', 'lfu', 'fifo'
+  }
+})
+
+// Actions that mutate the state directly
+export const assetsActions = {
+  // Generic asset loading
+  loadAsset: async (id, url, type, options = {}) => {
+    if (assetsActions.isLoaded(id)) {
+      return assetsActions.getAsset(id, type)
     }
     
-    set(state => ({
-      loading: new Map(state.loading).set(id, { type: 'texture', url, progress: 0 })
-    }))
-    
-    try {
-      const response = await fetch(url)
-      const blob = await response.blob()
-      const imageUrl = URL.createObjectURL(blob)
-      
-      const texture = {
-        id,
-        url: imageUrl,
-        originalUrl: url,
-        type: 'texture',
-        format: options.format || 'auto',
-        flipY: options.flipY !== false,
-        wrapS: options.wrapS || 'repeat',
-        wrapT: options.wrapT || 'repeat',
-        minFilter: options.minFilter || 'linear',
-        magFilter: options.magFilter || 'linear',
-        size: blob.size,
-        loadedAt: Date.now()
-      }
-      
-      set(state => {
-        const newLoading = new Map(state.loading)
-        newLoading.delete(id)
-        
-        return {
-          textures: new Map(state.textures).set(id, texture),
-          loaded: new Map(state.loaded).set(id, texture),
-          loading: newLoading,
-          cache: {
-            ...state.cache,
-            currentSize: state.cache.currentSize + blob.size
-          }
-        }
-      })
-      
-      get().updateProgress()
-      return texture
-      
-    } catch (error) {
-      set(state => {
-        const newLoading = new Map(state.loading)
-        newLoading.delete(id)
-        
-        return {
-          loading: newLoading,
-          errors: new Map(state.errors).set(id, error.message)
-        }
-      })
-      
-      throw error
-    }
-  },
-  
-  loadModel: async (id, url, options = {}) => {
-    if (get().models.has(id)) {
-      return get().models.get(id)
-    }
-    
-    set(state => ({
-      loading: new Map(state.loading).set(id, { type: 'model', url, progress: 0 })
-    }))
+    assetsState.loading.active.set(id, { 
+      type, 
+      url, 
+      progress: 0,
+      startTime: Date.now()
+    })
     
     try {
-      const response = await fetch(url)
-      const arrayBuffer = await response.arrayBuffer()
-      
-      const model = {
-        id,
-        url,
-        type: 'model',
-        data: arrayBuffer,
-        format: options.format || url.split('.').pop().toLowerCase(),
-        size: arrayBuffer.byteLength,
-        loadedAt: Date.now()
-      }
-      
-      set(state => {
-        const newLoading = new Map(state.loading)
-        newLoading.delete(id)
-        
-        return {
-          models: new Map(state.models).set(id, model),
-          loaded: new Map(state.loaded).set(id, model),
-          loading: newLoading,
-          cache: {
-            ...state.cache,
-            currentSize: state.cache.currentSize + arrayBuffer.byteLength
-          }
-        }
-      })
-      
-      get().updateProgress()
-      return model
-      
-    } catch (error) {
-      set(state => {
-        const newLoading = new Map(state.loading)
-        newLoading.delete(id)
-        
-        return {
-          loading: newLoading,
-          errors: new Map(state.errors).set(id, error.message)
-        }
-      })
-      
-      throw error
-    }
-  },
-  
-  loadSound: async (id, url, options = {}) => {
-    if (get().sounds.has(id)) {
-      return get().sounds.get(id)
-    }
-    
-    set(state => ({
-      loading: new Map(state.loading).set(id, { type: 'sound', url, progress: 0 })
-    }))
-    
-    try {
-      const response = await fetch(url)
-      const arrayBuffer = await response.arrayBuffer()
-      
-      const sound = {
-        id,
-        url,
-        type: 'sound',
-        data: arrayBuffer,
-        format: options.format || url.split('.').pop().toLowerCase(),
-        volume: options.volume || 1.0,
-        loop: options.loop || false,
-        size: arrayBuffer.byteLength,
-        loadedAt: Date.now()
-      }
-      
-      set(state => {
-        const newLoading = new Map(state.loading)
-        newLoading.delete(id)
-        
-        return {
-          sounds: new Map(state.sounds).set(id, sound),
-          loaded: new Map(state.loaded).set(id, sound),
-          loading: newLoading,
-          cache: {
-            ...state.cache,
-            currentSize: state.cache.currentSize + arrayBuffer.byteLength
-          }
-        }
-      })
-      
-      get().updateProgress()
-      return sound
-      
-    } catch (error) {
-      set(state => {
-        const newLoading = new Map(state.loading)
-        newLoading.delete(id)
-        
-        return {
-          loading: newLoading,
-          errors: new Map(state.errors).set(id, error.message)
-        }
-      })
-      
-      throw error
-    }
-  },
-  
-  // Batch loading
-  loadAssets: async (assetList) => {
-    const promises = assetList.map(asset => {
-      switch (asset.type) {
+      let asset
+      switch (type) {
         case 'texture':
-          return get().loadTexture(asset.id, asset.url, asset.options)
+          asset = await assetsActions._loadTexture(id, url, options)
+          break
         case 'model':
-          return get().loadModel(asset.id, asset.url, asset.options)
+          asset = await assetsActions._loadModel(id, url, options)
+          break
         case 'sound':
-          return get().loadSound(asset.id, asset.url, asset.options)
+          asset = await assetsActions._loadSound(id, url, options)
+          break
         default:
-          return Promise.reject(new Error(`Unknown asset type: ${asset.type}`))
+          throw new Error(`Unsupported asset type: ${type}`)
+      }
+      
+      // Store the loaded asset
+      assetsState.assets[`${type}s`].set(id, asset)
+      assetsState.metadata.loaded.set(id, {
+        ...asset,
+        loadedAt: Date.now(),
+        accessCount: 0,
+        lastAccessed: Date.now()
+      })
+      
+      // Update cache size
+      if (asset.size) {
+        assetsState.cache.currentSize += asset.size
+      }
+      
+      // Clean up loading state
+      assetsState.loading.active.delete(id)
+      assetsActions.updateProgress()
+      
+      return asset
+      
+    } catch (error) {
+      assetsState.metadata.errors.set(id, error.message)
+      assetsState.loading.active.delete(id)
+      assetsActions.updateProgress()
+      throw error
+    }
+  },
+  
+  // Specific loaders
+  _loadTexture: async (id, url, options = {}) => {
+    const response = await fetch(url)
+    const blob = await response.blob()
+    const imageUrl = URL.createObjectURL(blob)
+    
+    return {
+      id,
+      url: imageUrl,
+      originalUrl: url,
+      type: 'texture',
+      format: options.format || 'auto',
+      flipY: options.flipY !== false,
+      wrapS: options.wrapS || 'repeat',
+      wrapT: options.wrapT || 'repeat',
+      minFilter: options.minFilter || 'linear',
+      magFilter: options.magFilter || 'linear',
+      size: blob.size
+    }
+  },
+  
+  _loadModel: async (id, url, options = {}) => {
+    const response = await fetch(url)
+    const arrayBuffer = await response.arrayBuffer()
+    
+    return {
+      id,
+      url,
+      type: 'model',
+      data: arrayBuffer,
+      format: options.format || url.split('.').pop().toLowerCase(),
+      size: arrayBuffer.byteLength
+    }
+  },
+  
+  _loadSound: async (id, url, options = {}) => {
+    const response = await fetch(url)
+    const arrayBuffer = await response.arrayBuffer()
+    
+    return {
+      id,
+      url,
+      type: 'sound',
+      data: arrayBuffer,
+      format: options.format || url.split('.').pop().toLowerCase(),
+      volume: options.volume || 1.0,
+      loop: options.loop || false,
+      size: arrayBuffer.byteLength
+    }
+  },
+  
+  // Batch loading with dependency resolution
+  loadAssets: async (assetList) => {
+    // Build dependency graph
+    const dependencies = new Map()
+    assetList.forEach(asset => {
+      if (asset.dependencies) {
+        dependencies.set(asset.id, asset.dependencies)
       }
     })
     
-    set(state => ({
-      loadingProgress: {
-        ...state.loadingProgress,
-        total: assetList.length
-      }
-    }))
+    // Topological sort for loading order
+    const sorted = assetsActions._topologicalSort(assetList, dependencies)
     
-    const results = await Promise.allSettled(promises)
+    // Set total progress
+    assetsState.loading.progress.total = sorted.length
+    assetsState.loading.progress.loaded = 0
+    
+    const results = []
+    for (const asset of sorted) {
+      try {
+        const result = await assetsActions.loadAsset(
+          asset.id, 
+          asset.url, 
+          asset.type, 
+          asset.options
+        )
+        results.push({ status: 'fulfilled', value: result })
+        assetsState.loading.progress.loaded++
+      } catch (error) {
+        results.push({ status: 'rejected', reason: error })
+      }
+    }
+    
     return results
   },
   
-  // Asset retrieval
-  getTexture: (id) => get().textures.get(id),
-  getModel: (id) => get().models.get(id),
-  getSound: (id) => get().sounds.get(id),
-  getMaterial: (id) => get().materials.get(id),
+  // Asset retrieval with access tracking
+  getAsset: (id, type) => {
+    const asset = assetsState.assets[`${type}s`].get(id)
+    if (asset) {
+      // Update access metadata for cache management
+      const metadata = assetsState.metadata.loaded.get(id)
+      if (metadata) {
+        metadata.accessCount++
+        metadata.lastAccessed = Date.now()
+      }
+    }
+    return asset
+  },
+  
+  // Convenience getters
+  getTexture: (id) => assetsActions.getAsset(id, 'texture'),
+  getModel: (id) => assetsActions.getAsset(id, 'model'),
+  getSound: (id) => assetsActions.getAsset(id, 'sound'),
+  getMaterial: (id) => assetsActions.getAsset(id, 'material'),
   
   // Asset management
   unloadAsset: (id) => {
-    const state = get()
     let removedSize = 0
     
-    // Check all asset types
-    const assetTypes = ['textures', 'models', 'sounds', 'materials', 'animations', 'fonts']
-    
-    assetTypes.forEach(type => {
-      const asset = state[type].get(id)
+    // Find and remove from all asset types
+    Object.entries(assetsState.assets).forEach(([type, assetMap]) => {
+      const asset = assetMap.get(id)
       if (asset) {
         if (asset.size) removedSize += asset.size
         
-        // Revoke object URLs for textures
+        // Clean up blob URLs for textures
         if (type === 'textures' && asset.url?.startsWith('blob:')) {
           URL.revokeObjectURL(asset.url)
         }
         
-        set(state => ({
-          [type]: new Map(state[type]).delete(id),
-          loaded: new Map(state.loaded).delete(id),
-          cache: {
-            ...state.cache,
-            currentSize: Math.max(0, state.cache.currentSize - removedSize)
-          }
-        }))
+        assetMap.delete(id)
       }
     })
+    
+    // Clean up metadata
+    assetsState.metadata.loaded.delete(id)
+    assetsState.metadata.errors.delete(id)
+    
+    // Update cache size
+    assetsState.cache.currentSize = Math.max(0, assetsState.cache.currentSize - removedSize)
   },
   
+  // Cache management
   clearCache: () => {
-    const state = get()
-    
-    // Revoke all texture URLs
-    state.textures.forEach(texture => {
+    // Revoke all blob URLs
+    assetsState.assets.textures.forEach(texture => {
       if (texture.url?.startsWith('blob:')) {
         URL.revokeObjectURL(texture.url)
       }
     })
     
-    set({
-      textures: new Map(),
-      models: new Map(),
-      sounds: new Map(),
-      materials: new Map(),
-      animations: new Map(),
-      fonts: new Map(),
-      loaded: new Map(),
-      errors: new Map(),
-      cache: {
-        ...state.cache,
-        currentSize: 0
-      }
+    // Clear all maps
+    Object.values(assetsState.assets).forEach(assetMap => {
+      assetMap.clear()
     })
+    assetsState.metadata.loaded.clear()
+    assetsState.metadata.errors.clear()
+    assetsState.cache.currentSize = 0
+  },
+  
+  // Intelligent cache eviction
+  evictAssets: (targetSize) => {
+    const assetsToEvict = []
+    
+    // Get all loaded assets with metadata
+    assetsState.metadata.loaded.forEach((metadata, id) => {
+      assetsToEvict.push({ id, ...metadata })
+    })
+    
+    // Sort by cache strategy
+    switch (assetsState.cache.strategy) {
+      case 'lru':
+        assetsToEvict.sort((a, b) => a.lastAccessed - b.lastAccessed)
+        break
+      case 'lfu':
+        assetsToEvict.sort((a, b) => a.accessCount - b.accessCount)
+        break
+      case 'fifo':
+        assetsToEvict.sort((a, b) => a.loadedAt - b.loadedAt)
+        break
+    }
+    
+    // Evict until we reach target size
+    let freedSize = 0
+    for (const asset of assetsToEvict) {
+      if (freedSize >= targetSize) break
+      
+      freedSize += asset.size || 0
+      assetsActions.unloadAsset(asset.id)
+    }
+  },
+  
+  // Check and maintain cache size
+  checkCacheSize: () => {
+    if (assetsState.cache.currentSize > assetsState.cache.maxSize) {
+      const targetReduction = assetsState.cache.currentSize - assetsState.cache.maxSize
+      assetsActions.evictAssets(targetReduction)
+    }
   },
   
   // Progress tracking
   updateProgress: () => {
-    const state = get()
-    const loadedCount = state.loaded.size
-    const totalCount = loadedCount + state.loading.size
+    const loadedCount = assetsState.metadata.loaded.size
+    const totalCount = loadedCount + assetsState.loading.active.size
     
-    set({
-      loadingProgress: {
-        total: totalCount,
-        loaded: loadedCount,
-        percentage: totalCount > 0 ? (loadedCount / totalCount) * 100 : 0
-      }
-    })
+    assetsState.loading.progress.loaded = loadedCount
+    assetsState.loading.progress.total = Math.max(totalCount, assetsState.loading.progress.total)
+    assetsState.loading.progress.percentage = assetsState.loading.progress.total > 0 
+      ? (loadedCount / assetsState.loading.progress.total) * 100 
+      : 0
   },
   
-  // Cache management
-  checkCacheSize: () => {
-    const state = get()
-    if (state.cache.currentSize > state.cache.maxSize) {
-      // Remove oldest assets
-      const allAssets = []
-      
-      state.loaded.forEach((asset, id) => {
-        allAssets.push({ id, asset, loadedAt: asset.loadedAt })
-      })
-      
-      allAssets.sort((a, b) => a.loadedAt - b.loadedAt)
-      
-      // Remove oldest 25%
-      const toRemove = Math.floor(allAssets.length * 0.25)
-      for (let i = 0; i < toRemove; i++) {
-        get().unloadAsset(allAssets[i].id)
+  // Utility functions
+  isLoading: (id) => assetsState.loading.active.has(id),
+  hasError: (id) => assetsState.metadata.errors.has(id),
+  isLoaded: (id) => assetsState.metadata.loaded.has(id),
+  
+  // Dependency resolution helper
+  _topologicalSort: (assets, dependencies) => {
+    const visited = new Set()
+    const result = []
+    const visiting = new Set()
+    
+    const visit = (asset) => {
+      if (visiting.has(asset.id)) {
+        throw new Error(`Circular dependency detected: ${asset.id}`)
       }
+      
+      if (visited.has(asset.id)) return
+      
+      visiting.add(asset.id)
+      
+      const deps = dependencies.get(asset.id) || []
+      for (const depId of deps) {
+        const depAsset = assets.find(a => a.id === depId)
+        if (depAsset) {
+          visit(depAsset)
+        }
+      }
+      
+      visiting.delete(asset.id)
+      visited.add(asset.id)
+      result.push(asset)
     }
-  },
-  
-  // Utility
-  isLoading: (id) => get().loading.has(id),
-  hasError: (id) => get().errors.has(id),
-  isLoaded: (id) => get().loaded.has(id)
-}))
+    
+    assets.forEach(visit)
+    return result
+  }
+}
+
+// Set up automatic cache management
+if (typeof window !== 'undefined') {
+  // Periodic cache size checking
+  setInterval(() => {
+    if (assetsState.cache.enabled) {
+      assetsActions.checkCacheSize()
+    }
+  }, 30000) // Check every 30 seconds
+}
+
+// Legacy compatibility hook
+// assetsState and assetsActions are already exported above

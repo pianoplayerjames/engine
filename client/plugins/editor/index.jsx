@@ -19,7 +19,8 @@ import AudioPanel from './components/AudioPanel';
 import EffectsPanel from './components/EffectsPanel';
 import ContextMenu from './components/ContextMenu';
 import { Icons } from './components/Icons';
-import { useEditorStore } from './store.js';
+import { useSnapshot } from 'valtio';
+import { editorState, editorActions } from './store.js';
 
 function EditorPlugin() {
   const [selectedTool, setSelectedTool] = useState('select');
@@ -27,17 +28,18 @@ function EditorPlugin() {
   const [isResizingRight, setIsResizingRight] = useState(false);
   const [contextMenu, setContextMenu] = useState(null);
   
-  const { 
-    selectedObject, setSelectedObject, setContextMenuHandler, addSceneObject, removeSceneObject, setTransformMode,
-    selectedTool: selectedRightTool, setSelectedTool: setSelectedRightTool,
-    selectedBottomTab: activeTab, setSelectedBottomTab: setActiveTab,
-    rightPanelWidth, setRightPanelWidth,
-    bottomPanelHeight, setBottomPanelHeight,
-    isScenePanelOpen, setIsScenePanelOpen,
-    isAssetPanelOpen, setIsAssetPanelOpen,
-    setIsResizingPanels,
+  const { selection, ui, panels } = useSnapshot(editorState);
+  const { selectedObject } = selection;
+  const { selectedTool: selectedRightTool, selectedBottomTab: activeTab, rightPanelWidth, bottomPanelHeight } = ui;
+  const { isScenePanelOpen, isAssetPanelOpen } = panels;
+  
+  const {
+    setSelectedObject, setContextMenuHandler, addSceneObject, removeSceneObject, setTransformMode,
+    setSelectedTool: setSelectedRightTool, setSelectedBottomTab: setActiveTab,
+    setRightPanelWidth, setBottomPanelHeight,
+    setIsScenePanelOpen, setIsAssetPanelOpen, setIsResizingPanels,
     hydrateFromLocalStorage
-  } = useEditorStore();
+  } = editorActions;
 
   // Hydrate localStorage values on client mount (after SSR)
   useEffect(() => {
@@ -64,7 +66,7 @@ function EditorPlugin() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedObject, removeSceneObject, setSelectedObject, setTransformMode]);
+  }, [selectedObject]);
 
   // Handle object selection with automatic move gizmo
   const handleObjectSelect = (objectId) => {

@@ -4,8 +4,9 @@ import { Icons } from './Icons';
 import SliderWithTooltip from './SliderWithTooltip';
 import CollapsibleSection from './CollapsibleSection';
 import ContextMenu from './ContextMenu';
-import { useEditorStore } from '../store.js';
-import { useRenderStore } from '../../render/store.js';
+import { useSnapshot } from 'valtio';
+import { editorState, editorActions } from '../store.js';
+import { renderState, renderActions } from '../../render/store.js';
 import { HDR_ENVIRONMENTS, getHDREnvironment } from '../../render/environmentLoader.js';
 
 const parentNames = [
@@ -59,7 +60,9 @@ const sceneObjects = [
 
 function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selectedTool, onToolSelect, onContextMenu }) {
   const [expandedItems, setExpandedItems] = useState(['scene']);
-  const { scenePropertiesHeight: bottomPanelHeight, setScenePropertiesHeight: setBottomPanelHeight } = useEditorStore();
+  const { ui } = useSnapshot(editorState);
+  const { scenePropertiesHeight: bottomPanelHeight } = ui;
+  const { setScenePropertiesHeight: setBottomPanelHeight } = editorActions;
   const [isResizing, setIsResizing] = useState(false);
   const [isTestToggleOn, setIsTestToggleOn] = useState(false);
   const [roughness, setRoughness] = useState(0.5);
@@ -74,7 +77,9 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
     dragStartDepth: 0
   });
   
-  const { sceneObjects, removeSceneObject, setSelectedObject, setTransformMode, updateSceneObject, gridSettings, updateGridSettings, viewportSettings, updateViewportSettings } = useEditorStore();
+  const { sceneObjects, settings } = useSnapshot(editorState);
+  const { grid: gridSettings, viewport: viewportSettings } = settings;
+  const { removeSceneObject, setSelectedObject, setTransformMode, updateSceneObject, updateGridSettings, updateViewportSettings } = editorActions;
   
   // Get selected object data
   const selectedObjectData = sceneObjects.find(obj => obj.id === selectedObject);
@@ -1097,7 +1102,7 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
                         onClick={() => {
                           try {
                             const environment = getHDREnvironment(env.id);
-                            const { setEnvironment } = useRenderStore.getState();
+                            const { setEnvironment } = renderActions;
                             
                             if (environment.type === 'room') {
                               setEnvironment(null, 1.0, 'hdr', 'room');
@@ -1121,7 +1126,7 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
                     {/* Clear Environment Button */}
                     <button
                       onClick={() => {
-                        const { clearEnvironment } = useRenderStore.getState();
+                        const { clearEnvironment } = renderActions;
                         clearEnvironment();
                         // Also reset the background color
                         updateViewportSettings({ backgroundColor: '#1a202c' });
@@ -1146,7 +1151,7 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
                       defaultValue="1"
                       onChange={(e) => {
                         const intensity = parseFloat(e.target.value);
-                        const { setEnvironmentIntensity } = useRenderStore.getState();
+                        const { setEnvironmentIntensity } = renderActions;
                         setEnvironmentIntensity(intensity);
                         // Update the display value
                         const display = e.target.parentElement.querySelector('.intensity-display');

@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
-import { useSceneStore } from './store.js'
+import { sceneActions } from './store.js'
 
 export default function ScenePlugin() {
-  const { createEntity, addComponent, setSceneRoot } = useSceneStore()
+  const { createEntity, addComponent, setSceneRoot } = sceneActions
 
   useEffect(() => {
     // Create a default scene root entity
@@ -25,4 +25,4 @@ export default function ScenePlugin() {
 }
 
 // Export the store for other plugins to use
-export { useSceneStore } from './store.js'
+export { sceneState, sceneActions } from './store.js'

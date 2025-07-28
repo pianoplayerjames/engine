@@ -1,13 +1,14 @@
 import { useEffect } from 'react'
-import { useAudioStore } from './store.js'
+import { useSnapshot } from 'valtio'
+import { audioState, audioActions } from './store.js'
 
 export default function AudioPlugin() {
-  const { initAudio, context } = useAudioStore()
+  const { initAudio, getContext } = audioActions
 
   useEffect(() => {
     // Initialize audio context on first user interaction
     const initOnInteraction = async () => {
-      if (!context) {
+      if (!getContext()) {
         await initAudio()
         document.removeEventListener('click', initOnInteraction)
         document.removeEventListener('keydown', initOnInteraction)
@@ -22,10 +23,10 @@ export default function AudioPlugin() {
       document.removeEventListener('click', initOnInteraction)
       document.removeEventListener('keydown', initOnInteraction)
     }
-  }, [initAudio, context])
+  }, [initAudio, getContext])
 
   return null // This plugin doesn't render anything
 }
 
 // Export the store for other plugins to use
-export { useAudioStore } from './store.js'
+export { audioState, audioActions } from './store.js'

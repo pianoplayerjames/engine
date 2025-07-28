@@ -1,7 +1,8 @@
 // plugins/editor/components/AssetLibrary.jsx
 import React, { useState } from 'react';
 import { Icons } from './Icons';
-import { useEditorStore } from '../store.js';
+import { useSnapshot } from 'valtio';
+import { editorState, editorActions } from '../store.js';
 
 const assetCategories = [
   { id: '3d-models', label: '3D Models', count: 115, icon: Icons.Models },
@@ -34,7 +35,9 @@ function AssetLibrary() {
   const [searchQuery, setSearchQuery] = useState('');
   const [hoveredItem, setHoveredItem] = useState(null);
   const [isResizing, setIsResizing] = useState(false);
-  const { assetsLibraryWidth: categoryPanelWidth, setAssetsLibraryWidth: setCategoryPanelWidth } = useEditorStore();
+  const { ui } = useSnapshot(editorState);
+  const { assetsLibraryWidth: categoryPanelWidth } = ui;
+  const { setAssetsLibraryWidth: setCategoryPanelWidth } = editorActions;
 
   const filteredModels = models3D.filter(model =>
     model.name.toLowerCase().includes(searchQuery.toLowerCase())

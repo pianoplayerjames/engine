@@ -1,11 +1,14 @@
 // plugins/editor/components/TopLeftMenu.jsx
 import React, { useState } from 'react';
 import { Icons } from './Icons';
-import { useEditorStore } from '../store.js';
+import { useSnapshot } from 'valtio';
+import { editorState, editorActions } from '../store.js';
 
 function TopLeftMenu() {
   const [isOpen, setIsOpen] = useState(false);
-  const { topLeftMenuSelected, setTopLeftMenuSelected } = useEditorStore();
+  const { ui } = useSnapshot(editorState);
+  const { topLeftMenuSelected } = ui;
+  const { setTopLeftMenuSelected } = editorActions;
 
   const menuItems = [
     { id: 'new', label: 'New Scene', icon: Icons.Plus, shortcut: 'Ctrl+N' },

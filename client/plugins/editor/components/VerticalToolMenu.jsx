@@ -1,7 +1,8 @@
 // plugins/editor/components/VerticalToolMenu.jsx
 import React, { useState } from 'react';
 import { Icons } from './Icons';
-import { useEditorStore } from '../store.js';
+import { useSnapshot } from 'valtio';
+import { editorState, editorActions } from '../store.js';
 
 const tools = [
   { id: 'select', icon: Icons.Select, title: 'Select' },
@@ -19,7 +20,9 @@ function VerticalToolMenu({ selectedTool, onToolSelect }) {
   const [tooltipState, setTooltipState] = useState({ visible: false, text: '', x: 0, y: 0 });
   const [flashingTool, setFlashingTool] = useState(null);
   
-  const { transformMode, setTransformMode } = useEditorStore();
+  const { selection } = useSnapshot(editorState);
+  const { transformMode } = selection;
+  const { setTransformMode } = editorActions;
   
   // Use transformMode from store instead of selectedTool prop for transform tools
   const getEffectiveSelectedTool = () => {

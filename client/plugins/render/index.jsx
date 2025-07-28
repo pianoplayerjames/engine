@@ -1,13 +1,14 @@
 import React, { useRef, useEffect, useState, Suspense } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls, TransformControls, Grid, Stats, Environment, GizmoHelper, GizmoViewport } from '@react-three/drei'
-import { useRenderStore } from './store.js'
-import { useEditorStore } from '../editor/store.js'
+import { useSnapshot } from 'valtio'
+import { renderState, renderActions } from './store.js'
+import { editorState, editorActions } from '../editor/store.js'
 import * as THREE from 'three'
 
 // Component to manage scene background and environment using drei's Environment
 const EnvironmentBackground = React.memo(() => {
-  const { environment } = useRenderStore()
+  const { environment } = useSnapshot(renderState)
   const [currentPreset, setCurrentPreset] = useState(null)
   
   // Debounce preset changes to reduce flashing
@@ -40,25 +41,12 @@ function ViewportCanvas({ children, style = {}, onContextMenu }) {
   const transformControlsRef = useRef()
   const sceneRef = useRef()
   
-  const { 
-    camera, 
-    ambientLight, 
-    settings,
-    setScene,
-    setRenderer,
-    resize 
-  } = useRenderStore()
+  const { camera, lighting, settings, environment } = useSnapshot(renderState)
+  const { selection, settings: editorSettings } = useSnapshot(editorState)
   
-  const { 
-    selectedObject, 
-    transformMode,
-    gridSettings,
-    viewportSettings 
-  } = useEditorStore()
-  
-  const { 
-    environment
-  } = useRenderStore()
+  const { selectedObject, transformMode } = selection
+  const { grid: gridSettings, viewport: viewportSettings } = editorSettings
+  const { ambient: ambientLight } = lighting
   
   // Find mesh object by scene object ID
   const findMeshByObjectId = (objectId) => {
@@ -166,16 +154,16 @@ function ViewportCanvas({ children, style = {}, onContextMenu }) {
 
   // Update background color when viewport settings change
   useEffect(() => {
-    const state = useRenderStore.getState();
-    if (state.renderer) {
-      state.renderer.setClearColor(viewportSettings.backgroundColor);
+    const renderer = renderActions.getRenderer();
+    if (renderer) {
+      renderer.setClearColor(viewportSettings.backgroundColor);
     }
   }, [viewportSettings.backgroundColor]);
 
   const handleCreated = ({ scene, gl, camera: threeCamera }) => {
     sceneRef.current = scene
-    setScene(scene)
-    setRenderer(gl)
+    renderActions.setScene(scene)
+    renderActions.setRenderer(gl)
     
     // Apply render settings
     gl.shadowMap.enabled = settings.shadows
@@ -217,7 +205,7 @@ function ViewportCanvas({ children, style = {}, onContextMenu }) {
         dpr={[1, 2]} // Use device pixel ratio up to 2x for crisp rendering
         flat // Use flat shading for better performance with grid lines
         onCreated={handleCreated}
-        style={{ backgroundColor: viewportSettings.backgroundColor }}
+        style={{ backgroundColor: viewportSettings.backgroundColor, outline: 'none' }}
         onContextMenu={(e) => {
           e.preventDefault();
           if (onContextMenu) {
@@ -226,15 +214,13 @@ function ViewportCanvas({ children, style = {}, onContextMenu }) {
         }}
         onPointerMissed={() => {
           // Deselect object when clicking on empty space (no objects hit)
-          const { setSelectedObject } = useEditorStore.getState();
-          setSelectedObject(null);
+          editorActions.setSelectedObject(null);
         }}
         tabIndex={0}
-        style={{ outline: 'none' }}
       >
         <ambientLight 
-          intensity={ambientLight.intensity} 
-          color={ambientLight.color} 
+          intensity={lighting.ambient.intensity} 
+          color={lighting.ambient.color} 
         />
         <directionalLight 
           position={[10, 10, 5]} 
@@ -295,8 +281,7 @@ function ViewportCanvas({ children, style = {}, onContextMenu }) {
             onChange={() => {
               // Update store when object is transformed
               if (selectedMesh && selectedObject) {
-                const { updateSceneObject } = useEditorStore.getState();
-                updateSceneObject(selectedObject, {
+                editorActions.updateSceneObject(selectedObject, {
                   position: selectedMesh.position.toArray(),
                   rotation: selectedMesh.rotation.toArray(),
                   scale: selectedMesh.scale.toArray()
@@ -353,5 +338,5 @@ export default function RenderPlugin({ children, embedded = false, style = {}, o
 // Export ViewportCanvas for use in editor
 export { ViewportCanvas }
 
-// Export the store for other plugins to use
-export { useRenderStore } from './store.js'
+// Export the state and actions for other plugins to use
+export { renderState, renderActions } from './store.js'

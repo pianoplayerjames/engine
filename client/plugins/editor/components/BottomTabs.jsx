@@ -1,7 +1,8 @@
 // plugins/editor/components/BottomTabs.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import { Icons } from './Icons';
-import { useEditorStore } from '../store.js';
+import { useSnapshot } from 'valtio';
+import { editorState, editorActions } from '../store.js';
 
 const defaultTabs = [
   { id: 'assets', label: 'Assets', icon: Icons.Cube },
@@ -19,7 +20,9 @@ const defaultTabs = [
 ];
 
 function BottomTabs({ activeTab, onTabChange, isAssetPanelOpen, onToggleAssetPanel, rightPanelWidth, isScenePanelOpen }) {
-  const { bottomTabOrder, setBottomTabOrder, hydrateFromLocalStorage } = useEditorStore();
+  const { ui } = useSnapshot(editorState);
+  const { bottomTabOrder } = ui;
+  const { setBottomTabOrder, hydrateFromLocalStorage } = editorActions;
   
   // Create ordered tabs based on stored order
   const getOrderedTabs = () => {

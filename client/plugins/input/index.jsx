@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useInputStore } from './store.js'
+import { inputActions } from './store.js'
 
 export default function InputPlugin() {
   const { 
@@ -11,7 +11,7 @@ export default function InputPlugin() {
     updateGamepads,
     setGamepadConnected,
     setGamepadDisconnected
-  } = useInputStore()
+  } = inputActions
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -81,4 +81,4 @@ export default function InputPlugin() {
 }
 
 // Export the store for other plugins to use
-export { useInputStore } from './store.js'
+export { inputState, inputActions } from './store.js'

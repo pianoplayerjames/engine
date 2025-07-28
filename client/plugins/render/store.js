@@ -1,11 +1,15 @@
-import { create } from 'zustand'
+import { proxy, subscribe, useSnapshot } from 'valtio'
 
-export const useRenderStore = create((set, get) => ({
-  // Scene settings
+// Non-serializable objects stored outside proxy
+let renderRefs = {
   scene: null,
-  renderer: null,
+  renderer: null
+}
+
+// Create the reactive render state (without non-serializable objects)
+export const renderState = proxy({
   
-  // Environment settings
+  // Environment settings grouped for better reactivity
   environment: {
     preset: null,
     intensity: 1.0,
@@ -20,14 +24,18 @@ export const useRenderStore = create((set, get) => ({
     fov: 60,
     near: 0.1,
     far: 1000,
-    target: [0, 0, 0]
+    target: [0, 0, 0],
+    aspect: 16/9
   },
   
-  // Lighting
-  lights: new Map(),
-  ambientLight: {
-    intensity: 0.5,
-    color: '#ffffff'
+  // Lighting system
+  lighting: {
+    ambient: {
+      intensity: 0.5,
+      color: '#ffffff'
+    },
+    lights: new Map(),
+    shadowsEnabled: true
   },
   
   // Render settings
@@ -42,113 +50,205 @@ export const useRenderStore = create((set, get) => ({
     toneMappingExposure: 1.0
   },
   
-  // Post-processing
+  // Post-processing effects
   effects: new Map(),
   
-  // Performance
-  stats: {
+  // Performance monitoring
+  performance: {
     fps: 0,
     frameTime: 0,
     drawCalls: 0,
     triangles: 0,
-    memory: 0
+    memory: 0,
+    lastUpdate: 0
+  }
+})
+
+// Actions that mutate the state directly
+export const renderActions = {
+  // Camera controls
+  setCamera: (updates) => {
+    Object.assign(renderState.camera, updates)
   },
   
-  // Actions
-  setCamera: (updates) => set(state => ({
-    camera: { ...state.camera, ...updates }
-  })),
+  setCameraPosition: (x, y, z) => {
+    renderState.camera.position[0] = x
+    renderState.camera.position[1] = y
+    renderState.camera.position[2] = z
+  },
   
-  setCameraPosition: (x, y, z) => set(state => ({
-    camera: { ...state.camera, position: [x, y, z] }
-  })),
+  setCameraRotation: (x, y, z) => {
+    renderState.camera.rotation[0] = x
+    renderState.camera.rotation[1] = y
+    renderState.camera.rotation[2] = z
+  },
   
-  setCameraRotation: (x, y, z) => set(state => ({
-    camera: { ...state.camera, rotation: [x, y, z] }
-  })),
+  setCameraTarget: (x, y, z) => {
+    renderState.camera.target[0] = x
+    renderState.camera.target[1] = y
+    renderState.camera.target[2] = z
+  },
   
-  setCameraTarget: (x, y, z) => set(state => ({
-    camera: { ...state.camera, target: [x, y, z] }
-  })),
+  // Light management
+  addLight: (id, lightData) => {
+    renderState.lighting.lights.set(id, lightData)
+  },
   
-  addLight: (id, lightData) => set(state => ({
-    lights: new Map(state.lights).set(id, lightData)
-  })),
+  removeLight: (id) => {
+    renderState.lighting.lights.delete(id)
+  },
   
-  removeLight: (id) => set(state => {
-    const newLights = new Map(state.lights)
-    newLights.delete(id)
-    return { lights: newLights }
-  }),
-  
-  updateLight: (id, updates) => set(state => {
-    const light = state.lights.get(id)
-    if (!light) return state
-    
-    return {
-      lights: new Map(state.lights).set(id, { ...light, ...updates })
+  updateLight: (id, updates) => {
+    const light = renderState.lighting.lights.get(id)
+    if (light) {
+      Object.assign(light, updates)
     }
-  }),
+  },
   
-  setAmbientLight: (intensity, color) => set({
-    ambientLight: { intensity, color }
-  }),
+  setAmbientLight: (intensity, color) => {
+    renderState.lighting.ambient.intensity = intensity
+    renderState.lighting.ambient.color = color
+  },
   
-  updateSettings: (newSettings) => set(state => ({
-    settings: { ...state.settings, ...newSettings }
-  })),
+  // Render settings
+  updateSettings: (newSettings) => {
+    Object.assign(renderState.settings, newSettings)
+  },
   
-  // Environment actions
-  setEnvironment: (preset, intensity = 1.0, type = 'hdr', environmentType = 'preset') => set(state => {
-    // Don't manipulate scene directly - let EnvironmentBackground component handle it
-    return {
-      environment: { preset, intensity, type, environmentType }
-    };
-  }),
+  // Environment management
+  setEnvironment: (preset, intensity = 1.0, type = 'hdr', environmentType = 'preset') => {
+    renderState.environment.preset = preset
+    renderState.environment.intensity = intensity
+    renderState.environment.type = type
+    renderState.environment.environmentType = environmentType
+  },
   
-  setEnvironmentIntensity: (intensity) => set(state => {
-    // Don't manipulate scene directly - let EnvironmentBackground component handle it
-    return {
-      environment: { ...state.environment, intensity }
-    };
-  }),
+  setEnvironmentIntensity: (intensity) => {
+    renderState.environment.intensity = intensity
+  },
   
-  clearEnvironment: () => set(state => {
-    // Don't manipulate scene directly - let EnvironmentBackground component handle it
-    return {
-      environment: { preset: null, intensity: 1.0, type: 'color', environmentType: null }
-    };
-  }),
+  clearEnvironment: () => {
+    renderState.environment.preset = null
+    renderState.environment.intensity = 1.0
+    renderState.environment.type = 'color'
+    renderState.environment.environmentType = null
+  },
   
-  addEffect: (id, effect) => set(state => ({
-    effects: new Map(state.effects).set(id, effect)
-  })),
+  // Post-processing effects
+  addEffect: (id, effect) => {
+    renderState.effects.set(id, effect)
+  },
   
-  removeEffect: (id) => set(state => {
-    const newEffects = new Map(state.effects)
-    newEffects.delete(id)
-    return { effects: newEffects }
-  }),
+  removeEffect: (id) => {
+    renderState.effects.delete(id)
+  },
   
-  updateStats: (newStats) => set(state => ({
-    stats: { ...state.stats, ...newStats }
-  })),
+  updateEffect: (id, updates) => {
+    const effect = renderState.effects.get(id)
+    if (effect) {
+      Object.assign(effect, updates)
+    }
+  },
   
-  // Render helpers
+  // Performance monitoring
+  updatePerformance: (newStats) => {
+    Object.assign(renderState.performance, {
+      ...newStats,
+      lastUpdate: performance.now()
+    })
+  },
+  
+  // Render system management
   resize: (width, height) => {
-    const { renderer, camera } = get()
-    if (renderer) {
-      renderer.setSize(width, height)
+    if (renderRefs.renderer) {
+      renderRefs.renderer.setSize(width, height)
     }
     
-    set(state => ({
-      camera: {
-        ...state.camera,
-        aspect: width / height
-      }
-    }))
+    renderState.camera.aspect = width / height
   },
   
-  setScene: (scene) => set({ scene }),
-  setRenderer: (renderer) => set({ renderer })
-}))
+  setScene: (scene) => {
+    renderRefs.scene = scene
+  },
+  
+  setRenderer: (renderer) => {
+    renderRefs.renderer = renderer
+  },
+  
+  // Getters for non-serializable objects
+  getScene: () => renderRefs.scene,
+  getRenderer: () => renderRefs.renderer,
+  
+  // Advanced lighting controls
+  setShadowsEnabled: (enabled) => {
+    renderState.lighting.shadowsEnabled = enabled
+    renderState.settings.shadows = enabled
+  },
+  
+  // Batch light updates for performance
+  batchUpdateLights: (lightUpdates) => {
+    lightUpdates.forEach(({ id, updates }) => {
+      renderActions.updateLight(id, updates)
+    })
+  },
+  
+  // Environment presets
+  applyEnvironmentPreset: (presetName) => {
+    const presets = {
+      'sunset': {
+        preset: 'sunset',
+        intensity: 1.2,
+        type: 'hdr',
+        environmentType: 'preset'
+      },
+      'studio': {
+        preset: null,
+        intensity: 1.0,
+        type: 'color',
+        environmentType: 'room'
+      },
+      'forest': {
+        preset: 'forest',
+        intensity: 0.8,
+        type: 'hdr',
+        environmentType: 'preset'
+      }
+    }
+    
+    const preset = presets[presetName]
+    if (preset) {
+      Object.assign(renderState.environment, preset)
+    }
+  }
+}
+
+// Set up automatic performance monitoring
+if (typeof window !== 'undefined') {
+  let frameStartTime = 0
+  let frameCount = 0
+  
+  // Monitor rendering performance
+  const updatePerformanceStats = () => {
+    const now = performance.now()
+    const deltaTime = now - frameStartTime
+    frameStartTime = now
+    frameCount++
+    
+    if (frameCount % 60 === 0) { // Update every 60 frames
+      renderActions.updatePerformance({
+        fps: Math.round(1000 / deltaTime),
+        frameTime: deltaTime,
+        // These would be populated by the actual renderer
+        drawCalls: 0,
+        triangles: 0,
+        memory: 0
+      })
+    }
+    
+    requestAnimationFrame(updatePerformanceStats)
+  }
+  
+  requestAnimationFrame(updatePerformanceStats)
+}
+
+// renderState and renderActions are already exported above

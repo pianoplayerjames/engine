@@ -1,9 +1,10 @@
 import { useEffect } from 'react'
-import { useTimeStore } from './store.js'
-import { useInputStore } from '../input/store.js'
+import { subscribe } from 'valtio'
+import { timeState, timeActions } from './store.js'
+import { inputActions } from '../input/store.js'
 
 export default function TimePlugin() {
-  const { start, stop } = useTimeStore()
+  const { start, stop } = timeActions
 
   useEffect(() => {
     // Auto-start the game loop when component mounts
@@ -17,10 +18,10 @@ export default function TimePlugin() {
   
   // Clear input events each frame using the time store
   useEffect(() => {
-    const clearFrameEvents = useInputStore.getState().clearFrameEvents
+    const clearFrameEvents = inputActions.clearFrameEvents
     
-    const unsubscribe = useTimeStore.subscribe((state) => {
-      if (state.deltaTime > 0) {
+    const unsubscribe = subscribe(timeState, () => {
+      if (timeState.deltaTime > 0) {
         clearFrameEvents()
       }
     })
@@ -31,7 +32,8 @@ export default function TimePlugin() {
   // Handle visibility change to pause/resume
   useEffect(() => {
     const handleVisibilityChange = () => {
-      const { pause, resume, isPaused, isRunning } = useTimeStore.getState()
+      const { pause, resume } = timeActions
+      const { isPaused, isRunning } = timeState.loop
       
       if (document.hidden && isRunning && !isPaused) {
         pause()
@@ -51,4 +53,4 @@ export default function TimePlugin() {
 }
 
 // Export the store for other plugins to use
-export { useTimeStore } from './store.js'
+export { timeState, timeActions } from './store.js'
