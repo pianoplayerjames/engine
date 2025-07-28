@@ -890,10 +890,120 @@
         "children": [],
         "components": {}
       }
+    ],
+    [
+      82,
+      {
+        "id": 82,
+        "name": "SceneRoot_82",
+        "active": true,
+        "parent": null,
+        "children": [],
+        "components": {}
+      }
+    ],
+    [
+      83,
+      {
+        "id": 83,
+        "name": "SceneRoot_83",
+        "active": true,
+        "parent": null,
+        "children": [],
+        "components": {}
+      }
+    ],
+    [
+      84,
+      {
+        "id": 84,
+        "name": "SceneRoot_84",
+        "active": true,
+        "parent": null,
+        "children": [],
+        "components": {}
+      }
+    ],
+    [
+      85,
+      {
+        "id": 85,
+        "name": "SceneRoot_85",
+        "active": true,
+        "parent": null,
+        "children": [],
+        "components": {}
+      }
+    ],
+    [
+      86,
+      {
+        "id": 86,
+        "name": "SceneRoot_86",
+        "active": true,
+        "parent": null,
+        "children": [],
+        "components": {}
+      }
+    ],
+    [
+      87,
+      {
+        "id": 87,
+        "name": "SceneRoot_87",
+        "active": true,
+        "parent": null,
+        "children": [],
+        "components": {}
+      }
+    ],
+    [
+      88,
+      {
+        "id": 88,
+        "name": "SceneRoot_88",
+        "active": true,
+        "parent": null,
+        "children": [],
+        "components": {}
+      }
+    ],
+    [
+      89,
+      {
+        "id": 89,
+        "name": "SceneRoot_89",
+        "active": true,
+        "parent": null,
+        "children": [],
+        "components": {}
+      }
+    ],
+    [
+      90,
+      {
+        "id": 90,
+        "name": "SceneRoot_90",
+        "active": true,
+        "parent": null,
+        "children": [],
+        "components": {}
+      }
+    ],
+    [
+      91,
+      {
+        "id": 91,
+        "name": "SceneRoot_91",
+        "active": true,
+        "parent": null,
+        "children": [],
+        "components": {}
+      }
     ]
   ],
-  "entityCounter": 81,
-  "sceneRoot": 81,
+  "entityCounter": 91,
+  "sceneRoot": 91,
   "selectedEntity": null,
   "components": {
     "transform": [
@@ -2479,6 +2589,206 @@
       ],
       [
         81,
+        {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      ],
+      [
+        82,
+        {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      ],
+      [
+        83,
+        {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      ],
+      [
+        84,
+        {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      ],
+      [
+        85,
+        {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      ],
+      [
+        86,
+        {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      ],
+      [
+        87,
+        {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      ],
+      [
+        88,
+        {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      ],
+      [
+        89,
+        {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      ],
+      [
+        90,
+        {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      ],
+      [
+        91,
         {
           "position": [
             0,
