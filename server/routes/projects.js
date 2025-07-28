@@ -1,4 +1,5 @@
 import fs from 'fs/promises'
+import fsSync from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -7,6 +8,9 @@ const __dirname = path.dirname(__filename)
 
 // Projects directory relative to server root
 const PROJECTS_DIR = path.join(__dirname, '../../projects')
+
+// Store active watchers for cleanup
+const assetWatchers = new Map()
 
 // Ensure projects directory exists
 async function ensureProjectsDir() {
@@ -20,6 +24,8 @@ async function ensureProjectsDir() {
 export default async function projectRoutes(fastify) {
   // Ensure projects directory exists on startup
   await ensureProjectsDir()
+
+  // TODO: Re-implement WebSocket support later - using optimized polling for now
 
   // Create new project
   fastify.post('/api/projects/create', async (request, reply) => {
@@ -403,6 +409,90 @@ export default async function projectRoutes(fastify) {
       reply.code(500).send({ error: 'Failed to list projects' })
     }
   })
+
+  // Get assets list for a project
+  fastify.get('/api/projects/:projectName/assets', async (request, reply) => {
+    try {
+      const { projectName } = request.params
+      const projectPath = path.join(PROJECTS_DIR, projectName)
+      
+      // Check if project exists
+      try {
+        await fs.access(projectPath)
+      } catch {
+        return reply.code(404).send({ error: 'Project not found' })
+      }
+
+      const assetsList = await listProjectAssets(projectPath)
+      reply.send({ assets: assetsList })
+    } catch (error) {
+      console.error('Error listing project assets:', error)
+      reply.code(500).send({ error: 'Failed to list project assets' })
+    }
+  })
+}
+
+// Helper function to list assets from project directory (metadata only)
+async function listProjectAssets(projectPath) {
+  const assetsList = []
+  const assetsPath = path.join(projectPath, 'assets')
+  
+  try {
+    const listFromDir = async (dirPath, category = '', relativePath = '') => {
+      const entries = await fs.readdir(dirPath, { withFileTypes: true })
+      
+      for (const entry of entries) {
+        const fullPath = path.join(dirPath, entry.name)
+        const relativeFilePath = path.join(relativePath, entry.name).replace(/\\/g, '/')
+        
+        if (entry.isDirectory()) {
+          // Skip hidden directories
+          if (entry.name.startsWith('.')) continue
+          // Determine category based on directory name
+          const subCategory = category || entry.name
+          await listFromDir(fullPath, subCategory, relativeFilePath)
+        } else {
+          // Skip hidden files and system files
+          if (entry.name.startsWith('.') || entry.name === 'Thumbs.db') continue
+          // Get file stats
+          const stats = await fs.stat(fullPath)
+          const ext = path.extname(entry.name).toLowerCase()
+          
+          // Categorize based on directory and file extension
+          let assetCategory = category || 'misc'
+          if (category === 'models' || ['.glb', '.gltf', '.obj', '.fbx'].includes(ext)) {
+            assetCategory = '3d-models'
+          } else if (category === 'textures' || ['.jpg', '.jpeg', '.png', '.bmp', '.tga'].includes(ext)) {
+            assetCategory = 'textures'
+          } else if (category === 'audio' || ['.mp3', '.wav', '.ogg', '.m4a'].includes(ext)) {
+            assetCategory = 'audio'
+          } else if (category === 'scripts' || ['.js', '.ts', '.py'].includes(ext)) {
+            assetCategory = 'scripts'
+          } else if (['.json', '.xml'].includes(ext)) {
+            assetCategory = 'data'
+          }
+
+          assetsList.push({
+            id: relativeFilePath.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase(),
+            name: path.basename(entry.name, ext),
+            fileName: entry.name,
+            path: relativeFilePath,
+            category: assetCategory,
+            extension: ext,
+            size: stats.size,
+            lastModified: stats.mtime.toISOString(),
+            mimeType: getMimeType(ext)
+          })
+        }
+      }
+    }
+    
+    await listFromDir(assetsPath)
+  } catch (error) {
+    console.warn('Error listing assets:', error)
+  }
+  
+  return assetsList
 }
 
 // Helper function to collect assets from project directory

@@ -1,47 +1,121 @@
 // plugins/editor/components/AssetLibrary.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Icons } from '@/plugins/editor/components/Icons';
 import { useSnapshot } from 'valtio';
 import { editorState, editorActions } from '@/plugins/editor/store.js';
-
-const assetCategories = [
-  { id: '3d-models', label: '3D Models', count: 115, icon: Icons.Models },
-  { id: 'materials', label: 'Materials', count: 4, icon: Icons.Materials },
-  { id: 'textures', label: 'Textures', count: 0, icon: Icons.Textures },
-  { id: 'scripts', label: 'Scripts', count: 0, icon: Icons.Scripts },
-  { id: 'plugins', label: 'Plugins', count: 0, icon: Icons.Plugins },
-  { id: 'audio', label: 'Audio', count: 0, icon: Icons.Audio },
-  { id: 'animations', label: 'Animations', count: 0, icon: Icons.Animations },
-  { id: 'prefabs', label: 'Prefabs', count: 0, icon: Icons.Prefabs },
-];
-
-const models3D = [
-  { id: '1994-nis', name: '1994-nissan-skyline' },
-  { id: '2015-do', name: '2015-dodge-challenger' },
-  { id: 'adjustabl', name: 'adjustable-wrench' },
-  { id: 'air-vent', name: 'air-vent' },
-  { id: 'analog-c', name: 'analog-clock' },
-  { id: 'apartme', name: 'apartment-building' },
-  { id: 'bar', name: 'bar' },
-  { id: 'bathroom', name: 'bathroom-sink' },
-  { id: 'bathro', name: 'bathroom-mirror' },
-  { id: 'bench', name: 'bench' },
-  { id: 'bike-war', name: 'bike-warehouse' },
-  { id: 'billboard', name: 'billboard' },
-];
+import { projectManager } from '@/plugins/projects/projectManager.js';
 
 function AssetLibrary() {
   const [selectedCategory, setSelectedCategory] = useState('3d-models');
   const [searchQuery, setSearchQuery] = useState('');
   const [hoveredItem, setHoveredItem] = useState(null);
   const [isResizing, setIsResizing] = useState(false);
+  const [assets, setAssets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
   const { ui } = useSnapshot(editorState);
   const { assetsLibraryWidth: categoryPanelWidth } = ui;
   const { setAssetsLibraryWidth: setCategoryPanelWidth } = editorActions;
 
-  const filteredModels = models3D.filter(model =>
-    model.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Fetch assets with optimized polling for real-time updates
+  useEffect(() => {
+    const currentProject = projectManager.getCurrentProject();
+    if (!currentProject.name) {
+      setError('No project loaded');
+      return;
+    }
+
+    let intervalId;
+    let lastModified = null;
+
+    async function fetchAssets() {
+      try {
+        if (!lastModified) setLoading(true); // Only show loading on first fetch
+        setError(null);
+
+        const response = await fetch(`/api/projects/${currentProject.name}/assets`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch assets');
+        }
+
+        const data = await response.json();
+        const newAssets = data.assets || [];
+        
+        // Check if assets have changed by comparing count, names, and modification times
+        const currentModified = newAssets.reduce((latest, asset) => {
+          const assetTime = new Date(asset.lastModified).getTime();
+          return assetTime > latest ? assetTime : latest;
+        }, 0);
+
+        const assetSignature = JSON.stringify(newAssets.map(asset => ({
+          name: asset.name,
+          path: asset.path,
+          size: asset.size
+        })).sort((a, b) => a.path.localeCompare(b.path)));
+
+        // Check if this is the first load, files were modified, count changed, or files were added/removed
+        const currentAssetSignature = assetSignature;
+        const assetsChanged = lastModified === null || 
+                             currentModified > lastModified || 
+                             currentAssetSignature !== window.lastAssetSignature;
+
+        if (assetsChanged) {
+          console.log('📁 Assets updated:', newAssets.length, 'items');
+          setAssets(newAssets);
+          lastModified = currentModified;
+          window.lastAssetSignature = currentAssetSignature;
+        }
+
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching assets:', err);
+        setError(err.message);
+        setAssets([]);
+        setLoading(false);
+      }
+    }
+
+    // Initial fetch
+    fetchAssets();
+
+    // Poll for changes every 1 second for better responsiveness
+    intervalId = setInterval(fetchAssets, 1000);
+
+    // Cleanup on unmount
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, []);
+
+  // Calculate categories and counts dynamically
+  const assetCategories = React.useMemo(() => {
+    const categoryCounts = assets.reduce((acc, asset) => {
+      acc[asset.category] = (acc[asset.category] || 0) + 1;
+      return acc;
+    }, {});
+
+    return [
+      { id: '3d-models', label: '3D Models', count: categoryCounts['3d-models'] || 0, icon: Icons.Models },
+      { id: 'textures', label: 'Textures', count: categoryCounts['textures'] || 0, icon: Icons.Textures },
+      { id: 'audio', label: 'Audio', count: categoryCounts['audio'] || 0, icon: Icons.Audio },
+      { id: 'scripts', label: 'Scripts', count: categoryCounts['scripts'] || 0, icon: Icons.Scripts },
+      { id: 'data', label: 'Data', count: categoryCounts['data'] || 0, icon: Icons.Scripts },
+      { id: 'misc', label: 'Misc', count: categoryCounts['misc'] || 0, icon: Icons.Prefabs },
+    ];
+  }, [assets]);
+
+  // Filter assets by category and search query
+  const filteredAssets = React.useMemo(() => {
+    return assets.filter(asset => {
+      const matchesCategory = selectedCategory === 'all' || asset.category === selectedCategory;
+      const matchesSearch = asset.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           asset.fileName.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
+  }, [assets, selectedCategory, searchQuery]);
 
   const handleResizeMouseDown = (e) => {
     setIsResizing(true);
@@ -131,50 +205,66 @@ function AssetLibrary() {
       <div className="flex-1 p-3 overflow-y-auto scrollbar-thin bg-slate-800">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-medium text-white">{selectedCategory === '3d-models' ? '3D Models' : assetCategories.find(cat => cat.id === selectedCategory)?.label || 'Assets'}</h3>
-          <span className="text-xs text-gray-400">{filteredModels.length} items</span>
+          <span className="text-xs text-gray-400">{filteredAssets.length} items</span>
         </div>
         
-        <div className="grid grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-10 gap-3">
-          {filteredModels.map((model) => (
-            <div
-              key={model.id}
-              className="group cursor-pointer transition-all duration-200 p-2 rounded hover:bg-slate-700/30"
-              draggable
-              onMouseEnter={() => setHoveredItem(model.id)}
-              onMouseLeave={() => setHoveredItem(null)}
-              onDragStart={(e) => {
-                e.dataTransfer.setData('application/json', JSON.stringify({
-                  type: 'model',
-                  id: model.id,
-                  name: model.name
-                }));
-              }}
-            >
-              {/* Asset Item Container */}
-              <div className="relative">
-                {/* Your styled 3D cube icon */}
-                <div className="w-full h-16 mb-2 flex items-center justify-center relative">
-                  <Icons.Cube3D 
-                    className="w-14 h-14 transition-transform group-hover:scale-110" 
-                    isHovered={hoveredItem === model.id}
-                  />
-                  
-                  {/* GLB Badge - Top right over the cube */}
-                  <div className="absolute top-0 right-0 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full text-center leading-none">
-                    GLB
+        {loading && (
+          <div className="text-center text-gray-400 mt-12">
+            <p className="text-sm">Loading assets...</p>
+          </div>
+        )}
+        
+        {error && (
+          <div className="text-center text-red-400 mt-12">
+            <p className="text-sm">Error: {error}</p>
+          </div>
+        )}
+        
+        {!loading && !error && (
+          <div className="grid grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-10 gap-3">
+            {filteredAssets.map((asset) => (
+              <div
+                key={asset.id}
+                className="group cursor-pointer transition-all duration-200 p-2 rounded hover:bg-slate-700/30"
+                draggable
+                onMouseEnter={() => setHoveredItem(asset.id)}
+                onMouseLeave={() => setHoveredItem(null)}
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('application/json', JSON.stringify({
+                    type: 'asset',
+                    id: asset.id,
+                    name: asset.name,
+                    path: asset.path,
+                    category: asset.category
+                  }));
+                }}
+              >
+                {/* Asset Item Container */}
+                <div className="relative">
+                  {/* Your styled 3D cube icon */}
+                  <div className="w-full h-16 mb-2 flex items-center justify-center relative">
+                    <Icons.Cube3D 
+                      className="w-14 h-14 transition-transform group-hover:scale-110" 
+                      isHovered={hoveredItem === asset.id}
+                    />
+                    
+                    {/* Extension Badge - Top right over the cube */}
+                    <div className="absolute top-0 right-0 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full text-center leading-none">
+                      {asset.extension.replace('.', '').toUpperCase()}
+                    </div>
                   </div>
                 </div>
+                
+                {/* Asset Name */}
+                <div className="text-xs text-gray-300 group-hover:text-white transition-colors truncate text-center" title={asset.name}>
+                  {asset.name}
+                </div>
               </div>
-              
-              {/* Asset Name */}
-              <div className="text-xs text-gray-300 group-hover:text-white transition-colors truncate text-center" title={model.name}>
-                {model.name}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
         
-        {filteredModels.length === 0 && searchQuery && (
+        {!loading && !error && filteredAssets.length === 0 && searchQuery && (
           <div className="text-center text-gray-500 mt-12">
             <p className="text-sm">No assets found matching "{searchQuery}"</p>
           </div>
