@@ -413,8 +413,8 @@ function ViewportCanvas({ children, style = {}, onContextMenu }) {
           />
         )}
         
-        {/* Performance Stats */}
-        <Stats showPanel={0} />
+        {/* Performance Stats - conditionally rendered based on settings */}
+        {editorSettings.editor?.showStats && <Stats showPanel={0} />}
         
         {/* Viewport Gizmo */}
         <GizmoHelper

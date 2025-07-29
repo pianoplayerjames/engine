@@ -217,6 +217,9 @@ export default function EngineLoader({ children, onLoadComplete, showSplash: ena
 
   return (
     <div data-engine-loader="true">
+      {/* Always render children (main UI) in background */}
+      {children}
+      
       {/* Show project selection splash first */}
       {showProjectSplash && (
         <ProjectSplash onProjectSelected={handleProjectSelected} />
@@ -245,9 +248,6 @@ export default function EngineLoader({ children, onLoadComplete, showSplash: ena
           // AssetLoader handles its own hiding
         }}
       />
-      
-      {/* Only render children (main UI) after engine is ready */}
-      {engineReady && children}
     </div>
   )
 }

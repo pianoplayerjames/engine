@@ -8,6 +8,7 @@ import { useSnapshot } from 'valtio';
 import { editorState, editorActions } from '@/plugins/editor/store.js';
 import { renderState, renderActions } from '@/plugins/render/store.js';
 import { HDR_ENVIRONMENTS, getHDREnvironment } from '@/plugins/render/environmentLoader.js';
+import statsManager from '@/plugins/editor/utils/statsManager.js';
 
 // Mock data removed - now using actual sceneObjects from store
 
@@ -1206,6 +1207,33 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
                       <div className="text-xs text-gray-300">{viewportSettings.backgroundColor.toUpperCase()}</div>
                     </div>
                   </div>
+                </div>
+              </div>
+            </CollapsibleSection>
+            
+            <CollapsibleSection title="Performance" defaultOpen={false} index={3}>
+              <div className="space-y-4">
+                {/* Stats.js Toggle */}
+                <div className="flex items-center justify-between p-3 bg-slate-800/40 rounded-lg border border-slate-700/50">
+                  <div>
+                    <label className="text-xs font-medium text-gray-300">Performance Stats</label>
+                    <p className="text-xs text-gray-500 mt-0.5">Show FPS, memory usage, and render statistics</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const newValue = !settings.editor.showStats;
+                      console.log('ScenePanel: Stats toggle clicked, newValue:', newValue);
+                      
+                      editorActions.updateEditorSettings({ showStats: newValue });
+                      
+                      editorActions.addConsoleMessage(`Performance stats ${newValue ? 'enabled' : 'disabled'}`, 'success');
+                    }}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-200 ${settings.editor.showStats ? 'bg-blue-500 shadow-lg shadow-blue-500/30' : 'bg-slate-600'}`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 shadow-sm ${settings.editor.showStats ? 'translate-x-6' : 'translate-x-1'}`}
+                    />
+                  </button>
                 </div>
               </div>
             </CollapsibleSection>

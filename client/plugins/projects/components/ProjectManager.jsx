@@ -6,9 +6,43 @@ import { useLoading } from './LoadingProvider.jsx'
 export default function ProjectManager({ onProjectLoad, onClose }) {
   const [isCreating, setIsCreating] = useState(false)
   const [newProjectName, setNewProjectName] = useState('')
+  const [selectedTemplate, setSelectedTemplate] = useState('empty')
   const [error, setError] = useState(null)
   const fileInputRef = useRef(null)
   const { isLoading, operation, progress } = useLoading()
+
+  const projectTemplates = [
+    {
+      id: 'empty',
+      name: 'Empty Project',
+      description: 'Start with a blank scene',
+      icon: '📄'
+    },
+    {
+      id: 'basic-3d',
+      name: 'Basic 3D Scene',
+      description: 'Scene with basic lighting and objects',
+      icon: '🎯'
+    },
+    {
+      id: 'character',
+      name: 'Character Project',
+      description: 'Template for character animations',
+      icon: '🚶'
+    },
+    {
+      id: 'environment',
+      name: 'Environment',
+      description: 'Template for environment design',
+      icon: '🏔️'
+    },
+    {
+      id: 'game',
+      name: 'Game Project',
+      description: 'Basic game setup with physics',
+      icon: '🎮'
+    }
+  ]
 
   const handleOpenProject = async (event) => {
     const file = event.target.files[0]
@@ -40,7 +74,7 @@ export default function ProjectManager({ onProjectLoad, onClose }) {
     setError(null)
 
     try {
-      const projectPath = await projectManager.createNewProject(newProjectName.trim())
+      const projectPath = await projectManager.createNewProject(newProjectName.trim(), selectedTemplate)
       onProjectLoad?.(newProjectName.trim(), projectPath)
       onClose?.()
     } catch (err) {
@@ -125,7 +159,32 @@ export default function ProjectManager({ onProjectLoad, onClose }) {
                 New Project
               </button>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-4">
+                {/* Template Selection */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-400 mb-2">Choose Template</label>
+                  <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto">
+                    {projectTemplates.map((template) => (
+                      <button
+                        key={template.id}
+                        onClick={() => setSelectedTemplate(template.id)}
+                        className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${
+                          selectedTemplate === template.id
+                            ? 'border-blue-500 bg-blue-600/20 text-blue-300'
+                            : 'border-gray-600 bg-gray-700/50 text-gray-300 hover:border-gray-500 hover:bg-gray-700'
+                        }`}
+                      >
+                        <span className="text-lg">{template.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium">{template.name}</div>
+                          <div className="text-xs text-gray-400">{template.description}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Project Name Input */}
                 <input
                   type="text"
                   value={newProjectName}
@@ -146,6 +205,7 @@ export default function ProjectManager({ onProjectLoad, onClose }) {
                     onClick={() => {
                       setIsCreating(false)
                       setNewProjectName('')
+                      setSelectedTemplate('empty')
                       setError(null)
                     }}
                     className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded transition-colors"

@@ -107,9 +107,11 @@ export default function ProjectSplash({ onProjectSelected }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-slate-900 flex z-[100]">
-      {/* Left Sidebar - mimics the engine's left panel */}
-      <div className="w-80 bg-slate-800 border-r border-slate-700 flex flex-col">
+    <div className="fixed inset-0 bg-slate-900/15 backdrop-blur-[1px] flex items-center justify-center z-[100]">
+      {/* Centered Project Manager Container */}
+      <div className="bg-slate-800 border border-slate-700 rounded-lg shadow-2xl w-[900px] h-[600px] flex overflow-hidden">
+        {/* Left Sidebar - mimics the engine's left panel */}
+        <div className="w-80 bg-slate-800 border-r border-slate-700 flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-slate-700">
           <h1 className="text-xl font-semibold text-white mb-1">RENZORA</h1>
@@ -159,14 +161,14 @@ export default function ProjectSplash({ onProjectSelected }) {
           </h2>
         </div>
 
-        {/* Content area */}
-        <div className="flex-1 p-4 overflow-auto">
-          {showCreateForm ? (
-            /* Create Project Form */
-            <div className="max-w-4xl">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Project Details */}
-                <div className="space-y-4">
+        {/* Content area with custom scrollbar */}
+        <div className="flex-1 flex flex-col">
+          <div className="flex-1 p-4 overflow-auto scrollbar-thin scrollbar-track-slate-800 scrollbar-thumb-slate-600 hover:scrollbar-thumb-slate-500">
+            {showCreateForm ? (
+              /* Create Project Form */
+              <div className="max-w-2xl">
+                <div className="space-y-6">
+                  {/* Project Details */}
                   <div className="bg-slate-900 p-4 rounded border border-slate-700">
                     <h3 className="text-sm font-medium text-white mb-4">Project Details</h3>
                     <div>
@@ -183,39 +185,92 @@ export default function ProjectSplash({ onProjectSelected }) {
                       />
                     </div>
                   </div>
-                </div>
 
-                {/* Templates */}
-                <div className="space-y-4">
+                  {/* Templates */}
                   <div className="bg-slate-900 p-4 rounded border border-slate-700">
                     <h3 className="text-sm font-medium text-white mb-4">Choose Template</h3>
-                    <div className="space-y-2">
-                      {templates.map((template) => (
-                        <button
-                          key={template.id}
-                          onClick={() => setSelectedTemplate(template.id)}
-                          className={`w-full p-3 rounded text-left transition-all border ${
-                            selectedTemplate === template.id
-                              ? 'border-blue-500 bg-blue-500/20 text-white'
-                              : 'border-slate-600 bg-slate-700 hover:bg-slate-600 text-gray-300'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="text-lg">{template.icon}</span>
-                            <div>
-                              <h4 className="text-sm font-medium">{template.name}</h4>
-                              <p className="text-xs text-gray-400">{template.description}</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        {templates.map((template) => (
+                          <button
+                            key={template.id}
+                            onClick={() => setSelectedTemplate(template.id)}
+                            className={`p-4 rounded text-center transition-all border ${
+                              selectedTemplate === template.id
+                                ? 'border-blue-500 bg-blue-500/20 text-white'
+                                : 'border-slate-600 bg-slate-700 hover:bg-slate-600 text-gray-300'
+                            }`}
+                          >
+                            <div className="flex flex-col items-center gap-2">
+                              <span className="text-2xl">{template.icon}</span>
+                              <div>
+                                <h4 className="text-sm font-medium">{template.name}</h4>
+                                <p className="text-xs text-gray-400 mt-1">{template.description}</p>
+                              </div>
                             </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
+                          </button>
+                        ))}
+                      </div>
                   </div>
                 </div>
               </div>
+            ) : (
+              /* Project List */
+              <div>
+                {loading ? (
+                  <div className="flex items-center justify-center py-20">
+                    <div className="flex items-center gap-3 text-gray-400">
+                      <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                      <span className="text-sm">Loading projects...</span>
+                    </div>
+                  </div>
+                ) : projects.length > 0 ? (
+                  <div className="space-y-2">
+                    {projects.map((project) => (
+                      <button
+                        key={project.name}
+                        onClick={() => handleProjectSelect(project.name)}
+                        className="group w-full p-3 bg-slate-900 hover:bg-slate-700 rounded border border-slate-700 hover:border-slate-600 transition-all text-left"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-sm font-semibold text-white">
+                            {project.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-medium text-white truncate">{getProjectDisplayName(project)}</h4>
+                            <div className="flex items-center gap-4 text-xs text-gray-400 mt-1">
+                              <span>Modified: {formatDate(project.lastModified)}</span>
+                              <span>Created: {formatDate(project.created)}</span>
+                            </div>
+                          </div>
+                          <Icons.ChevronRight className="w-4 h-4 text-gray-500 group-hover:text-gray-300 transition-colors" />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <div className="w-16 h-16 bg-slate-700 rounded-full flex items-center justify-center mb-4">
+                      <Icons.Folder className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <h4 className="text-sm font-medium text-white mb-2">No projects found</h4>
+                    <p className="text-xs text-gray-400 mb-6">Create your first project to get started</p>
+                    <button
+                      onClick={() => setShowCreateForm(true)}
+                      className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition-colors mx-auto"
+                    >
+                      <Icons.Plus className="w-4 h-4" />
+                      Create Project
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
-              {/* Actions */}
-              <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-slate-700">
+          {/* Fixed Actions Bar - only show when creating */}
+          {showCreateForm && (
+            <div className="flex-shrink-0 p-4 border-t border-slate-700 bg-slate-800">
+              <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setShowCreateForm(false)}
                   className="px-4 py-2 text-gray-400 hover:text-white text-sm transition-colors"
@@ -241,59 +296,9 @@ export default function ProjectSplash({ onProjectSelected }) {
                 </button>
               </div>
             </div>
-          ) : (
-            /* Project List */
-            <div>
-              {loading ? (
-                <div className="flex items-center justify-center py-20">
-                  <div className="flex items-center gap-3 text-gray-400">
-                    <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                    <span className="text-sm">Loading projects...</span>
-                  </div>
-                </div>
-              ) : projects.length > 0 ? (
-                <div className="space-y-2">
-                  {projects.map((project) => (
-                    <button
-                      key={project.name}
-                      onClick={() => handleProjectSelect(project.name)}
-                      className="group w-full p-3 bg-slate-900 hover:bg-slate-700 rounded border border-slate-700 hover:border-slate-600 transition-all text-left"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-sm font-semibold text-white">
-                          {project.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-medium text-white truncate">{getProjectDisplayName(project)}</h4>
-                          <div className="flex items-center gap-4 text-xs text-gray-400 mt-1">
-                            <span>Modified: {formatDate(project.lastModified)}</span>
-                            <span>Created: {formatDate(project.created)}</span>
-                          </div>
-                        </div>
-                        <Icons.ChevronRight className="w-4 h-4 text-gray-500 group-hover:text-gray-300 transition-colors" />
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-20">
-                  <div className="w-12 h-12 bg-slate-700 rounded flex items-center justify-center mx-auto mb-4">
-                    <Icons.Folder className="w-6 h-6 text-gray-400" />
-                  </div>
-                  <h4 className="text-sm font-medium text-white mb-2">No projects found</h4>
-                  <p className="text-xs text-gray-400 mb-6">Create your first project to get started</p>
-                  <button
-                    onClick={() => setShowCreateForm(true)}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition-colors mx-auto"
-                  >
-                    <Icons.Plus className="w-4 h-4" />
-                    Create Project
-                  </button>
-                </div>
-              )}
-            </div>
           )}
         </div>
+      </div>
       </div>
     </div>
   )

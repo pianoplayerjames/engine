@@ -48,6 +48,17 @@ const defaultUISettings = {
   },
   topLeftMenu: {
     selectedItem: null
+  },
+  workflow: {
+    activeWorkflow: 'modeling',
+    workflowSettings: {
+      modeling: { panels: ['scene', 'properties', 'assets'] },
+      sculpting: { panels: ['scene', 'properties', 'brushes'] },
+      shading: { panels: ['scene', 'shader-editor', 'assets'] },
+      animation: { panels: ['scene', 'timeline', 'dope-sheet'] },
+      rendering: { panels: ['scene', 'render-properties', 'compositor'] },
+      physics: { panels: ['scene', 'physics-properties', 'cache'] }
+    }
   }
 }
 
@@ -70,6 +81,7 @@ export const editorState = proxy({
     toolbarTabOrder: defaultUISettings.toolbar.tabOrder,
     toolbarBottomTabOrder: defaultUISettings.toolbar.bottomTabOrder,
     topLeftMenuSelected: defaultUISettings.topLeftMenu.selectedItem,
+    workflow: defaultUISettings.workflow,
   },
 
   // Camera state (now persisted!)
@@ -77,7 +89,16 @@ export const editorState = proxy({
     position: [0, 0, 5],
     target: [0, 0, 0],
     zoom: 1,
-    fov: 75
+    fov: 75,
+    speed: 5,
+    mouseSensitivity: 0.002
+  },
+
+  // Viewport state
+  viewport: {
+    renderMode: 'solid', // wireframe, solid, material, rendered
+    showGrid: true,
+    gridSnapping: false
   },
   
   // Panel visibility
@@ -392,7 +413,8 @@ export const editorState = proxy({
       snapToGrid: false,
       showGrid: true,
       showWireframe: false,
-      cameraSpeed: 1.0
+      cameraSpeed: 1.0,
+      showStats: false
     }
   },
   
@@ -511,6 +533,12 @@ export const editorActions = {
   setTopLeftMenuSelected: (item) => {
     editorState.ui.topLeftMenuSelected = item
   },
+  // Workflow actions
+  setWorkflowMode: (workflowId) => {
+    editorState.ui.workflow.activeWorkflow = workflowId
+    updateUISetting('workflow.activeWorkflow', workflowId)
+    autoSaveManager.markDirty()
+  },
 
   // Camera actions (now persisted!)
   setCameraPosition: (position) => {
@@ -527,6 +555,27 @@ export const editorActions = {
 
   setCameraFOV: (fov) => {
     editorState.camera.fov = fov
+  },
+
+  setCameraSpeed: (speed) => {
+    editorState.camera.speed = speed
+  },
+
+  setCameraSensitivity: (sensitivity) => {
+    editorState.camera.mouseSensitivity = sensitivity
+  },
+
+  // Viewport actions
+  setRenderMode: (mode) => {
+    editorState.viewport.renderMode = mode
+  },
+
+  setShowGrid: (show) => {
+    editorState.viewport.showGrid = show
+  },
+
+  setGridSnapping: (snap) => {
+    editorState.viewport.gridSnapping = snap
   },
   
   // Console management

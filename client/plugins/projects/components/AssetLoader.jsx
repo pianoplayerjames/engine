@@ -31,7 +31,7 @@ export default function AssetLoader({ isVisible, progress, currentAsset, onCompl
   if (!isVisible && progress === 0) return null
 
   return (
-    <div className={`fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity duration-300 ${
+    <div className={`fixed inset-0 bg-black/15 backdrop-blur-[1px] flex items-center justify-center z-50 transition-opacity duration-300 ${
       isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
     }`}>
       <div className="bg-gray-900/95 border border-gray-700 rounded-lg p-8 max-w-md w-full mx-4 shadow-2xl">

@@ -20,7 +20,7 @@ const RightPanel = ({
       className="absolute right-0 top-0 bottom-0 pointer-events-auto no-select z-20"
       style={{ 
         width: isScenePanelOpen ? rightPanelWidth : 48,
-        height: '100vh',
+        paddingBottom: isAssetPanelOpen ? bottomPanelHeight : 40,
         ...style
       }}
       suppressHydrationWarning

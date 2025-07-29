@@ -58,7 +58,7 @@ function TopLeftMenu() {
 
   return (
     <>
-      <div className="absolute top-4 left-4 pointer-events-auto z-30 no-select">
+      <div className="absolute top-4 left-4 pointer-events-auto z-60 no-select">
         <div className="relative">
           {/* Menu Button - matching your established style */}
           <button

@@ -22,7 +22,7 @@ export default function SplashLoader({ onReady }) {
   if (!show) return null
 
   return (
-    <div className={`fixed inset-0 bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 flex items-center justify-center z-[100] transition-opacity duration-300 ${
+    <div className={`fixed inset-0 bg-gradient-to-br from-gray-900/10 via-blue-900/10 to-purple-900/10 backdrop-blur-[1px] flex items-center justify-center z-[100] transition-opacity duration-300 ${
       fadeOut ? 'opacity-0' : 'opacity-100'
     }`}>
       <div className="text-center">

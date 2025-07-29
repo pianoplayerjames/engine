@@ -15,12 +15,24 @@ export default function InputPlugin() {
 
   useEffect(() => {
     const handleKeyDown = (event) => {
+      // Don't interfere with text inputs, textareas, or contentEditable elements
+      const target = event.target
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true') {
+        return
+      }
+      
       console.log('Key down:', event.code)
       event.preventDefault()
       setKeyDown(event.code)
     }
 
     const handleKeyUp = (event) => {
+      // Don't interfere with text inputs, textareas, or contentEditable elements
+      const target = event.target
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true') {
+        return
+      }
+      
       event.preventDefault()
       setKeyUp(event.code)
     }
