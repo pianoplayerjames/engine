@@ -16,6 +16,23 @@ export default {
       '@': resolve(import.meta.dirname, 'client')
     }
   },
+  worker: {
+    format: 'es',
+    plugins: () => [viteReact()]
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        assetFileNames: (assetInfo) => {
+          // Keep worker files in assets directory
+          if (assetInfo.name && assetInfo.name.includes('Worker')) {
+            return 'assets/[name]-[hash][extname]'
+          }
+          return 'assets/[name]-[hash][extname]'
+        }
+      }
+    }
+  },
   ssr: {
     external: [
       'use-sync-external-store'

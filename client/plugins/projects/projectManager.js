@@ -17,6 +17,11 @@ class ProjectManager {
     this.initialized = false
     this.loadingCallbacks = []
     this.isCurrentlyLoading = false
+    this.eventSource = null
+    this.reconnectAttempts = 0
+    this.maxReconnectAttempts = 5
+    this.reconnectDelay = 1000
+    this.fileChangeCallbacks = []
     
     // Connect AutoSaveManager
     autoSaveManager.setProjectManager(this)
@@ -62,6 +67,93 @@ class ProjectManager {
       this.isCurrentlyLoading = false
       this.emitLoadingProgress(0, '', '')
     }, 300)
+  }
+
+  // WebSocket methods for real-time file watching
+  addFileChangeListener(callback) {
+    this.fileChangeCallbacks.push(callback)
+  }
+
+  removeFileChangeListener(callback) {
+    this.fileChangeCallbacks = this.fileChangeCallbacks.filter(cb => cb !== callback)
+  }
+
+  emitFileChange(changeData) {
+    this.fileChangeCallbacks.forEach(callback => {
+      try {
+        callback(changeData)
+      } catch (error) {
+        console.warn('File change callback error:', error)
+      }
+    })
+  }
+
+  connectEventSource(projectName) {
+    if (this.eventSource) {
+      this.eventSource.close()
+    }
+
+    const sseUrl = `/api/projects/${projectName}/watch`
+    
+    console.log(`Connecting to SSE: ${sseUrl}`)
+    this.eventSource = new EventSource(sseUrl)
+
+    this.eventSource.onopen = () => {
+      console.log(`SSE connected for project: ${projectName}`)
+      this.reconnectAttempts = 0
+    }
+
+    this.eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        console.log(`File change detected:`, data)
+        
+        // Handle different types of file changes
+        switch (data.type) {
+          case 'connected':
+            console.log(`SSE connection confirmed for project: ${data.project}`)
+            break
+          case 'file_added':
+          case 'file_changed':
+          case 'file_deleted':
+          case 'directory_added':
+          case 'directory_deleted':
+          case 'assets_directory_recreated':
+            this.emitFileChange(data)
+            break
+          default:
+            console.log('Unknown SSE message:', data)
+        }
+      } catch (error) {
+        console.error('Error parsing SSE message:', error)
+      }
+    }
+
+    this.eventSource.onerror = (error) => {
+      console.error(`SSE error for project ${projectName}:`, error)
+      
+      // EventSource will automatically reconnect, but we can add our own logic
+      if (this.eventSource.readyState === EventSource.CLOSED) {
+        console.log(`SSE connection closed for project: ${projectName}`)
+        this.eventSource = null
+        
+        // Attempt to reconnect with exponential backoff
+        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+          setTimeout(() => {
+            console.log(`Attempting to reconnect SSE (${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`)
+            this.reconnectAttempts++
+            this.connectEventSource(projectName)
+          }, this.reconnectDelay * Math.pow(2, this.reconnectAttempts))
+        }
+      }
+    }
+  }
+
+  disconnectEventSource() {
+    if (this.eventSource) {
+      this.eventSource.close()
+      this.eventSource = null
+    }
   }
 
   // Extract .ren file to working directory
@@ -117,6 +209,9 @@ class ProjectManager {
       this.currentProjectPath = result.projectPath
       this.currentProjectName = projectName
       this.saveCurrentProjectToStorage()
+      
+      // Connect SSE for real-time updates
+      this.connectEventSource(result.projectPath)
       
       this.updateLoadingProgress(100, 'Project imported successfully')
       console.log(`Project "${projectName}" extracted successfully`)
@@ -229,6 +324,9 @@ class ProjectManager {
       this.currentProjectPath = result.projectPath
       this.currentProjectName = projectName
       this.saveCurrentProjectToStorage()
+      
+      // Connect SSE for real-time updates
+      this.connectEventSource(result.projectPath)
       
       this.updateLoadingProgress(100, 'Project created successfully')
       console.log(`New project "${projectName}" created`)
@@ -470,6 +568,9 @@ class ProjectManager {
       this.currentProjectPath = projectData.projectPath
       this.currentProjectName = projectData.project.name
       this.saveCurrentProjectToStorage()
+      
+      // Connect SSE for real-time updates
+      this.connectEventSource(projectData.projectPath)
       
       this.updateLoadingProgress(100, 'Project loaded successfully')
       console.log(`Project "${projectName}" loaded successfully`)

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
 export const useKeyboardShortcuts = (selectedObject, editorActions) => {
-  const { removeSceneObject, setSelectedEntity, setTransformMode } = editorActions;
+  const { removeSceneObject, setSelectedEntity, setTransformMode, snapObjectToSurface } = editorActions;
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -39,6 +39,13 @@ export const useKeyboardShortcuts = (selectedObject, editorActions) => {
             setTransformMode('scale');
           }
           break;
+        case 'x':
+        case 'X':
+          if (selectedObject && !e.ctrlKey && !e.metaKey) {
+            e.preventDefault(); // Prevent any default browser behavior
+            snapObjectToSurface(selectedObject);
+          }
+          break;
         default:
           break;
       }
@@ -48,5 +55,5 @@ export const useKeyboardShortcuts = (selectedObject, editorActions) => {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedObject, removeSceneObject, setSelectedEntity, setTransformMode]);
+  }, [selectedObject, removeSceneObject, setSelectedEntity, setTransformMode, snapObjectToSurface]);
 };

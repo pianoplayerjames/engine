@@ -1,0 +1,17 @@
+{
+  "base": "/",
+  "root": "/Users/jam/Documents/engine/client",
+  "build": {
+    "assetsDir": "assets",
+    "outDir": "dist/client"
+  },
+  "fastify": {
+    "outDirs": {
+      "client": "dist/client",
+      "ssr": "dist/server"
+    },
+    "entryPaths": {
+      "ssr": "$app/index.js"
+    }
+  }
+}

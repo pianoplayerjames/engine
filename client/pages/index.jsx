@@ -3,6 +3,8 @@
 import React, { useRef, useEffect, useMemo, useCallback } from 'react'
 import { useThree } from '@react-three/fiber'
 import RenderPlugin from '@/plugins/render/index.jsx'
+import ModelObject from '@/components/ModelObject.jsx'
+import { SimpleEdgeOutline } from '@/components/SelectionOutline.jsx'
 import InputPlugin from '@/plugins/input/index.jsx'
 import AudioPlugin from '@/plugins/audio/index.jsx'
 import TimePlugin from '@/plugins/time/index.jsx'
@@ -36,6 +38,119 @@ function SceneObject({ sceneObj }) {
     setTransformMode('move')
   }
   
+  // Handle different object types
+  if (sceneObj.type === 'model' && sceneObj.assetPath) {
+    return (
+      <ModelObject
+        sceneObj={sceneObj}
+        isSelected={isSelected}
+        onClick={handleClick}
+      />
+    )
+  }
+
+  // Handle light objects
+  if (sceneObj.type === 'light') {
+    const getLightComponent = () => {
+      switch (sceneObj.lightType) {
+        case 'directional':
+          return (
+            <directionalLight
+              position={sceneObj.position}
+              rotation={sceneObj.rotation}
+              color={sceneObj.color}
+              intensity={sceneObj.intensity}
+              castShadow={sceneObj.castShadow}
+              shadow-mapSize={sceneObj.shadowMapSize || [1024, 1024]}
+              shadow-camera-far={sceneObj.shadowCameraFar || 50}
+              shadow-camera-left={sceneObj.shadowCameraLeft || -10}
+              shadow-camera-right={sceneObj.shadowCameraRight || 10}
+              shadow-camera-top={sceneObj.shadowCameraTop || 10}
+              shadow-camera-bottom={sceneObj.shadowCameraBottom || -10}
+            />
+          )
+        case 'point':
+          return (
+            <pointLight
+              position={sceneObj.position}
+              color={sceneObj.color}
+              intensity={sceneObj.intensity}
+              distance={sceneObj.distance || 0}
+              decay={sceneObj.decay || 1}
+              castShadow={sceneObj.castShadow}
+              shadow-mapSize={sceneObj.shadowMapSize || [1024, 1024]}
+            />
+          )
+        case 'spot':
+          return (
+            <spotLight
+              position={sceneObj.position}
+              rotation={sceneObj.rotation}
+              color={sceneObj.color}
+              intensity={sceneObj.intensity}
+              distance={sceneObj.distance || 0}
+              angle={sceneObj.angle || Math.PI / 3}
+              penumbra={sceneObj.penumbra || 0}
+              decay={sceneObj.decay || 1}
+              castShadow={sceneObj.castShadow}
+              shadow-mapSize={sceneObj.shadowMapSize || [1024, 1024]}
+            />
+          )
+        default:
+          return null
+      }
+    }
+
+    if (!sceneObj.visible) return null
+
+    return (
+      <group>
+        {getLightComponent()}
+        {/* Light helper visualization when selected */}
+        {isSelected && (
+          <mesh position={sceneObj.position} onClick={handleClick} userData={{ sceneObjectId: sceneObj.id }}>
+            <sphereGeometry args={[0.3]} />
+            <meshBasicMaterial color={sceneObj.color} transparent opacity={0.6} />
+          </mesh>
+        )}
+        {/* Always visible light helper (smaller) */}
+        <mesh position={sceneObj.position} onClick={handleClick} userData={{ sceneObjectId: sceneObj.id }}>
+          <sphereGeometry args={[0.15]} />
+          <meshBasicMaterial color={sceneObj.color} />
+        </mesh>
+      </group>
+    )
+  }
+
+  // Handle camera objects
+  if (sceneObj.type === 'camera') {
+    if (!sceneObj.visible) return null
+
+    return (
+      <group>
+        {/* Camera helper visualization */}
+        <mesh 
+          ref={meshRef}
+          position={sceneObj.position} 
+          rotation={sceneObj.rotation}
+          onClick={handleClick}
+          userData={{ sceneObjectId: sceneObj.id }}
+        >
+          <boxGeometry args={[0.5, 0.3, 0.8]} />
+          <meshStandardMaterial color="#666666" />
+        </mesh>
+        {/* Camera outline when selected */}
+        {isSelected && meshRef.current && (
+          <SimpleEdgeOutline 
+            object={meshRef.current} 
+            isSelected={true} 
+          />
+        )}
+      </group>
+    )
+  }
+  
+  // Handle mesh objects
   const getGeometry = () => {
     switch (sceneObj.geometry) {
       case 'box':
@@ -54,21 +169,30 @@ function SceneObject({ sceneObj }) {
   if (!sceneObj.visible) return null
   
   return (
-    <mesh
-      ref={meshRef}
-      position={sceneObj.position}
-      rotation={sceneObj.rotation}
-      scale={sceneObj.scale}
-      onClick={handleClick}
-      userData={{ sceneObjectId: sceneObj.id }}
-    >
-      {getGeometry()}
-      <meshStandardMaterial 
-        color={isSelected ? '#4FC3F7' : sceneObj.material.color} 
-        emissive={isSelected ? '#1E88E5' : '#000000'}
-        emissiveIntensity={isSelected ? 0.2 : 0}
-      />
-    </mesh>
+    <group>
+      <mesh
+        ref={meshRef}
+        position={sceneObj.position}
+        rotation={sceneObj.rotation}
+        scale={sceneObj.scale}
+        onClick={handleClick}
+        userData={{ sceneObjectId: sceneObj.id }}
+      >
+        {getGeometry()}
+        <meshStandardMaterial 
+          color={sceneObj.material?.color || '#orange'}
+          roughness={sceneObj.material?.roughness || 0.5}
+          metalness={sceneObj.material?.metalness || 0}
+        />
+      </mesh>
+      {/* Render outline when selected */}
+      {isSelected && meshRef.current && (
+        <SimpleEdgeOutline 
+          object={meshRef.current} 
+          isSelected={true} 
+        />
+      )}
+    </group>
   )
 }
 
@@ -108,7 +232,8 @@ export default function Index() {
 
   return (
     <EngineLoader
-      showSplash={false} // Disable splash for fastest loading
+      showSplash={false} // Disable brand splash for fastest loading
+      showProjectSelection={true} // Enable project selection splash
       onLoadComplete={handleLoadComplete}
     >
       <LoadingProvider>
@@ -122,6 +247,9 @@ export default function Index() {
         <ProjectsPlugin />
         
         <RenderPlugin onContextMenu={contextMenuHandler} viewportBounds={viewportBounds}>
+          {/* Immediate ambient light to prevent initial darkness */}
+          <ambientLight intensity={0.4} color="#404040" />
+          
           <SceneRenderer />
           
           <mesh position={[0, -1, 0]} rotation={[-Math.PI / 2, 0, 0]}>

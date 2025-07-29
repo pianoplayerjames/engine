@@ -119,6 +119,64 @@ export const Icons = {
     </svg>
   ),
 
+  CameraScene: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" {...props}>
+      <defs>
+        <linearGradient id="camera-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#8B5CF6" />
+          <stop offset="100%" stopColor="#7C3AED" />
+        </linearGradient>
+      </defs>
+      <rect x="2" y="8" width="20" height="12" rx="2" fill="url(#camera-gradient)" stroke="#6D28D9" strokeWidth="1.2"/>
+      <path d="M7 8L9 5H15L17 8" stroke="#6D28D9" strokeWidth="1.2" fill="url(#camera-gradient)"/>
+      <circle cx="12" cy="14" r="3" stroke="#6D28D9" strokeWidth="1.2" fill="none"/>
+      <circle cx="12" cy="14" r="1.5" fill="#FFFFFF"/>
+      <rect x="18" y="10" width="2" height="1" fill="#FFFFFF" rx="0.5"/>
+    </svg>
+  ),
+
+  LightDirectional: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" {...props}>
+      <defs>
+        <linearGradient id="sun-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FDE047" />
+          <stop offset="100%" stopColor="#FACC15" />
+        </linearGradient>
+      </defs>
+      <circle cx="12" cy="12" r="4" fill="url(#sun-gradient)" stroke="#EAB308" strokeWidth="1.2"/>
+      <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="#EAB308" strokeWidth="1.8" strokeLinecap="round"/>
+    </svg>
+  ),
+
+  LightPoint: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" {...props}>
+      <defs>
+        <radialGradient id="point-gradient">
+          <stop offset="0%" stopColor="#F97316" />
+          <stop offset="100%" stopColor="#EA580C" />
+        </radialGradient>
+      </defs>
+      <circle cx="12" cy="12" r="3" fill="url(#point-gradient)" stroke="#DC2626" strokeWidth="1.2"/>
+      <path d="M12 8v1M12 15v1M8 12h1M15 12h1M9.5 9.5l0.7 0.7M14.8 14.8l0.7 0.7M14.5 9.5l-0.7 0.7M9.2 14.8l-0.7 0.7" stroke="#DC2626" strokeWidth="1.5" strokeLinecap="round"/>
+      <circle cx="12" cy="12" r="6" stroke="#FED7AA" strokeWidth="0.8" opacity="0.5" strokeDasharray="2,2"/>
+    </svg>
+  ),
+
+  LightSpot: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" {...props}>
+      <defs>
+        <linearGradient id="spot-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#06B6D4" />
+          <stop offset="100%" stopColor="#0891B2" />
+        </linearGradient>
+      </defs>
+      <path d="M12 2L8 8H16L12 2Z" fill="url(#spot-gradient)" stroke="#0E7490" strokeWidth="1.2"/>
+      <path d="M8 8L6 14H18L16 8" fill="none" stroke="#0E7490" strokeWidth="1.2" opacity="0.6"/>
+      <path d="M6 14L4 20H20L18 14" fill="none" stroke="#0CABA8" strokeWidth="1" opacity="0.4"/>
+      <circle cx="12" cy="4" r="1" fill="#FFFFFF"/>
+    </svg>
+  ),
+
   Paint: (props) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <path d="M18 3A2.5 2.5 0 0 0 15.5 5.5L7 14L2 22L10 17L18.5 8.5A2.5 2.5 0 0 0 18 3Z" strokeLinejoin="round"/>

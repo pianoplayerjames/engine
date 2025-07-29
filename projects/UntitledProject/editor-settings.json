@@ -1,11 +1,11 @@
 {
   "ui": {
-    "rightPanelWidth": 287,
-    "bottomPanelHeight": 363,
-    "scenePropertiesHeight": 460,
-    "assetsLibraryWidth": 250,
+    "rightPanelWidth": 309,
+    "bottomPanelHeight": 341,
+    "scenePropertiesHeight": 484,
+    "assetsLibraryWidth": 200,
     "rightPropertiesMenuPosition": "right",
-    "selectedTool": "settings",
+    "selectedTool": "scene",
     "selectedBottomTab": "assets",
     "bottomTabOrder": [
       "assets",
@@ -36,7 +36,7 @@
       "settings",
       "fullscreen"
     ],
-    "topLeftMenuSelected": "export-project"
+    "topLeftMenuSelected": null
   },
   "camera": {
     "position": [
@@ -58,10 +58,10 @@
       "size": 100,
       "cellSize": 1,
       "cellThickness": 1,
-      "cellColor": "#4a618c",
-      "sectionSize": 5,
+      "cellColor": "#6B7280",
+      "sectionSize": 10,
       "sectionThickness": 2,
-      "sectionColor": "#34743f",
+      "sectionColor": "#9CA3AF",
       "position": [
         0,
         -0.9,
@@ -72,7 +72,7 @@
       "infiniteGrid": true
     },
     "viewport": {
-      "backgroundColor": "#a3daf0"
+      "backgroundColor": "#1a202c"
     },
     "editor": {
       "gridSize": 1,
@@ -91,5 +91,126 @@
     "isAssetPanelOpen": true,
     "isResizingPanels": false
   },
-  "sceneObjects": []
+  "sceneObjects": [
+    {
+      "id": "model-1753774783075",
+      "name": "Raw steak",
+      "type": "model",
+      "position": [
+        0.4573299322120009,
+        -0.14948056471762977,
+        2.9554415305836628
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        "XYZ"
+      ],
+      "scale": [
+        0.4224004784435493,
+        0.4224004784435493,
+        0.4224004784435493
+      ],
+      "assetPath": "models/Raw steak.glb",
+      "assetId": "models-raw-steak-glb",
+      "visible": true
+    },
+    {
+      "id": "model-1753774789626",
+      "name": "Raw ham",
+      "type": "model",
+      "position": [
+        0.2902753942827019,
+        -0.19938407612997783,
+        3.236004109852701
+      ],
+      "rotation": [
+        -0.004747719666707854,
+        -0.0157986812040285,
+        -0.2919415216592557,
+        "XYZ"
+      ],
+      "scale": [
+        0.4688844710664638,
+        0.4688844710664638,
+        0.4688844710664638
+      ],
+      "assetPath": "models/Raw ham.glb",
+      "assetId": "models-raw-ham-glb",
+      "visible": true
+    },
+    {
+      "id": "model-1753774799024",
+      "name": "Round Table",
+      "type": "model",
+      "position": [
+        0.24130046006687778,
+        -0.6222433939755184,
+        2.976123443029683
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        "XYZ"
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "assetPath": "models/Round Table.glb",
+      "assetId": "models-round-table-glb",
+      "visible": true
+    },
+    {
+      "id": "model-1753775151801",
+      "name": "Animated Woman",
+      "type": "model",
+      "position": [
+        1.3745388147906503,
+        -0.16838568912359198,
+        2.276806258880115
+      ],
+      "rotation": [
+        0,
+        -0.8945764250503051,
+        0,
+        "XYZ"
+      ],
+      "scale": [
+        1.614391570403671,
+        1.614391570403671,
+        1.614391570403671
+      ],
+      "assetPath": "models/Animated Woman.glb",
+      "assetId": "models-animated-woman-glb",
+      "visible": true
+    },
+    {
+      "id": "model-1753790061040",
+      "name": "Bear_1",
+      "type": "model",
+      "position": [
+        2.6624472332407545,
+        1.1488100960782435,
+        -0.3487992365718249
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        "XYZ"
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "assetPath": "models/Bear_1.glb",
+      "assetId": "models-bear-1-glb",
+      "visible": true
+    }
+  ]
 }

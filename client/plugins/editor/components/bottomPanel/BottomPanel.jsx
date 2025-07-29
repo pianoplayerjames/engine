@@ -8,7 +8,7 @@ import TimelinePanel from '@/plugins/editor/components/bottomPanel/TimelinePanel
 import ConsolePanel from '@/plugins/editor/components/bottomPanel/ConsolePanel';
 import MaterialsPanel from '@/plugins/editor/components/bottomPanel/MaterialsPanel';
 import TerrainPanel from '@/plugins/editor/components/bottomPanel/TerrainPanel';
-import LightingPanel from '@/plugins/editor/components/bottomPanel/LightingPanel';
+import LightingPanel from '@/plugins/editor/components/lighting/LightingPanel';
 import PhysicsPanel from '@/plugins/editor/components/bottomPanel/PhysicsPanel';
 import AudioPanel from '@/plugins/editor/components/bottomPanel/AudioPanel';
 import EffectsPanel from '@/plugins/editor/components/bottomPanel/EffectsPanel';

@@ -4,6 +4,7 @@ import { OrbitControls, TransformControls, Grid, Stats, Environment, GizmoHelper
 import { useSnapshot } from 'valtio'
 import { renderState, renderActions } from './store.js'
 import { editorState, editorActions } from '@/plugins/editor/store.js'
+import LightingManager from '@/components/LightingManager.jsx'
 import * as THREE from 'three'
 
 // Component to manage scene background and environment using drei's Environment
@@ -40,6 +41,8 @@ function ViewportCanvas({ children, style = {}, onContextMenu }) {
   const orbitControlsRef = useRef()
   const transformControlsRef = useRef()
   const sceneRef = useRef()
+  const canvasRef = useRef()
+  const [isDragOver, setIsDragOver] = useState(false)
   
   const { camera, lighting, settings, environment } = useSnapshot(renderState)
   const { selection, settings: editorSettings } = useSnapshot(editorState)
@@ -169,6 +172,93 @@ function ViewportCanvas({ children, style = {}, onContextMenu }) {
     }
   }, [viewportSettings.backgroundColor]);
 
+  // Handle asset drops from the asset library
+  const handleDrop = (e) => {
+    console.log('🎯 Drop event triggered on viewport');
+    e.preventDefault()
+    setIsDragOver(false) // Hide drag indicator
+    
+    try {
+      const rawData = e.dataTransfer.getData('application/json');
+      console.log('📦 Raw drop data:', rawData);
+      
+      const assetData = JSON.parse(rawData);
+      console.log('🔍 Parsed asset data:', assetData);
+      console.log('✅ Asset type:', assetData.type, 'Category:', assetData.category);
+      
+      if (assetData.type === 'asset' && assetData.category === '3d-models') {
+        console.log('🎉 Valid 3D model drop detected!');
+        // Get mouse position in viewport coordinates
+        const rect = canvasRef.current?.getBoundingClientRect()
+        if (!rect) return
+        
+        const x = ((e.clientX - rect.left) / rect.width) * 2 - 1
+        const y = -((e.clientY - rect.top) / rect.height) * 2 + 1
+        
+        // Cast ray to find drop position
+        const raycaster = new THREE.Raycaster()
+        const mouse = new THREE.Vector2(x, y)
+        
+        if (orbitControlsRef.current?.object) {
+          raycaster.setFromCamera(mouse, orbitControlsRef.current.object)
+          
+          // Try to intersect with the grid/ground plane
+          const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 1) // Y=1 plane
+          const dropPosition = new THREE.Vector3()
+          raycaster.ray.intersectPlane(groundPlane, dropPosition)
+          
+          // Create a new scene object
+          const newObject = {
+            name: assetData.name || 'Model',
+            type: 'model',
+            position: [dropPosition.x, dropPosition.y, dropPosition.z],
+            rotation: [0, 0, 0],
+            scale: [1, 1, 1],
+            assetPath: assetData.path,
+            assetId: assetData.id,
+            visible: true
+          }
+          
+          // Add to scene
+          const createdObject = editorActions.addSceneObject(newObject)
+          console.log(`🎯 Dropped ${assetData.name} at position:`, dropPosition.toArray())
+          
+          // Select the newly created object
+          editorActions.setSelectedEntity(createdObject.id)
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to handle asset drop:', error)
+    }
+  }
+  
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+    
+    // Check if it's a valid asset being dragged (from asset library)
+    const types = e.dataTransfer.types
+    if (types.includes('application/x-asset-drag')) {
+      setIsDragOver(true)
+    }
+  }
+  
+  const handleDragEnter = (e) => {
+    e.preventDefault()
+    const types = e.dataTransfer.types
+    if (types.includes('application/x-asset-drag')) {
+      setIsDragOver(true)
+    }
+  }
+  
+  const handleDragLeave = (e) => {
+    e.preventDefault()
+    // Only hide if we're leaving the viewport container
+    if (!canvasRef.current?.contains(e.relatedTarget)) {
+      setIsDragOver(false)
+    }
+  }
+
   const handleCreated = ({ scene, gl, camera: threeCamera }) => {
     sceneRef.current = scene
     renderActions.setScene(scene)
@@ -184,6 +274,7 @@ function ViewportCanvas({ children, style = {}, onContextMenu }) {
 
   return (
     <div 
+      ref={canvasRef}
       style={{ 
         width: '100%', 
         height: '100%', 
@@ -191,14 +282,39 @@ function ViewportCanvas({ children, style = {}, onContextMenu }) {
         transition: 'none', // Ensure no CSS transitions interfere with resize
         ...style 
       }}
-      onMouseEnter={() => {
-        // Ensure canvas regains focus when mouse enters viewport
+      onClick={() => {
+        // Ensure canvas regains focus when clicked on viewport
         const canvas = document.querySelector('canvas');
         if (canvas) {
           canvas.focus();
         }
       }}
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
     >
+      {/* Drag overlay indicator */}
+      {isDragOver && (
+        <div 
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            border: '2px dashed rgba(59, 130, 246, 0.5)',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            pointerEvents: 'none',
+            zIndex: 1000
+          }}
+        >
+        </div>
+      )}
       <Canvas
         camera={{
           position: camera.position,
@@ -229,15 +345,8 @@ function ViewportCanvas({ children, style = {}, onContextMenu }) {
         }}
         tabIndex={0}
       >
-        <ambientLight 
-          intensity={lighting.ambient.intensity} 
-          color={lighting.ambient.color} 
-        />
-        <directionalLight 
-          position={[10, 10, 5]} 
-          intensity={1}
-          castShadow={settings.shadows}
-        />
+        {/* Advanced Lighting System */}
+        <LightingManager />
         
         {/* Environment and Background Management */}
         <Suspense fallback={null}>

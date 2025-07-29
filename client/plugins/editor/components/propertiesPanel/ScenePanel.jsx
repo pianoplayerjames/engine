@@ -9,54 +9,7 @@ import { editorState, editorActions } from '@/plugins/editor/store.js';
 import { renderState, renderActions } from '@/plugins/render/store.js';
 import { HDR_ENVIRONMENTS, getHDREnvironment } from '@/plugins/render/environmentLoader.js';
 
-const parentNames = [
-  'Urban Landscape', 'Natural Environment', 'Indoor Setting', 'Sci-Fi Outpost', 'Fantasy Kingdom',
-  'Vehicle Garage', 'Character Assembly', 'Props Collection', 'Lighting Setup', 'Special Effects',
-  'UI Elements', 'Audio Sources', 'Camera Rigs', 'Animation Sequences', 'Particle Systems',
-  'Decal Placement', 'Water Bodies', 'Foliage Group', 'Rock Formations', 'Building Complex'
-];
-
-const childNames = [
-  'Street Level', 'Skyscrapers', 'Residential Area', 'Industrial Zone', 'Park',
-  'Forest', 'Mountains', 'River', 'Cave System', 'Beach',
-  'Living Room', 'Kitchen', 'Bedroom', 'Office', 'Basement',
-  'Corridors', 'Command Center', 'Hangar Bay', 'Living Quarters', 'Laboratory'
-];
-
-const grandchildNames = [
-  'Lamp Post', 'Bench', 'Mailbox', 'Traffic Light', 'Fire Hydrant',
-  'Oak Tree', 'Pine Tree', 'Boulder', 'Shrub', 'Flower Bed',
-  'Sofa', 'Coffee Table', 'Television', 'Bookshelf', 'Dining Table',
-  'Computer Terminal', 'Holographic Display', 'Storage Crate', 'Power Conduit', 'Specimen Tank'
-];
-
-const sceneObjects = [
-  {
-    id: 'world',
-    name: 'World',
-    type: 'terrain',
-    visible: true,
-    children: Array.from({ length: 20 }, (_, i) => ({
-      id: `parent-${i}`,
-      name: parentNames[i % parentNames.length],
-      type: 'model',
-      visible: true,
-      children: Array.from({ length: 10 }, (_, j) => ({
-        id: `child-${i}-${j}`,
-        name: childNames[j % childNames.length],
-        type: 'model',
-        visible: true,
-        children: Array.from({ length: 5 }, (_, k) => ({
-          id: `grandchild-${i}-${j}-${k}`,
-          name: grandchildNames[k % grandchildNames.length],
-          type: 'model',
-          visible: true,
-          children: [],
-        })),
-      })),
-    })),
-  },
-];
+// Mock data removed - now using actual sceneObjects from store
 
 function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selectedTool, onToolSelect, onContextMenu }) {
   const [expandedItems, setExpandedItems] = useState(['scene']);
@@ -188,13 +141,27 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
       name: 'Scene',
       type: 'scene',
       visible: true,
-      children: sceneObjects.map(obj => ({
-        id: obj.id,
-        name: obj.name,
-        type: obj.type,
-        visible: obj.visible,
-        children: []
-      }))
+      children: sceneObjects
+        .filter(obj => !obj.parentId) // Only show top-level objects (including folders)
+        .map(obj => ({
+          id: obj.id,
+          name: obj.name,
+          type: obj.type,
+          lightType: obj.lightType,
+          visible: obj.visible,
+          children: obj.type === 'folder' && obj.children ? 
+            obj.children.map(childId => {
+              const childObj = sceneObjects.find(child => child.id === childId);
+              return childObj ? {
+                id: childObj.id,
+                name: childObj.name,
+                type: childObj.type,
+                lightType: childObj.lightType,
+                visible: childObj.visible,
+                children: []
+              } : null;
+            }).filter(Boolean) : []
+        }))
     }
   ];
   
@@ -427,7 +394,7 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
 
   
 
-  const getIcon = (type) => {
+  const getIcon = (type, lightType) => {
     switch (type) {
       case 'character':
         return <Icons.Character className="w-4 h-4 text-blue-400" />;
@@ -435,6 +402,23 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
         return <Icons.Terrain className="w-4 h-4 text-green-400" />;
       case 'model':
         return <Icons.Cube className="w-4 h-4 text-gray-400" />;
+      case 'mesh':
+        return <Icons.Cube3D className="w-4 h-4 text-blue-400" />;
+      case 'light':
+        switch (lightType) {
+          case 'directional':
+            return <Icons.LightDirectional className="w-4 h-4" />;
+          case 'point':
+            return <Icons.LightPoint className="w-4 h-4" />;
+          case 'spot':
+            return <Icons.LightSpot className="w-4 h-4" />;
+          default:
+            return <Icons.LightBulb className="w-4 h-4 text-yellow-400" />;
+        }
+      case 'camera':
+        return <Icons.CameraScene className="w-4 h-4" />;
+      case 'folder':
+        return <Icons.Folder className="w-4 h-4 text-yellow-500" />;
       default:
         return <Icons.Cube className="w-4 h-4 text-gray-400" />;
     }
@@ -498,7 +482,7 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
             )}
           </button>
           
-          <span className="mr-2">{getIcon(item.type)}</span>
+          <span className="mr-2">{getIcon(item.type, item.lightType)}</span>
           <span className="flex-1 text-gray-200 truncate">{item.name}</span>
           
           <button 
@@ -561,9 +545,12 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
                 <div>
                   <CollapsibleSection title="Transform" defaultOpen={true} index={0}>
                     <div className="space-y-4">
-                      <div className="space-y-2">
-                        <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">Position</label>
-                        <div className="grid grid-cols-3 gap-2">
+                      {/* Only show transform properties for objects that have them */}
+                      {selectedObjectData && (selectedObjectData.type === 'mesh' || selectedObjectData.type === 'light' || selectedObjectData.type === 'camera') && selectedObjectData.position && (
+                        <>
+                          <div className="space-y-2">
+                            <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">Position</label>
+                            <div className="grid grid-cols-3 gap-2">
                           <div className="relative">
                             <input 
                               type="number" 
@@ -631,41 +618,83 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
                           </div>
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">Scale</label>
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="relative">
-                            <input 
-                              type="number" 
-                              step="0.1"
-                              value={selectedObjectData ? selectedObjectData.scale[0].toFixed(2) : '1'} 
-                              onChange={(e) => handlePropertyChange('scale', 'x', e.target.value)}
-                              className="w-full bg-slate-800/80 border border-slate-600 text-white text-xs p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all" 
-                            />
-                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">X</span>
-                          </div>
-                          <div className="relative">
-                            <input 
-                              type="number" 
-                              step="0.1"
-                              value={selectedObjectData ? selectedObjectData.scale[1].toFixed(2) : '1'} 
-                              onChange={(e) => handlePropertyChange('scale', 'y', e.target.value)}
-                              className="w-full bg-slate-800/80 border border-slate-600 text-white text-xs p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all" 
-                            />
-                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">Y</span>
-                          </div>
-                          <div className="relative">
-                            <input 
-                              type="number" 
-                              step="0.1"
-                              value={selectedObjectData ? selectedObjectData.scale[2].toFixed(2) : '1'} 
-                              onChange={(e) => handlePropertyChange('scale', 'z', e.target.value)}
-                              className="w-full bg-slate-800/80 border border-slate-600 text-white text-xs p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all" 
-                            />
-                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">Z</span>
+                          {/* Only show scale for mesh objects */}
+                          {selectedObjectData.type === 'mesh' && selectedObjectData.scale && (
+                            <div className="space-y-2">
+                              <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">Scale</label>
+                              <div className="grid grid-cols-3 gap-2">
+                                <div className="relative">
+                                  <input 
+                                    type="number" 
+                                    step="0.1"
+                                    value={selectedObjectData ? selectedObjectData.scale[0].toFixed(2) : '1'} 
+                                    onChange={(e) => handlePropertyChange('scale', 'x', e.target.value)}
+                                    className="w-full bg-slate-800/80 border border-slate-600 text-white text-xs p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all" 
+                                  />
+                                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">X</span>
+                                </div>
+                                <div className="relative">
+                                  <input 
+                                    type="number" 
+                                    step="0.1"
+                                    value={selectedObjectData ? selectedObjectData.scale[1].toFixed(2) : '1'} 
+                                    onChange={(e) => handlePropertyChange('scale', 'y', e.target.value)}
+                                    className="w-full bg-slate-800/80 border border-slate-600 text-white text-xs p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all" 
+                                  />
+                                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">Y</span>
+                                </div>
+                                <div className="relative">
+                                  <input 
+                                    type="number" 
+                                    step="0.1"
+                                    value={selectedObjectData ? selectedObjectData.scale[2].toFixed(2) : '1'} 
+                                    onChange={(e) => handlePropertyChange('scale', 'z', e.target.value)}
+                                    className="w-full bg-slate-800/80 border border-slate-600 text-white text-xs p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all" 
+                                  />
+                                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">Z</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                      
+                      {/* Show object type info for non-transform objects */}
+                      {selectedObjectData && selectedObjectData.type === 'folder' && (
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">Folder Info</label>
+                          <div className="text-xs text-gray-400">
+                            <p>Type: Folder</p>
+                            <p>Children: {selectedObjectData.children ? selectedObjectData.children.length : 0}</p>
                           </div>
                         </div>
-                      </div>
+                      )}
+                      
+                      {/* Show camera-specific properties */}
+                      {selectedObjectData && selectedObjectData.type === 'camera' && (
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">Camera Info</label>
+                          <div className="text-xs text-gray-400">
+                            <p>Type: {selectedObjectData.cameraType || 'perspective'}</p>
+                            <p>FOV: {selectedObjectData.fov || 60}°</p>
+                            <p>Near: {selectedObjectData.near || 0.1}</p>
+                            <p>Far: {selectedObjectData.far || 1000}</p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Show light-specific properties */}
+                      {selectedObjectData && selectedObjectData.type === 'light' && (
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">Light Info</label>
+                          <div className="text-xs text-gray-400">
+                            <p>Type: {selectedObjectData.lightType}</p>
+                            <p>Color: {selectedObjectData.color}</p>
+                            <p>Intensity: {selectedObjectData.intensity}</p>
+                            <p>Cast Shadow: {selectedObjectData.castShadow ? 'Yes' : 'No'}</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </CollapsibleSection>
                   <CollapsibleSection title="Material" defaultOpen={true} index={1}>
@@ -1217,7 +1246,7 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
         </div>
         {selectedTool === 'scene' && (
           <div className="text-xs text-gray-400 uppercase tracking-wide">
-            SCENE OBJECTS (39)
+            SCENE OBJECTS ({sceneObjects.length})
           </div>
         )}
       </div>

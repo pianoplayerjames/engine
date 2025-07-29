@@ -169,6 +169,11 @@ export const sceneActions = {
     const entities = []
     
     sceneState.entities.forEach((entity, entityId) => {
+      // Ensure components is a Set (handle restoration edge cases)
+      if (!entity.components || typeof entity.components.has !== 'function') {
+        entity.components = new Set(entity.components || [])
+      }
+      
       const hasAllComponents = componentTypes.every(type => 
         entity.components.has(type)
       )
@@ -309,7 +314,13 @@ if (typeof window !== 'undefined') {
   setTimeout(() => {
     autoSaveManager.registerStore('scene', sceneState, {
       extractSaveData: () => ({
-        entities: Array.from(sceneState.entities.entries()),
+        entities: Array.from(sceneState.entities.entries()).map(([id, entity]) => [
+          id,
+          {
+            ...entity,
+            components: Array.from(entity.components) // Convert Set to Array for serialization
+          }
+        ]),
         entityCounter: sceneState.entityCounter,
         sceneRoot: sceneState.sceneRoot,
         selectedEntity: sceneState.selectedEntity,
@@ -322,7 +333,13 @@ if (typeof window !== 'undefined') {
       }),
       restoreData: (data) => {
         if (data.entities) {
-          sceneState.entities = new Map(data.entities)
+          sceneState.entities = new Map(data.entities.map(([id, entity]) => [
+            id,
+            {
+              ...entity,
+              components: new Set(entity.components) // Ensure components is always a Set
+            }
+          ]))
         }
         if (data.entityCounter !== undefined) {
           sceneState.entityCounter = data.entityCounter
