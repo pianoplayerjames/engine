@@ -1,10 +1,22 @@
 {
+  "name": "game-engine",
+  "version": "1.0.0",
+  "description": "A powerful game development engine with 3D editing capabilities",
+  "author": "Your Name <your.email@example.com>",
   "type": "module",
+  "main": "electron/main.js",
   "scripts": {
     "dev": "node server.js --dev",
     "start": "NODE_ENV=production node server.js",
     "build": "NODE_ENV=production vite build",
-    "lint": "oxlint"
+    "lint": "oxlint",
+    "electron": "NODE_ENV=development electron .",
+    "electron:dev": "node electron/dev.js",
+    "electron:pack": "npm run build && NODE_ENV=production electron .",
+    "electron:dist": "npm run build && electron-builder",
+    "electron:dist-mac": "npm run build && electron-builder --mac",
+    "electron:dist-win": "npm run build && electron-builder --win",
+    "electron:dist-linux": "npm run build && electron-builder --linux"
   },
   "dependencies": {
     "@fastify/multipart": "^9.0.3",
@@ -30,10 +42,88 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.2.0",
+    "electron": "^37.2.4",
+    "electron-builder": "^26.0.12",
     "oxlint": "^0.16.6",
     "postcss": "^8.5.3",
     "postcss-preset-env": "^10.1.5",
     "tailwindcss": "^4.1.11",
-    "vite": "^6.2.4"
+    "vite": "^6.2.4",
+    "wait-on": "^8.0.4"
+  },
+  "build": {
+    "appId": "com.yourcompany.engine",
+    "productName": "Game Engine",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "electron/**/*",
+      "server.js",
+      "server/**/*",
+      "client/dist/**/*",
+      "projects/**/*",
+      "package.json",
+      "node_modules/**/*",
+      "!node_modules/**/{README.md,readme.md,CHANGELOG.md,changelog.md}",
+      "!node_modules/**/test/**/*",
+      "!node_modules/**/__tests__/**/*",
+      "!node_modules/**/*.map"
+    ],
+    "extraResources": [
+      {
+        "from": "projects",
+        "to": "projects",
+        "filter": ["**/*"]
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "icon": "assets/icon.icns"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64", "ia32"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64", "ia32"]
+        }
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.png",
+      "category": "Development"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   }
 }

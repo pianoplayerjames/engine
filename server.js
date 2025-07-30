@@ -2,8 +2,11 @@ import Fastify from 'fastify'
 import FastifyVite from '@fastify/vite'
 import projectRoutes from './server/routes/projects.js'
 
+const isElectron = process.env.ELECTRON_MODE === 'true'
+const port = process.env.PORT || 3000
+
 const server = Fastify({
-  logger: {
+  logger: isElectron ? false : {
     transport: {
       target: '@fastify/one-line-logger'
     }
@@ -24,4 +27,17 @@ server.setErrorHandler((error, req, reply) => {
 })
 
 await server.vite.ready()
-await server.listen({ port: 3000 })
+
+// Configure server listening
+const listenOptions = {
+  port: port,
+  host: isElectron ? '127.0.0.1' : '0.0.0.0'
+}
+
+await server.listen(listenOptions)
+
+if (isElectron) {
+  console.log(`🚀 Server running in Electron mode on http://127.0.0.1:${port}`)
+} else {
+  console.log(`🚀 Server running on http://localhost:${port}`)
+}
