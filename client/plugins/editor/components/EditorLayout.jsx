@@ -7,7 +7,6 @@ import RenderPlugin from '@/plugins/render/index.jsx';
 import ModelObject from '@/components/ModelObject.jsx';
 import { SimpleEdgeOutline } from '@/components/SelectionOutline.jsx';
 import CameraControls from '@/plugins/editor/components/camera/CameraControls.jsx';
-import CameraHelpers from '@/plugins/editor/components/camera/CameraHelpers.jsx';
 
 // Layout components
 import { PanelResizer } from '@/plugins/editor/components/layout';
@@ -361,8 +360,6 @@ const EditorLayout = () => {
           </RenderPlugin>
         </div>
         
-        {/* Camera Helper Controls */}
-        <CameraHelpers />
         
         {/* Right Panel Container */}
         <RightPanel

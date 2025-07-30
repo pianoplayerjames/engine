@@ -334,16 +334,101 @@ function AssetLibrary() {
     }));
   }, [assetCategories]);
 
-  // Filter assets by search query
+  // Global search across all assets
+  const [globalSearchResults, setGlobalSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  
+  // Perform global search when search query changes
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setGlobalSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    const performGlobalSearch = async () => {
+      setIsSearching(true);
+      const currentProject = projectManager.getCurrentProject();
+      if (!currentProject.name) {
+        setIsSearching(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/projects/${currentProject.name}/assets/search?q=${encodeURIComponent(searchQuery)}`);
+        if (response.ok) {
+          const data = await response.json();
+          setGlobalSearchResults(data.results || []);
+        } else {
+          // Fallback to client-side search if server search is not available
+          console.warn('Server search not available, falling back to client-side search');
+          setGlobalSearchResults([]);
+        }
+      } catch (error) {
+        console.warn('Search API error, falling back to client-side search:', error);
+        // Fallback: search through cached data
+        performClientSideGlobalSearch();
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    const performClientSideGlobalSearch = () => {
+      const searchResults = [];
+      const searchLower = searchQuery.toLowerCase();
+      
+      // Search through cached assets by path
+      cacheRef.current.assetsByPath.forEach((pathData, path) => {
+        pathData.assets.forEach(asset => {
+          if (asset.name.toLowerCase().includes(searchLower) || 
+              asset.fileName?.toLowerCase().includes(searchLower)) {
+            searchResults.push({
+              ...asset,
+              path: path ? `${path}/${asset.name}` : asset.name
+            });
+          }
+        });
+      });
+      
+      // Search through categories if available
+      if (cacheRef.current.categories) {
+        Object.values(cacheRef.current.categories).forEach(category => {
+          category.files?.forEach(asset => {
+            if (asset.name.toLowerCase().includes(searchLower) || 
+                asset.fileName?.toLowerCase().includes(searchLower)) {
+              // Avoid duplicates
+              if (!searchResults.find(r => r.id === asset.id)) {
+                searchResults.push(asset);
+              }
+            }
+          });
+        });
+      }
+      
+      setGlobalSearchResults(searchResults);
+    };
+
+    // Debounce search to avoid too many requests
+    const searchTimeout = setTimeout(performGlobalSearch, 300);
+    return () => clearTimeout(searchTimeout);
+  }, [searchQuery]);
+
+  // Filter assets by search query - use global results if searching, otherwise current directory
   const filteredAssets = React.useMemo(() => {
     if (!searchQuery) return assets;
     
+    // If we have global search results, use them
+    if (globalSearchResults.length > 0) {
+      return globalSearchResults;
+    }
+    
+    // Fallback to local filtering of current directory
     return assets.filter(asset => {
       const matchesSearch = asset.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                            asset.fileName.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesSearch;
     });
-  }, [assets, searchQuery]);
+  }, [assets, searchQuery, globalSearchResults]);
 
   // Get current category assets when in type view
   useEffect(() => {
@@ -960,39 +1045,47 @@ function AssetLibrary() {
           onMouseDown={handleResizeMouseDown}
         />
         {/* Fixed Header */}
-        <div className="px-2 py-2">
+        <div className="px-2 py-2 border-b border-slate-700">
           <div className="flex items-center justify-between mb-2">
             <div className="text-xs font-medium text-gray-300">Project Assets</div>
-            <div className="flex bg-slate-800 rounded overflow-hidden">
-              <button
-                onClick={() => setViewMode('folder')}
-                className={`px-2 py-1 text-xs transition-colors ${
-                  viewMode === 'folder'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-400 hover:text-white hover:bg-slate-700'
-                }`}
-                title="Folder View"
-              >
-                <Icons.Folder className="w-3 h-3" />
-              </button>
-              <button
-                onClick={() => setViewMode('type')}
-                className={`px-2 py-1 text-xs transition-colors ${
-                  viewMode === 'type'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-400 hover:text-white hover:bg-slate-700'
-                }`}
-                title="Asset Type View"
-              >
-                <Icons.Cube className="w-3 h-3" />
-              </button>
+            <div className="flex items-center gap-2">
+              <div className="flex bg-slate-800 rounded overflow-hidden">
+                <button
+                  onClick={() => setViewMode('folder')}
+                  className={`px-2 py-1 text-xs transition-colors ${
+                    viewMode === 'folder'
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-400 hover:text-white hover:bg-slate-700'
+                  }`}
+                  title="Folder View"
+                >
+                  <Icons.Folder className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={() => setViewMode('type')}
+                  className={`px-2 py-1 text-xs transition-colors ${
+                    viewMode === 'type'
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-400 hover:text-white hover:bg-slate-700'
+                  }`}
+                  title="Asset Type View"
+                >
+                  <Icons.Cube className="w-3 h-3" />
+                </button>
+              </div>
             </div>
           </div>
           <div className="relative">
-            <Icons.MagnifyingGlass className="w-3 h-3 absolute left-2 top-1.5 text-gray-400" />
+            {isSearching ? (
+              <div className="w-3 h-3 absolute left-2 top-1.5 animate-spin">
+                <div className="w-3 h-3 border border-gray-400 border-t-blue-400 rounded-full"></div>
+              </div>
+            ) : (
+              <Icons.MagnifyingGlass className="w-3 h-3 absolute left-2 top-1.5 text-gray-400" />
+            )}
             <input
               type="text"
-              placeholder="Search..."
+              placeholder={`Search all assets...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-6 pr-2 py-1 bg-slate-800 border border-slate-600 rounded text-xs text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
@@ -1052,181 +1145,189 @@ function AssetLibrary() {
       
       {/* Asset Grid - More Compact */}
       <div 
-        className={`flex-1 p-3 overflow-y-auto scrollbar-thin transition-all duration-200 relative ${
+        className={`flex-1 flex flex-col transition-all duration-200 relative ${
           isDragOver ? 'bg-blue-900/30 border-2 border-blue-400 border-dashed' : 'bg-slate-800'
         }`}
-        onDragOver={handleDragOver}
-        onDragEnter={handleDragEnter}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        onContextMenu={handleContextMenu}
       >
-        {/* Breadcrumb Navigation */}
-        {viewMode === 'folder' && breadcrumbs.length > 0 && (
-          <div className="flex items-center mb-3 text-xs">
-            {breadcrumbs.map((crumb, index) => (
-              <React.Fragment key={crumb.path}>
-                <button 
-                  onClick={() => handleBreadcrumbClick(crumb.path)}
-                  className={`px-2 py-1 rounded transition-colors ${
-                    dragOverBreadcrumb === crumb.path
-                      ? 'bg-blue-600/30 border border-blue-400 border-dashed text-blue-200'
-                      : index === breadcrumbs.length - 1 
-                        ? 'text-white font-medium hover:text-blue-400' 
-                        : 'text-gray-400 hover:text-blue-400'
-                  }`}
-                  onDragOver={(e) => {
-                    if (isInternalDrag) {
-                      e.preventDefault();
-                      e.dataTransfer.dropEffect = 'move';
-                      setDragOverBreadcrumb(crumb.path);
-                    }
-                  }}
-                  onDragEnter={(e) => {
-                    if (isInternalDrag) {
-                      e.preventDefault();
-                      setDragOverBreadcrumb(crumb.path);
-                    }
-                  }}
-                  onDragLeave={(e) => {
-                    if (!e.currentTarget.contains(e.relatedTarget)) {
-                      setDragOverBreadcrumb(null);
-                    }
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    if (isInternalDrag) {
-                      setDragOverBreadcrumb(null);
-                      
-                      try {
-                        const dragData = JSON.parse(e.dataTransfer.getData('application/json'));
-                        if (dragData.type === 'asset' && dragData.path !== crumb.path) {
-                          // Don't allow dropping a folder into itself or its children
-                          if (dragData.assetType === 'folder' && crumb.path.startsWith(dragData.path)) {
-                            console.warn('Cannot move folder into itself or its children');
-                            return;
-                          }
-                          handleMoveItem(dragData.path, crumb.path);
+        {/* Fixed Header with controls inline with directory tree */}
+        <div className="bg-slate-800 flex-shrink-0 border-b border-slate-700">
+          {/* Top row with breadcrumb and controls */}
+          <div className="flex items-center justify-between px-3 py-2">
+            {/* Breadcrumb Navigation - Top Left */}
+            <div className="flex items-center text-xs">
+              {viewMode === 'folder' && breadcrumbs.length > 0 ? (
+                breadcrumbs.map((crumb, index) => (
+                  <React.Fragment key={crumb.path}>
+                    <button 
+                      onClick={() => handleBreadcrumbClick(crumb.path)}
+                      className={`px-2 py-1 rounded transition-colors ${
+                        dragOverBreadcrumb === crumb.path
+                          ? 'bg-blue-600/30 border border-blue-400 border-dashed text-blue-200'
+                          : index === breadcrumbs.length - 1 
+                            ? 'text-white font-medium hover:text-blue-400' 
+                            : 'text-gray-400 hover:text-blue-400'
+                      }`}
+                      onDragOver={(e) => {
+                        if (isInternalDrag) {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = 'move';
+                          setDragOverBreadcrumb(crumb.path);
                         }
-                      } catch (error) {
-                        console.error('Error parsing drag data in breadcrumb:', error);
-                      }
-                    }
-                  }}
-                >
-                  {crumb.name}
-                </button>
-                {index < breadcrumbs.length - 1 && (
-                  <Icons.ChevronRight className="w-3 h-3 mx-1 text-gray-600" />
-                )}
-              </React.Fragment>
-            ))}
-          </div>
-        )}
-
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <h3 className="text-sm font-medium text-white">
-              {viewMode === 'folder' 
-                ? (currentPath ? currentPath.split('/').pop() : 'Assets')
-                : (assetCategories && assetCategories[selectedCategory] 
+                      }}
+                      onDragEnter={(e) => {
+                        if (isInternalDrag) {
+                          e.preventDefault();
+                          setDragOverBreadcrumb(crumb.path);
+                        }
+                      }}
+                      onDragLeave={(e) => {
+                        if (!e.currentTarget.contains(e.relatedTarget)) {
+                          setDragOverBreadcrumb(null);
+                        }
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (isInternalDrag) {
+                          setDragOverBreadcrumb(null);
+                          
+                          try {
+                            const dragData = JSON.parse(e.dataTransfer.getData('application/json'));
+                            if (dragData.type === 'asset' && dragData.path !== crumb.path) {
+                              // Don't allow dropping a folder into itself or its children
+                              if (dragData.assetType === 'folder' && crumb.path.startsWith(dragData.path)) {
+                                console.warn('Cannot move folder into itself or its children');
+                                return;
+                              }
+                              handleMoveItem(dragData.path, crumb.path);
+                            }
+                          } catch (error) {
+                            console.error('Error parsing drag data in breadcrumb:', error);
+                          }
+                        }
+                      }}
+                    >
+                      {crumb.name}
+                    </button>
+                    {index < breadcrumbs.length - 1 && (
+                      <Icons.ChevronRight className="w-3 h-3 mx-1 text-gray-600" />
+                    )}
+                  </React.Fragment>
+                ))
+              ) : (
+                // Show category name when in type view mode
+                <span className="text-gray-400 px-2 py-1">
+                  {viewMode === 'type' && assetCategories && assetCategories[selectedCategory] 
                     ? assetCategories[selectedCategory].name 
-                    : 'Assets')
-              }
-            </h3>
-            {filteredAssets.length > 0 && showLoadingBar && (
-              /* Loading progress bar */
-              <div className="flex items-center gap-2 transition-all duration-1000 opacity-100">
-                <div className="w-20 h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-green-500 transition-all duration-300 rounded-full"
-                    style={{ 
-                      width: `${(filteredAssets.filter(asset => loadedAssets.has(asset.id)).length / filteredAssets.length) * 100}%` 
-                    }}
-                  />
-                </div>
-                <span className="text-xs text-gray-400">
-                  {filteredAssets.filter(asset => loadedAssets.has(asset.id)).length}/{filteredAssets.length}
+                    : 'Assets'
+                  }
                 </span>
-              </div>
-            )}
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-400">{filteredAssets.length} items</span>
-            
-            {/* Grid/List Toggle */}
-            <div className="flex bg-slate-700 rounded overflow-hidden">
-              <button
-                onClick={() => setLayoutMode('grid')}
-                className={`px-2 py-1 text-xs transition-colors ${
-                  layoutMode === 'grid'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-400 hover:text-white hover:bg-slate-600'
-                }`}
-                title="Grid View"
-              >
-                <Icons.Square2Stack className="w-3 h-3" />
-              </button>
-              <button
-                onClick={() => setLayoutMode('list')}
-                className={`px-2 py-1 text-xs transition-colors ${
-                  layoutMode === 'list'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-400 hover:text-white hover:bg-slate-600'
-                }`}
-                title="List View"
-              >
-                <Icons.MenuBars className="w-3 h-3" />
-              </button>
+              )}
             </div>
             
-            {/* Asset sync status indicator - appears on the right */}
-            {filteredAssets.length > 0 && (
-              <>
-                {showLoadingBar ? (
-                  /* Loading state */
-                  <div className="flex items-center gap-1.5 text-blue-400/80 bg-blue-400/10 px-2 py-1 rounded-md border border-blue-400/20">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-spin" />
-                    <span className="text-xs font-medium">Loading...</span>
+            {/* Controls - Top Right */}
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-gray-400">{filteredAssets.length} items</span>
+              
+              {filteredAssets.length > 0 && showLoadingBar && (
+                /* Loading progress bar */
+                <div className="flex items-center gap-2 transition-all duration-1000 opacity-100">
+                  <div className="w-20 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-green-500 transition-all duration-300 rounded-full"
+                      style={{ 
+                        width: `${(filteredAssets.filter(asset => loadedAssets.has(asset.id)).length / filteredAssets.length) * 100}%` 
+                      }}
+                    />
                   </div>
-                ) : (() => {
-                  const fileAssets = filteredAssets.filter(asset => asset.type === 'file');
-                  const loadedFiles = fileAssets.filter(asset => loadedAssets.has(asset.id));
-                  return loadedFiles.length === fileAssets.length;
-                })() ? (
-                  /* All loaded state */
-                  <div className="flex items-center gap-1.5 text-green-400/80">
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                    <span className="text-xs font-medium">Synced</span>
-                  </div>
-                ) : (() => {
-                  /* Partial loading state - only count files that need loading */
-                  const fileAssets = filteredAssets.filter(asset => asset.type === 'file');
-                  const loadedFiles = fileAssets.filter(asset => loadedAssets.has(asset.id));
-                  
-                  if (fileAssets.length === 0) {
-                    // No files to load (only folders)
+                  <span className="text-xs text-gray-400">
+                    {filteredAssets.filter(asset => loadedAssets.has(asset.id)).length}/{filteredAssets.length}
+                  </span>
+                </div>
+              )}
+              
+              {/* Grid/List Toggle */}
+              <div className="flex bg-slate-700 rounded overflow-hidden">
+                <button
+                  onClick={() => setLayoutMode('grid')}
+                  className={`px-2 py-1 text-xs transition-colors ${
+                    layoutMode === 'grid'
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-400 hover:text-white hover:bg-slate-600'
+                  }`}
+                  title="Grid View"
+                >
+                  <Icons.Square2Stack className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={() => setLayoutMode('list')}
+                  className={`px-2 py-1 text-xs transition-colors ${
+                    layoutMode === 'list'
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-400 hover:text-white hover:bg-slate-600'
+                  }`}
+                  title="List View"
+                >
+                  <Icons.MenuBars className="w-3 h-3" />
+                </button>
+              </div>
+              
+              {/* Asset sync status indicator */}
+              {filteredAssets.length > 0 && (
+                <>
+                  {showLoadingBar ? (
+                    /* Loading state */
+                    <div className="flex items-center gap-1.5 text-blue-400/80 bg-blue-400/10 px-2 py-1 rounded-md border border-blue-400/20">
+                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-spin" />
+                      <span className="text-xs font-medium">Loading...</span>
+                    </div>
+                  ) : (() => {
+                    const fileAssets = filteredAssets.filter(asset => asset.type === 'file');
+                    const loadedFiles = fileAssets.filter(asset => loadedAssets.has(asset.id));
+                    return loadedFiles.length === fileAssets.length;
+                  })() ? (
+                    /* All loaded state */
+                    <div className="flex items-center gap-1.5 text-green-400/80">
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                      <span className="text-xs font-medium">Synced</span>
+                    </div>
+                  ) : (() => {
+                    /* Partial loading state */
+                    const fileAssets = filteredAssets.filter(asset => asset.type === 'file');
+                    const loadedFiles = fileAssets.filter(asset => loadedAssets.has(asset.id));
+                    
+                    if (fileAssets.length === 0) {
+                      return (
+                        <div className="flex items-center gap-1.5 text-green-400/80">
+                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                          <span className="text-xs font-medium">Synced</span>
+                        </div>
+                      );
+                    }
+                    
+                    const percentage = Math.round((loadedFiles.length / fileAssets.length) * 100);
                     return (
-                      <div className="flex items-center gap-1.5 text-green-400/80">
-                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                        <span className="text-xs font-medium">Synced</span>
+                      <div className="flex items-center gap-1.5 text-orange-400/80">
+                        <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse" />
+                        <span className="text-xs font-medium">{percentage}%</span>
                       </div>
                     );
-                  }
-                  
-                  const percentage = Math.round((loadedFiles.length / fileAssets.length) * 100);
-                  return (
-                    <div className="flex items-center gap-1.5 text-orange-400/80">
-                      <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse" />
-                      <span className="text-xs font-medium">{percentage}%</span>
-                    </div>
-                  );
-                })()}
-              </>
-            )}
+                  })()}
+                </>
+              )}
+            </div>
           </div>
         </div>
+        
+        {/* Scrollable Content area */}
+        <div 
+          className="flex-1 p-3 overflow-y-auto scrollbar-thin"
+          onDragOver={handleDragOver}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onContextMenu={handleContextMenu}
+        >
+
         
         {loading && (
           <div className="text-center text-gray-400 mt-12">
@@ -1886,6 +1987,7 @@ function AssetLibrary() {
             onClose={() => setContextMenu(null)}
           />
         )}
+        </div>
       </div>
     </div>
   );

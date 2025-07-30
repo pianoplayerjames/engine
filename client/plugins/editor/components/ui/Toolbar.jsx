@@ -23,7 +23,7 @@ const defaultBottomTools = [
 function Toolbar({ selectedTool, onToolSelect, scenePanelOpen, onScenePanelToggle }) {
   const { ui } = useSnapshot(editorState);
   const { toolbarTabOrder, toolbarBottomTabOrder } = ui;
-  const { setToolbarTabOrder, setToolbarBottomTabOrder, hydrateFromLocalStorage } = editorActions;
+  const { setToolbarTabOrder, setToolbarBottomTabOrder } = editorActions;
   
   // Create ordered tools based on stored order
   const getOrderedTools = () => {
