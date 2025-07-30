@@ -14,6 +14,15 @@ function HorizontalToolbar() {
   const { transformMode } = selection;
   const { setSelectedTool, setTransformMode, setCameraSpeed, setCameraSensitivity, setRenderMode, setGridSnapping, setShowGrid } = editorActions;
   
+  // Get current active viewport type for workflow filtering
+  const getCurrentWorkflow = () => {
+    if (!viewport.tabs || viewport.tabs.length === 0) {
+      return '3d-viewport';
+    }
+    const activeTabData = viewport.tabs.find(tab => tab.id === viewport.activeTabId);
+    return activeTabData?.type || '3d-viewport';
+  };
+  
   // Camera settings
   const cameraSpeed = camera.speed || 5;
   const mouseSensitivity = camera.mouseSensitivity || 0.002;
@@ -52,35 +61,209 @@ function HorizontalToolbar() {
     };
   }, [isCameraExpanded]);
 
-  // All tools in one flat array - no categories
-  const tools = [
-    // Project tools
-    { id: 'new', icon: Icons.Plus, tooltip: 'New Project', shortcut: 'Ctrl+N' },
-    { id: 'open', icon: Icons.Folder, tooltip: 'Open Project', shortcut: 'Ctrl+O' },
-    { id: 'save', icon: Icons.Save, tooltip: 'Save Project', shortcut: 'Ctrl+S' },
+  // Workflow-specific tool sets
+  const workflowTools = {
+    '3d-viewport': [
+      // Project tools
+      { id: 'new', icon: Icons.Plus, tooltip: 'New Project', shortcut: 'Ctrl+N' },
+      { id: 'open', icon: Icons.Folder, tooltip: 'Open Project', shortcut: 'Ctrl+O' },
+      { id: 'save', icon: Icons.Save, tooltip: 'Save Project', shortcut: 'Ctrl+S' },
+      
+      // Transform tools
+      { id: 'select', icon: Icons.MousePointer, tooltip: 'Select', shortcut: 'V' },
+      { id: 'move', icon: Icons.Move, tooltip: 'Move', shortcut: 'G' },
+      { id: 'rotate', icon: Icons.RotateCcw, tooltip: 'Rotate', shortcut: 'R' },
+      { id: 'scale', icon: Icons.Maximize, tooltip: 'Scale', shortcut: 'S' },
+      
+      // Create tools
+      { id: 'cube', icon: Icons.Square, tooltip: 'Add Cube' },
+      { id: 'sphere', icon: Icons.Circle, tooltip: 'Add Sphere' },
+      { id: 'cylinder', icon: Icons.Cylinder, tooltip: 'Add Cylinder' },
+      { id: 'light', icon: Icons.Sun, tooltip: 'Add Light' },
+      { id: 'camera', icon: Icons.Camera, tooltip: 'Add Camera' },
+      
+      // Edit tools
+      { id: 'duplicate', icon: Icons.Copy, tooltip: 'Duplicate', shortcut: 'Ctrl+D' },
+      { id: 'delete', icon: Icons.Trash, tooltip: 'Delete', shortcut: 'Del' },
+      { id: 'undo', icon: Icons.Undo, tooltip: 'Undo', shortcut: 'Ctrl+Z' },
+      { id: 'redo', icon: Icons.Redo, tooltip: 'Redo', shortcut: 'Ctrl+Y' },
+      
+      // Paint/sculpt tools
+      { id: 'paint', icon: Icons.Paintbrush2, tooltip: 'Paint' },
+    ],
     
-    // Transform tools
-    { id: 'select', icon: Icons.MousePointer, tooltip: 'Select', shortcut: 'V' },
-    { id: 'move', icon: Icons.Move, tooltip: 'Move', shortcut: 'G' },
-    { id: 'rotate', icon: Icons.RotateCcw, tooltip: 'Rotate', shortcut: 'R' },
-    { id: 'scale', icon: Icons.Maximize, tooltip: 'Scale', shortcut: 'S' },
+    'daw-editor': [
+      // Project tools
+      { id: 'new', icon: Icons.Plus, tooltip: 'New Project', shortcut: 'Ctrl+N' },
+      { id: 'open', icon: Icons.Folder, tooltip: 'Open Project', shortcut: 'Ctrl+O' },
+      { id: 'save', icon: Icons.Save, tooltip: 'Save Project', shortcut: 'Ctrl+S' },
+      
+      // Transport controls
+      { id: 'play', icon: Icons.Play, tooltip: 'Play', shortcut: 'Space' },
+      { id: 'pause', icon: Icons.Pause, tooltip: 'Pause', shortcut: 'Space' },
+      { id: 'stop', icon: Icons.Square, tooltip: 'Stop', shortcut: 'Esc' },
+      { id: 'record', icon: Icons.Circle, tooltip: 'Record', shortcut: 'R' },
+      
+      // Track tools
+      { id: 'add-track', icon: Icons.Plus, tooltip: 'Add Track' },
+      { id: 'add-audio-track', icon: Icons.Audio, tooltip: 'Add Audio Track' },
+      { id: 'add-midi-track', icon: Icons.Music, tooltip: 'Add MIDI Track' },
+      { id: 'add-instrument', icon: Icons.Piano, tooltip: 'Add Instrument' },
+      
+      // Edit tools
+      { id: 'cut', icon: Icons.Scissors, tooltip: 'Cut', shortcut: 'Ctrl+X' },
+      { id: 'copy', icon: Icons.Copy, tooltip: 'Copy', shortcut: 'Ctrl+C' },
+      { id: 'paste', icon: Icons.Clipboard, tooltip: 'Paste', shortcut: 'Ctrl+V' },
+      { id: 'undo', icon: Icons.Undo, tooltip: 'Undo', shortcut: 'Ctrl+Z' },
+      { id: 'redo', icon: Icons.Redo, tooltip: 'Redo', shortcut: 'Ctrl+Y' },
+      
+      // Audio tools
+      { id: 'metronome', icon: Icons.Clock, tooltip: 'Metronome' },
+      { id: 'loop', icon: Icons.Repeat, tooltip: 'Loop' },
+    ],
     
-    // Create tools
-    { id: 'cube', icon: Icons.Square, tooltip: 'Add Cube' },
-    { id: 'sphere', icon: Icons.Circle, tooltip: 'Add Sphere' },
-    { id: 'cylinder', icon: Icons.Cylinder, tooltip: 'Add Cylinder' },
-    { id: 'light', icon: Icons.Sun, tooltip: 'Add Light' },
-    { id: 'camera', icon: Icons.Camera, tooltip: 'Add Camera' },
+    'material-editor': [
+      // Project tools
+      { id: 'new', icon: Icons.Plus, tooltip: 'New Project', shortcut: 'Ctrl+N' },
+      { id: 'open', icon: Icons.Folder, tooltip: 'Open Project', shortcut: 'Ctrl+O' },
+      { id: 'save', icon: Icons.Save, tooltip: 'Save Project', shortcut: 'Ctrl+S' },
+      
+      // Material tools
+      { id: 'new-material', icon: Icons.Palette, tooltip: 'New Material' },
+      { id: 'duplicate', icon: Icons.Copy, tooltip: 'Duplicate Material' },
+      { id: 'apply', icon: Icons.Check, tooltip: 'Apply Material' },
+      
+      // Edit tools
+      { id: 'undo', icon: Icons.Undo, tooltip: 'Undo', shortcut: 'Ctrl+Z' },
+      { id: 'redo', icon: Icons.Redo, tooltip: 'Redo', shortcut: 'Ctrl+Y' },
+    ],
     
-    // Edit tools
-    { id: 'duplicate', icon: Icons.Copy, tooltip: 'Duplicate', shortcut: 'Ctrl+D' },
-    { id: 'delete', icon: Icons.Trash, tooltip: 'Delete', shortcut: 'Del' },
-    { id: 'undo', icon: Icons.Undo, tooltip: 'Undo', shortcut: 'Ctrl+Z' },
-    { id: 'redo', icon: Icons.Redo, tooltip: 'Redo', shortcut: 'Ctrl+Y' },
+    'node-editor': [
+      // Project tools
+      { id: 'new', icon: Icons.Plus, tooltip: 'New Project', shortcut: 'Ctrl+N' },
+      { id: 'open', icon: Icons.Folder, tooltip: 'Open Project', shortcut: 'Ctrl+O' },
+      { id: 'save', icon: Icons.Save, tooltip: 'Save Project', shortcut: 'Ctrl+S' },
+      
+      // Node tools
+      { id: 'add-node', icon: Icons.Plus, tooltip: 'Add Node' },
+      { id: 'delete-node', icon: Icons.Trash, tooltip: 'Delete Node' },
+      { id: 'duplicate', icon: Icons.Copy, tooltip: 'Duplicate', shortcut: 'Ctrl+D' },
+      
+      // Edit tools
+      { id: 'undo', icon: Icons.Undo, tooltip: 'Undo', shortcut: 'Ctrl+Z' },
+      { id: 'redo', icon: Icons.Redo, tooltip: 'Redo', shortcut: 'Ctrl+Y' },
+    ],
     
-    // Paint/sculpt tools
-    { id: 'paint', icon: Icons.Paintbrush2, tooltip: 'Paint' },
-  ];
+    'animation-editor': [
+      // Project tools
+      { id: 'new', icon: Icons.Plus, tooltip: 'New Project', shortcut: 'Ctrl+N' },
+      { id: 'open', icon: Icons.Folder, tooltip: 'Open Project', shortcut: 'Ctrl+O' },
+      { id: 'save', icon: Icons.Save, tooltip: 'Save Project', shortcut: 'Ctrl+S' },
+      
+      // Animation tools
+      { id: 'play', icon: Icons.Play, tooltip: 'Play Animation', shortcut: 'Space' },
+      { id: 'pause', icon: Icons.Pause, tooltip: 'Pause Animation', shortcut: 'Space' },
+      { id: 'keyframe', icon: Icons.Key, tooltip: 'Add Keyframe', shortcut: 'I' },
+      
+      // Edit tools
+      { id: 'undo', icon: Icons.Undo, tooltip: 'Undo', shortcut: 'Ctrl+Z' },
+      { id: 'redo', icon: Icons.Redo, tooltip: 'Redo', shortcut: 'Ctrl+Y' },
+    ],
+    
+    'text-editor': [
+      // Project tools
+      { id: 'new', icon: Icons.Plus, tooltip: 'New File', shortcut: 'Ctrl+N' },
+      { id: 'open', icon: Icons.Folder, tooltip: 'Open File', shortcut: 'Ctrl+O' },
+      { id: 'save', icon: Icons.Save, tooltip: 'Save File', shortcut: 'Ctrl+S' },
+      
+      // Text tools
+      { id: 'find', icon: Icons.Search, tooltip: 'Find', shortcut: 'Ctrl+F' },
+      { id: 'replace', icon: Icons.Replace, tooltip: 'Replace', shortcut: 'Ctrl+H' },
+      
+      // Edit tools
+      { id: 'undo', icon: Icons.Undo, tooltip: 'Undo', shortcut: 'Ctrl+Z' },
+      { id: 'redo', icon: Icons.Redo, tooltip: 'Redo', shortcut: 'Ctrl+Y' },
+    ],
+    
+    'video-editor': [
+      // Project tools
+      { id: 'new', icon: Icons.Plus, tooltip: 'New Project', shortcut: 'Ctrl+N' },
+      { id: 'open', icon: Icons.Folder, tooltip: 'Open Project', shortcut: 'Ctrl+O' },
+      { id: 'save', icon: Icons.Save, tooltip: 'Save Project', shortcut: 'Ctrl+S' },
+      
+      // Transport controls
+      { id: 'play', icon: Icons.Play, tooltip: 'Play', shortcut: 'Space' },
+      { id: 'pause', icon: Icons.Pause, tooltip: 'Pause', shortcut: 'Space' },
+      { id: 'stop', icon: Icons.Square, tooltip: 'Stop', shortcut: 'Esc' },
+      { id: 'record', icon: Icons.Circle, tooltip: 'Record', shortcut: 'R' },
+      
+      // Edit tools
+      { id: 'cut', icon: Icons.Cut, tooltip: 'Cut/Razr Tool', shortcut: 'C' },
+      { id: 'trim', icon: Icons.Trim, tooltip: 'Trim Tool', shortcut: 'T' },
+      { id: 'speed', icon: Icons.Speed, tooltip: 'Speed Tool', shortcut: 'S' },
+      { id: 'select', icon: Icons.CursorArrowRays, tooltip: 'Selection Tool', shortcut: 'V' },
+      
+      // Media tools
+      { id: 'import', icon: Icons.Archive, tooltip: 'Import Media', shortcut: 'Ctrl+I' },
+      { id: 'render', icon: Icons.Film, tooltip: 'Render Video', shortcut: 'Ctrl+R' },
+      
+      // Edit actions
+      { id: 'undo', icon: Icons.Undo, tooltip: 'Undo', shortcut: 'Ctrl+Z' },
+      { id: 'redo', icon: Icons.Redo, tooltip: 'Redo', shortcut: 'Ctrl+Y' },
+    ],
+    
+    'photo-editor': [
+      // Project tools
+      { id: 'new', icon: Icons.Plus, tooltip: 'New Image', shortcut: 'Ctrl+N' },
+      { id: 'open', icon: Icons.Folder, tooltip: 'Open Image', shortcut: 'Ctrl+O' },
+      { id: 'save', icon: Icons.Save, tooltip: 'Save Image', shortcut: 'Ctrl+S' },
+      
+      // Selection tools
+      { id: 'move', icon: Icons.HandRaised, tooltip: 'Move Tool', shortcut: 'V' },
+      { id: 'select-rectangle', icon: Icons.Rectangle, tooltip: 'Rectangular Marquee Tool', shortcut: 'M' },
+      { id: 'select-ellipse', icon: Icons.Circle, tooltip: 'Elliptical Marquee Tool', shortcut: 'M' },
+      { id: 'lasso', icon: Icons.Lasso, tooltip: 'Lasso Tool', shortcut: 'L' },
+      { id: 'magic-wand', icon: Icons.Sparkles, tooltip: 'Magic Wand Tool', shortcut: 'W' },
+      
+      // Transform tools
+      { id: 'crop', icon: Icons.Crop, tooltip: 'Crop Tool', shortcut: 'C' },
+      { id: 'eyedropper', icon: Icons.EyeDropper, tooltip: 'Eyedropper Tool', shortcut: 'I' },
+      
+      // Paint tools
+      { id: 'brush', icon: Icons.PaintBrush, tooltip: 'Brush Tool', shortcut: 'B' },
+      { id: 'pencil', icon: Icons.Pencil, tooltip: 'Pencil Tool', shortcut: 'B' },
+      { id: 'eraser', icon: Icons.Eraser, tooltip: 'Eraser Tool', shortcut: 'E' },
+      { id: 'gradient', icon: Icons.Gradient, tooltip: 'Gradient Tool', shortcut: 'G' },
+      { id: 'paint-bucket', icon: Icons.PaintBucket, tooltip: 'Paint Bucket Tool', shortcut: 'G' },
+      
+      // Retouch tools
+      { id: 'healing', icon: Icons.Healing, tooltip: 'Healing Brush Tool', shortcut: 'J' },
+      { id: 'clone', icon: Icons.Clone, tooltip: 'Clone Stamp Tool', shortcut: 'S' },
+      { id: 'blur', icon: Icons.Blur, tooltip: 'Blur Tool', shortcut: 'R' },
+      { id: 'sharpen', icon: Icons.Sharpen, tooltip: 'Sharpen Tool', shortcut: 'R' },
+      { id: 'smudge', icon: Icons.Smudge, tooltip: 'Smudge Tool', shortcut: 'R' },
+      { id: 'dodge', icon: Icons.Dodge, tooltip: 'Dodge Tool', shortcut: 'O' },
+      { id: 'burn', icon: Icons.Burn, tooltip: 'Burn Tool', shortcut: 'O' },
+      { id: 'sponge', icon: Icons.Sponge, tooltip: 'Sponge Tool', shortcut: 'O' },
+      
+      // Creative tools
+      { id: 'text', icon: Icons.Type, tooltip: 'Type Tool', shortcut: 'T' },
+      { id: 'path', icon: Icons.BezierCurve, tooltip: 'Pen Tool', shortcut: 'P' },
+      { id: 'shape', icon: Icons.Shapes, tooltip: 'Shape Tool', shortcut: 'U' },
+      
+      // Navigation tools
+      { id: 'zoom', icon: Icons.MagnifyingGlass, tooltip: 'Zoom Tool', shortcut: 'Z' },
+      { id: 'hand', icon: Icons.Hand, tooltip: 'Hand Tool', shortcut: 'H' },
+      
+      // Edit actions
+      { id: 'undo', icon: Icons.Undo, tooltip: 'Undo', shortcut: 'Ctrl+Z' },
+      { id: 'redo', icon: Icons.Redo, tooltip: 'Redo', shortcut: 'Ctrl+Y' },
+    ]
+  };
+  
+  // Get tools for current workflow
+  const currentWorkflow = getCurrentWorkflow();
+  const tools = workflowTools[currentWorkflow] || workflowTools['3d-viewport'];
 
   // Get effective selected tool (matches the old logic)
   const getEffectiveSelectedTool = () => {
@@ -144,8 +327,66 @@ function HorizontalToolbar() {
       });
       editorActions.addConsoleMessage('Created camera', 'success');
     }
+    // Handle DAW transport controls
+    else if (['play', 'pause', 'stop', 'record'].includes(toolId)) {
+      setFlashingTool(toolId);
+      setTimeout(() => setFlashingTool(null), 300);
+      editorActions.addConsoleMessage(`Transport: ${toolId}`, 'info');
+    }
+    // Handle DAW track tools
+    else if (['add-track', 'add-audio-track', 'add-midi-track', 'add-instrument'].includes(toolId)) {
+      editorActions.addConsoleMessage(`Added ${toolId.replace('add-', '').replace('-', ' ')}`, 'success');
+    }
+    // Handle DAW audio tools
+    else if (['metronome', 'loop'].includes(toolId)) {
+      setFlashingTool(toolId);
+      setTimeout(() => setFlashingTool(null), 200);
+      editorActions.addConsoleMessage(`${toolId} toggled`, 'info');
+    }
+    // Handle text editor tools
+    else if (['find', 'replace'].includes(toolId)) {
+      editorActions.addConsoleMessage(`${toolId} dialog opened`, 'info');
+    }
+    // Handle video editor tools
+    else if (['cut', 'trim', 'speed', 'select'].includes(toolId)) {
+      setSelectedTool(toolId);
+      editorActions.addConsoleMessage(`Video tool: ${toolId}`, 'info');
+    }
+    else if (['import', 'render'].includes(toolId)) {
+      setFlashingTool(toolId);
+      setTimeout(() => setFlashingTool(null), 300);
+      editorActions.addConsoleMessage(`${toolId === 'import' ? 'Import media' : 'Render video'} triggered`, 'info');
+    }
+    // Handle material editor tools
+    else if (['new-material', 'apply'].includes(toolId)) {
+      editorActions.addConsoleMessage(`Material tool: ${toolId}`, 'info');
+    }
+    // Handle node editor tools
+    else if (['add-node', 'delete-node'].includes(toolId)) {
+      editorActions.addConsoleMessage(`Node tool: ${toolId}`, 'info');
+    }
+    // Handle animation tools
+    else if (['keyframe'].includes(toolId)) {
+      editorActions.addConsoleMessage('Keyframe added', 'success');
+    }
+    // Handle photo editor tools
+    else if ([
+      'move', 'select-rectangle', 'select-ellipse', 'lasso', 'magic-wand', 'crop', 'eyedropper',
+      'healing', 'brush', 'pencil', 'clone', 'eraser', 'gradient', 'paint-bucket',
+      'blur', 'sharpen', 'smudge', 'dodge', 'burn', 'sponge', 'text', 'path', 'shape', 'zoom', 'hand'
+    ].includes(toolId)) {
+      setSelectedTool(toolId);
+      editorActions.setPhotoEditorTool(toolId);
+      editorActions.addConsoleMessage(`Photo tool: ${toolId}`, 'info');
+    }
     // Handle action tools (undo/redo)
     else if (['undo', 'redo'].includes(toolId)) {
+      setFlashingTool(toolId);
+      setTimeout(() => setFlashingTool(null), 200);
+      editorActions.addConsoleMessage(`${toolId} action triggered`, 'info');
+    }
+    // Handle edit tools (cut/copy/paste)
+    else if (['cut', 'copy', 'paste'].includes(toolId)) {
       setFlashingTool(toolId);
       setTimeout(() => setFlashingTool(null), 200);
       editorActions.addConsoleMessage(`${toolId} action triggered`, 'info');
@@ -166,12 +407,52 @@ function HorizontalToolbar() {
             const effectiveSelectedTool = getEffectiveSelectedTool();
             const isActive = (effectiveSelectedTool === tool.id && !['undo', 'redo', 'new', 'open', 'save'].includes(tool.id)) || flashingTool === tool.id;
             
-            // Add dividers after certain tool groups
-            const showDivider = 
-              (index === 2) || // After save (project tools)
-              (index === 6) || // After scale (transform tools)  
-              (index === 12) || // After camera (create tools)
-              (index === 15); // After redo (edit tools)
+            // Add dividers after certain tool groups based on workflow
+            let showDivider = false;
+            if (currentWorkflow === '3d-viewport') {
+              showDivider = 
+                (index === 2) || // After save (project tools)
+                (index === 6) || // After scale (transform tools)  
+                (index === 12) || // After camera (create tools)
+                (index === 15); // After redo (edit tools)
+            } else if (currentWorkflow === 'daw-editor') {
+              showDivider = 
+                (index === 2) || // After save (project tools)
+                (index === 6) || // After record (transport tools)
+                (index === 10) || // After add-instrument (track tools)
+                (index === 15); // After redo (edit tools)
+            } else if (currentWorkflow === 'material-editor') {
+              showDivider = 
+                (index === 2) || // After save (project tools)
+                (index === 5); // After apply (material tools)
+            } else if (currentWorkflow === 'node-editor') {
+              showDivider = 
+                (index === 2) || // After save (project tools)
+                (index === 5); // After duplicate (node tools)
+            } else if (currentWorkflow === 'animation-editor') {
+              showDivider = 
+                (index === 2) || // After save (project tools)
+                (index === 5); // After keyframe (animation tools)
+            } else if (currentWorkflow === 'text-editor') {
+              showDivider = 
+                (index === 2) || // After save (project tools)
+                (index === 4); // After replace (text tools)
+            } else if (currentWorkflow === 'video-editor') {
+              showDivider = 
+                (index === 2) || // After save (project tools)
+                (index === 6) || // After record (transport tools)
+                (index === 10) || // After select (edit tools)
+                (index === 12); // After render (media tools)
+            } else if (currentWorkflow === 'photo-editor') {
+              showDivider = 
+                (index === 2) || // After save (project tools)
+                (index === 7) || // After magic-wand (selection tools)
+                (index === 9) || // After eyedropper (transform tools)
+                (index === 14) || // After paint-bucket (paint tools)
+                (index === 21) || // After sponge (retouch tools)
+                (index === 24) || // After shape (creative tools)
+                (index === 26); // After hand (navigation tools)
+            }
             
             return (
               <React.Fragment key={tool.id}>
@@ -209,18 +490,20 @@ function HorizontalToolbar() {
 
           {/* Right side quick actions */}
           <div className="flex items-center gap-2 relative" ref={cameraRef}>
-            {/* Camera Settings Button */}
-            <button
-              className={`px-2 py-1 text-xs rounded transition-colors ${
-                isCameraExpanded
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-400 hover:text-gray-200 hover:bg-slate-800'
-              }`}
-              onClick={() => setIsCameraExpanded(!isCameraExpanded)}
-              title="Camera Settings"
-            >
-              <Icons.Camera className="w-4 h-4" />
-            </button>
+            {/* Camera Settings Button - Only show for 3D workflows */}
+            {(currentWorkflow === '3d-viewport' || currentWorkflow === 'material-editor') && (
+              <button
+                className={`px-2 py-1 text-xs rounded transition-colors ${
+                  isCameraExpanded
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-400 hover:text-gray-200 hover:bg-slate-800'
+                }`}
+                onClick={() => setIsCameraExpanded(!isCameraExpanded)}
+                title="Camera Settings"
+              >
+                <Icons.Camera className="w-4 h-4" />
+              </button>
+            )}
             
             {/* Camera Settings Panel */}
             {isCameraExpanded && (
@@ -331,18 +614,23 @@ function HorizontalToolbar() {
               </div>
             )}
             
-            <button
-              className="px-2 py-1 text-xs text-gray-400 hover:text-gray-200 hover:bg-slate-800 rounded transition-colors"
-              onClick={() => editorActions.addConsoleMessage('Grid toggled', 'info')}
-            >
-              Grid
-            </button>
-            <button
-              className="px-2 py-1 text-xs text-gray-400 hover:text-gray-200 hover:bg-slate-800 rounded transition-colors"
-              onClick={() => editorActions.addConsoleMessage('Snap toggled', 'info')}
-            >
-              Snap
-            </button>
+            {/* Grid and Snap controls - Only show for 3D workflows */}
+            {(currentWorkflow === '3d-viewport' || currentWorkflow === 'material-editor') && (
+              <>
+                <button
+                  className="px-2 py-1 text-xs text-gray-400 hover:text-gray-200 hover:bg-slate-800 rounded transition-colors"
+                  onClick={() => editorActions.addConsoleMessage('Grid toggled', 'info')}
+                >
+                  Grid
+                </button>
+                <button
+                  className="px-2 py-1 text-xs text-gray-400 hover:text-gray-200 hover:bg-slate-800 rounded transition-colors"
+                  onClick={() => editorActions.addConsoleMessage('Snap toggled', 'info')}
+                >
+                  Snap
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -228,8 +228,13 @@ if (typeof window !== 'undefined') {
   let frameStartTime = 0
   let frameCount = 0
   
-  // Monitor rendering performance
+  // Performance monitoring state
+  let performanceMonitoringActive = true
+  
+  // Monitor rendering performance conditionally
   const updatePerformanceStats = () => {
+    if (!performanceMonitoringActive) return
+    
     const now = performance.now()
     const deltaTime = now - frameStartTime
     frameStartTime = now
@@ -247,6 +252,18 @@ if (typeof window !== 'undefined') {
     }
     
     requestAnimationFrame(updatePerformanceStats)
+  }
+  
+  // Export performance monitoring controls
+  window.renderPerformanceMonitoring = {
+    start: () => {
+      performanceMonitoringActive = true
+      console.log('🚀 Render performance monitoring started')
+    },
+    stop: () => {
+      performanceMonitoringActive = false
+      console.log('⏸️ Render performance monitoring stopped')
+    }
   }
   
   requestAnimationFrame(updatePerformanceStats)

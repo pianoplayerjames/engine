@@ -10,8 +10,17 @@ import MaterialsPanel from '@/plugins/editor/components/bottomPanel/MaterialsPan
 import TerrainPanel from '@/plugins/editor/components/bottomPanel/TerrainPanel';
 import LightingPanel from '@/plugins/editor/components/lighting/LightingPanel';
 import PhysicsPanel from '@/plugins/editor/components/bottomPanel/PhysicsPanel';
-import AudioPanel from '@/plugins/editor/components/bottomPanel/AudioPanel';
 import EffectsPanel from '@/plugins/editor/components/bottomPanel/EffectsPanel';
+import ChannelMixer from '@/plugins/editor/components/bottomPanel/ChannelMixer';
+import MediaBin from '@/plugins/editor/components/bottomPanel/MediaBin';
+import VideoTimeline from '@/plugins/editor/components/bottomPanel/VideoTimeline';
+import ColorGrading from '@/plugins/editor/components/bottomPanel/ColorGrading';
+import AudioTracks from '@/plugins/editor/components/bottomPanel/AudioTracks';
+import PhotoPropertiesPanel from '@/plugins/editor/components/bottomPanel/PhotoPropertiesPanel';
+import ChannelsPanel from '@/plugins/editor/components/bottomPanel/ChannelsPanel';
+import PathsPanel from '@/plugins/editor/components/bottomPanel/PathsPanel';
+import ActionsPanel from '@/plugins/editor/components/bottomPanel/ActionsPanel';
+import InfoPanel from '@/plugins/editor/components/bottomPanel/InfoPanel';
 
 const BottomPanel = ({
   activeTab,
@@ -50,10 +59,28 @@ const BottomPanel = ({
         return <LightingPanel />;
       case 'physics':
         return <PhysicsPanel />;
-      case 'audio':
-        return <AudioPanel />;
       case 'effects':
         return <EffectsPanel />;
+      case 'mixer':
+        return <ChannelMixer />;
+      case 'media-bin':
+        return <MediaBin />;
+      case 'video-timeline':
+        return <VideoTimeline />;
+      case 'color-grading':
+        return <ColorGrading />;
+      case 'audio-tracks':
+        return <AudioTracks />;
+      case 'photo-properties':
+        return <PhotoPropertiesPanel />;
+      case 'channels':
+        return <ChannelsPanel />;
+      case 'paths':
+        return <PathsPanel />;
+      case 'actions':
+        return <ActionsPanel />;
+      case 'info':
+        return <InfoPanel />;
       default:
         return null;
     }

@@ -1,6 +1,5 @@
 // Component for rendering 3D model objects in the scene
 import React, { useRef, useEffect, useState, useMemo } from 'react';
-import { useLoader } from '@react-three/fiber';
 import { GLTFLoader } from 'three-stdlib';
 import { OBJLoader } from 'three-stdlib';
 import { FBXLoader } from 'three-stdlib';

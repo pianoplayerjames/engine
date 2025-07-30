@@ -4,6 +4,18 @@ import { Icons } from '@/plugins/editor/components/Icons.jsx';
 import SliderWithTooltip from '@/plugins/editor/components/ui/SliderWithTooltip.jsx';
 import CollapsibleSection from '@/plugins/editor/components/ui/CollapsibleSection.jsx';
 import ContextMenu from '@/plugins/editor/components/ui/ContextMenu.jsx';
+import DAWPropertiesPanel from './DAWPropertiesPanel.jsx';
+import VSTPluginsPanel from './VSTPluginsPanel.jsx';
+import MasterChannelsPanel from './MasterChannelsPanel.jsx';
+import TrackPropertiesPanel from './TrackPropertiesPanel.jsx';
+import VideoPropertiesPanel from './VideoPropertiesPanel.jsx';
+import EffectsLibraryPanel from './EffectsLibraryPanel.jsx';
+import ExportSettingsPanel from './ExportSettingsPanel.jsx';
+import LayersPanel from './LayersPanel.jsx';
+import AdjustmentsPanel from './AdjustmentsPanel.jsx';
+import HistoryPanel from './HistoryPanel.jsx';
+import ColorsPanel from './ColorsPanel.jsx';
+import BrushesPanel from './BrushesPanel.jsx';
 import { useSnapshot } from 'valtio';
 import { editorState, editorActions } from '@/plugins/editor/store.js';
 import { renderState, renderActions } from '@/plugins/render/store.js';
@@ -517,6 +529,20 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
       case 'cloud': return 'Cloud';
       case 'monitor': return 'Display';
       case 'settings': return 'Settings';
+      case 'daw-properties': return 'DAW Properties';
+      case 'audio-devices': return 'Audio Devices';
+      case 'mixer-settings': return 'Mixer Settings';
+      case 'vst-plugins': return 'VST Plugins';
+      case 'master-channels': return 'Master Channels';
+      case 'track-properties': return 'Track Properties';
+      case 'video-properties': return 'Video Properties';
+      case 'effects-panel': return 'Effects Panel';
+      case 'export-settings': return 'Export Settings';
+      case 'layers': return 'Layers';
+      case 'adjustments': return 'Adjustments';
+      case 'history': return 'History';
+      case 'colors': return 'Colors';
+      case 'brushes': return 'Brushes';
       default: return 'Properties';
     }
   };
@@ -1240,6 +1266,187 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
             </div>
           </div>
         );
+
+      case 'daw-properties':
+        return <DAWPropertiesPanel />;
+
+      case 'audio-devices':
+        return (
+          <div className="h-full overflow-y-auto bg-gray-900 p-4 space-y-4">
+            <CollapsibleSection 
+              title="Audio Devices" 
+              icon={Icons.Audio}
+              defaultOpen={true}
+            >
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs text-gray-400 mb-2 block">Input Device</label>
+                  <select className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm text-gray-200">
+                    <option>Default Input</option>
+                    <option>Microphone Array</option>
+                    <option>Audio Interface</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 mb-2 block">Output Device</label>
+                  <select className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm text-gray-200">
+                    <option>Default Output</option>
+                    <option>Speakers</option>
+                    <option>Headphones</option>
+                  </select>
+                </div>
+                <div>
+                  <SliderWithTooltip
+                    label="Input Gain"
+                    defaultValue={75}
+                    min={0}
+                    max={100}
+                    step={1}
+                  />
+                </div>
+                <div>
+                  <SliderWithTooltip
+                    label="Output Gain"
+                    defaultValue={85}
+                    min={0}
+                    max={100}
+                    step={1}
+                  />
+                </div>
+              </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection 
+              title="Monitoring" 
+              icon={Icons.Monitor}
+              defaultOpen={false}
+            >
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-gray-400">Direct Monitoring</label>
+                  <button className="w-10 h-6 rounded-full bg-gray-600">
+                    <div className="w-4 h-4 rounded-full bg-white translate-x-1" />
+                  </button>
+                </div>
+                <div>
+                  <SliderWithTooltip
+                    label="Monitor Mix"
+                    defaultValue={50}
+                    min={0}
+                    max={100}
+                    step={1}
+                  />
+                </div>
+              </div>
+            </CollapsibleSection>
+          </div>
+        );
+
+      case 'mixer-settings':
+        return (
+          <div className="h-full overflow-y-auto bg-gray-900 p-4 space-y-4">
+            <CollapsibleSection 
+              title="Mixer Configuration" 
+              icon={Icons.Mixer}
+              defaultOpen={true}
+            >
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs text-gray-400 mb-2 block">Channel Layout</label>
+                  <select className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm text-gray-200">
+                    <option>Stereo</option>
+                    <option>5.1 Surround</option>
+                    <option>7.1 Surround</option>
+                    <option>Custom</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 mb-2 block">Max Channels</label>
+                  <input
+                    type="number"
+                    min="2"
+                    max="64"
+                    defaultValue="16"
+                    className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm text-gray-200"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-gray-400">Auto Gain Control</label>
+                  <button className="w-10 h-6 rounded-full bg-blue-600">
+                    <div className="w-4 h-4 rounded-full bg-white translate-x-5" />
+                  </button>
+                </div>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-gray-400">Peak Limiting</label>
+                  <button className="w-10 h-6 rounded-full bg-blue-600">
+                    <div className="w-4 h-4 rounded-full bg-white translate-x-5" />
+                  </button>
+                </div>
+              </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection 
+              title="Effects Send" 
+              icon={Icons.Effects}
+              defaultOpen={false}
+            >
+              <div className="space-y-4">
+                <div>
+                  <SliderWithTooltip
+                    label="Reverb Send"
+                    defaultValue={25}
+                    min={0}
+                    max={100}
+                    step={1}
+                  />
+                </div>
+                <div>
+                  <SliderWithTooltip
+                    label="Delay Send"
+                    defaultValue={15}
+                    min={0}
+                    max={100}
+                    step={1}
+                  />
+                </div>
+                <div>
+                  <SliderWithTooltip
+                    label="Chorus Send"
+                    defaultValue={10}
+                    min={0}
+                    max={100}
+                    step={1}
+                  />
+                </div>
+              </div>
+            </CollapsibleSection>
+          </div>
+        );
+
+      case 'vst-plugins':
+        return <VSTPluginsPanel />;
+
+      case 'master-channels':
+        return <MasterChannelsPanel />;
+
+      case 'track-properties':
+        return <TrackPropertiesPanel />;
+      case 'video-properties':
+        return <VideoPropertiesPanel />;
+      case 'effects-panel':
+        return <EffectsLibraryPanel />;
+      case 'export-settings':
+        return <ExportSettingsPanel />;
+      case 'layers':
+        return <LayersPanel />;
+      case 'adjustments':
+        return <AdjustmentsPanel />;
+      case 'history':
+        return <HistoryPanel />;
+      case 'colors':
+        return <ColorsPanel />;
+      case 'brushes':
+        return <BrushesPanel />;
       
       default:
         return (

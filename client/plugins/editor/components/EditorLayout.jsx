@@ -18,6 +18,9 @@ import { PanelToggleButton, ContextMenu } from '@/plugins/editor/components/ui';
 import TopBarMenu from '@/plugins/editor/components/menus/TopBarMenu.jsx';
 import HorizontalToolbar from '@/plugins/editor/components/ui/HorizontalToolbar.jsx';
 
+// Viewport components
+import ViewportContainer from '@/plugins/editor/components/viewports/ViewportContainer.jsx';
+
 // Hooks
 import { usePanelResize, useKeyboardShortcuts } from '../hooks';
 import { useContextMenuActions } from '@/plugins/editor/components/actions/ContextMenuActions';
@@ -327,7 +330,7 @@ const EditorLayout = () => {
       
       {/* Main Content Area - Takes remaining space */}
       <div className="flex-1 relative overflow-hidden pointer-events-auto">
-        {/* 3D Viewport - Constrained to avoid panels */}
+        {/* Viewport Container - Constrained to avoid panels */}
         <div 
           className="absolute pointer-events-auto"
           style={{
@@ -337,27 +340,12 @@ const EditorLayout = () => {
             bottom: isAssetPanelOpen ? bottomPanelHeight - 1 : 40 // Account for bottom panel tabs
           }}
         >
-          <RenderPlugin 
-            embedded={true} 
-            onContextMenu={contextMenuHandler} 
-            style={{ width: '100%', height: '100%' }}
-          >
-            {/* Camera Controls */}
-            <CameraControls />
-            
-            {/* Immediate ambient light to prevent initial darkness */}
-            <ambientLight intensity={0.4} color="#404040" />
-            
-            <SceneRenderer />
-            
-            {/* Grid - only show if enabled */}
-            {editorState.viewport.showGrid && (
-              <mesh position={[0, -2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                <planeGeometry args={[10, 10]} />
-                <meshStandardMaterial color="#666666" />
-              </mesh>
-            )}
-          </RenderPlugin>
+          <ViewportContainer 
+            SceneRenderer={SceneRenderer}
+            onContextMenu={(e) => handleContextMenu(e, null, 'viewport')}
+            contextMenuHandler={contextMenuHandler}
+            showGrid={editorState.viewport.showGrid}
+          />
         </div>
         
         

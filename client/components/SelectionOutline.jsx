@@ -13,7 +13,7 @@ function SelectionOutline({ selectedObjects = [] }) {
   const outlinePassRef = useRef();
 
   // Create effect composer
-  const [composer, renderPass, outlinePass] = useMemo(() => {
+  const [composer, _renderPass, outlinePass] = useMemo(() => {
     const composer = new EffectComposer(gl);
     const renderPass = new RenderPass(scene, camera);
     const outlinePass = new OutlinePass(

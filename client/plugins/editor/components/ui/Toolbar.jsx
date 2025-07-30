@@ -12,6 +12,20 @@ const defaultTools = [
   { id: 'wifi', icon: Icons.Wifi, title: 'Network' },
   { id: 'cloud', icon: Icons.Cloud, title: 'Cloud' },
   { id: 'monitor', icon: Icons.Monitor, title: 'Display' },
+  { id: 'daw-properties', icon: Icons.Mixer, title: 'DAW Properties' },
+  { id: 'audio-devices', icon: Icons.Audio, title: 'Audio Devices' },
+  { id: 'mixer-settings', icon: Icons.Settings, title: 'Mixer Settings' },
+  { id: 'vst-plugins', icon: Icons.Grid, title: 'VST Plugins' },
+  { id: 'master-channels', icon: Icons.Mixer, title: 'Master Channels' },
+  { id: 'track-properties', icon: Icons.Settings, title: 'Track Properties' },
+  { id: 'video-properties', icon: Icons.Video, title: 'Video Properties' },
+  { id: 'effects-panel', icon: Icons.Effects, title: 'Effects Panel' },
+  { id: 'export-settings', icon: Icons.Film, title: 'Export Settings' },
+  { id: 'layers', icon: Icons.Layers, title: 'Layers' },
+  { id: 'adjustments', icon: Icons.AdjustmentsHorizontal, title: 'Adjustments' },
+  { id: 'history', icon: Icons.Clock, title: 'History' },
+  { id: 'colors', icon: Icons.Palette, title: 'Colors' },
+  { id: 'brushes', icon: Icons.PaintBrush, title: 'Brushes' },
 ];
 
 const defaultBottomTools = [
@@ -20,21 +34,85 @@ const defaultBottomTools = [
   { id: 'fullscreen', icon: Icons.Fullscreen, title: 'Fullscreen' },
 ];
 
+// Workflow-based tool configurations for right panel
+const workflowTools = {
+  '3d-viewport': [
+    'scene', 'light', 'effects', 'folder', 'star', 'monitor'
+  ],
+  'daw-editor': [
+    'daw-properties', 'audio-devices', 'mixer-settings', 'vst-plugins', 'master-channels', 'track-properties', 'folder', 'star'
+  ],
+  'material-editor': [
+    'scene', 'folder', 'star', 'monitor'
+  ],
+  'node-editor': [
+    'folder', 'star', 'effects', 'monitor'
+  ],
+  'animation-editor': [
+    'scene', 'folder', 'star', 'monitor'
+  ],
+  'text-editor': [
+    'folder', 'star', 'monitor'
+  ],
+  'video-editor': [
+    'video-properties', 'effects-panel', 'export-settings', 'folder', 'star'
+  ],
+  'photo-editor': [
+    'layers', 'adjustments', 'history', 'colors', 'brushes', 'folder', 'star'
+  ],
+  'default': [
+    'scene', 'light', 'effects', 'folder', 'star', 'wifi', 'cloud', 'monitor',
+    'daw-properties', 'audio-devices', 'mixer-settings', 'vst-plugins', 'master-channels', 'track-properties'
+  ]
+};
+
 function Toolbar({ selectedTool, onToolSelect, scenePanelOpen, onScenePanelToggle }) {
-  const { ui } = useSnapshot(editorState);
+  const { ui, viewport } = useSnapshot(editorState);
   const { toolbarTabOrder, toolbarBottomTabOrder } = ui;
   const { setToolbarTabOrder, setToolbarBottomTabOrder } = editorActions;
   
-  // Create ordered tools based on stored order
-  const getOrderedTools = () => {
-    if (!toolbarTabOrder || !Array.isArray(toolbarTabOrder)) {
-      return defaultTools;
+  // Get current active viewport type for workflow filtering
+  const getCurrentWorkflow = () => {
+    if (!viewport.tabs || viewport.tabs.length === 0) {
+      return 'default';
     }
+    const activeTabData = viewport.tabs.find(tab => tab.id === viewport.activeTabId);
+    return activeTabData?.type || 'default';
+  };
+  
+  // Create ordered tools based on workflow and stored order
+  const getOrderedTools = () => {
+    const currentWorkflow = getCurrentWorkflow();
+    const allowedToolIds = workflowTools[currentWorkflow] || workflowTools['default'];
+    
     const toolsMap = defaultTools.reduce((map, tool) => {
       map[tool.id] = tool;
       return map;
     }, {});
-    return toolbarTabOrder.map(id => toolsMap[id]).filter(Boolean);
+    
+    // Migration: Add missing tools to stored order if they don't exist
+    let currentTabOrder = toolbarTabOrder || [];
+    const missingTools = defaultTools
+      .filter(tool => !currentTabOrder.includes(tool.id))
+      .map(tool => tool.id);
+    
+    if (missingTools.length > 0) {
+      currentTabOrder = [...currentTabOrder, ...missingTools];
+      // Update store with new tools
+      setToolbarTabOrder(currentTabOrder);
+    }
+    
+    // Filter tools based on current workflow, then apply user ordering
+    if (!currentTabOrder || !Array.isArray(currentTabOrder)) {
+      return defaultTools.filter(tool => allowedToolIds.includes(tool.id));
+    }
+    
+    const workflowFilteredTools = currentTabOrder
+      .filter(id => allowedToolIds.includes(id))
+      .map(id => toolsMap[id])
+      .filter(Boolean);
+    
+    return workflowFilteredTools;
   };
   
   const getOrderedBottomTools = () => {
@@ -59,15 +137,11 @@ function Toolbar({ selectedTool, onToolSelect, scenePanelOpen, onScenePanelToggl
   const [tools, setTools] = useState(() => getOrderedTools());
   const [bottomTools, setBottomTools] = useState(() => getOrderedBottomTools());
   
-  // Update tools when store order changes
+  // Update tools when store order or viewport changes
   useEffect(() => {
-    const toolsMap = defaultTools.reduce((map, tool) => {
-      map[tool.id] = tool;
-      return map;
-    }, {});
-    const orderedTools = toolbarTabOrder.map(id => toolsMap[id]).filter(Boolean);
+    const orderedTools = getOrderedTools();
     setTools(orderedTools);
-  }, [toolbarTabOrder]);
+  }, [toolbarTabOrder, viewport.activeTabId]);
   
   useEffect(() => {
     const toolsMap = defaultBottomTools.reduce((map, tool) => {
@@ -240,6 +314,11 @@ function Toolbar({ selectedTool, onToolSelect, scenePanelOpen, onScenePanelToggl
         return;
       }
       
+      // Get current active viewport type for handling photo editor tools
+      const currentWorkflow = getCurrentWorkflow();
+      
+      // Photo editor tools are now handled by the top horizontal toolbar
+      // This toolbar only handles property panels for photo editor
       
       if (!scenePanelOpen) {
         onScenePanelToggle();

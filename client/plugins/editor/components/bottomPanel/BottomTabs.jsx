@@ -15,23 +15,96 @@ const defaultTabs = [
   { id: 'terrain', label: 'Terrain', icon: Icons.Terrain },
   { id: 'lighting', label: 'Lighting', icon: Icons.Sun },
   { id: 'physics', label: 'Physics', icon: Icons.Cube },
-  { id: 'audio', label: 'Audio', icon: Icons.Audio },
   { id: 'effects', label: 'Effects', icon: Icons.Effects },
+  { id: 'mixer', label: 'Mixer', icon: Icons.Mixer },
+  { id: 'video-timeline', label: 'Video Timeline', icon: Icons.Film },
+  { id: 'media-bin', label: 'Media Bin', icon: Icons.Archive },
+  { id: 'color-grading', label: 'Color Grading', icon: Icons.ColorSwatch },
+  { id: 'audio-tracks', label: 'Audio Tracks', icon: Icons.SpeakerWave },
+  { id: 'photo-properties', label: 'Properties', icon: Icons.Cog },
+  { id: 'channels', label: 'Channels', icon: Icons.Layers },
+  { id: 'paths', label: 'Paths', icon: Icons.BezierCurve },
+  { id: 'actions', label: 'Actions', icon: Icons.Play },
+  { id: 'info', label: 'Info', icon: Icons.InformationCircle },
 ];
 
+// Workflow-based tab configurations
+const workflowTabs = {
+  '3d-viewport': [
+    'assets', 'scripts', 'animation', 'materials', 'terrain', 
+    'lighting', 'physics', 'effects', 'console'
+  ],
+  'daw-editor': [
+    'assets', 'mixer', 'timeline', 'console'
+  ],
+  'material-editor': [
+    'assets', 'materials', 'console'
+  ],
+  'node-editor': [
+    'assets', 'node-editor', 'console'
+  ],
+  'animation-editor': [
+    'assets', 'animation', 'timeline', 'console'
+  ],
+  'text-editor': [
+    'assets', 'scripts', 'console'
+  ],
+  'video-editor': [
+    'media-bin', 'video-timeline', 'color-grading', 'audio-tracks', 'effects', 'console'
+  ],
+  'photo-editor': [
+    'channels', 'paths', 'actions', 'info', 'console'
+  ],
+  'default': [
+    'assets', 'scripts', 'animation', 'node-editor', 'timeline', 'console',
+    'materials', 'terrain', 'lighting', 'physics', 'effects', 'mixer',
+    'video-timeline', 'media-bin', 'color-grading', 'audio-tracks'
+  ]
+};
+
 function BottomTabs({ activeTab, onTabChange, isAssetPanelOpen, onToggleAssetPanel, rightPanelWidth, isScenePanelOpen }) {
-  const { ui } = useSnapshot(editorState);
+  const { ui, viewport } = useSnapshot(editorState);
   const { bottomTabOrder } = ui;
   const { setBottomTabOrder, hydrateFromLocalStorage } = editorActions;
   
-  // Create ordered tabs based on stored order
+  // Get current active viewport type for workflow filtering
+  const getCurrentWorkflow = () => {
+    if (!viewport.tabs || viewport.tabs.length === 0) {
+      return 'default';
+    }
+    const activeTabData = viewport.tabs.find(tab => tab.id === viewport.activeTabId);
+    return activeTabData?.type || 'default';
+  };
+  
+  // Create ordered tabs based on workflow and stored order
   const getOrderedTabs = () => {
+    const currentWorkflow = getCurrentWorkflow();
+    const allowedTabIds = workflowTabs[currentWorkflow] || workflowTabs['default'];
+    
     const tabsMap = defaultTabs.reduce((map, tab) => {
       map[tab.id] = tab;
       return map;
     }, {});
     
-    return bottomTabOrder.map(id => tabsMap[id]).filter(Boolean);
+    // Migration: Add missing tabs to stored order if they don't exist
+    let currentTabOrder = bottomTabOrder || [];
+    const missingTabs = defaultTabs
+      .filter(tab => !currentTabOrder.includes(tab.id))
+      .map(tab => tab.id);
+    
+    if (missingTabs.length > 0) {
+      currentTabOrder = [...currentTabOrder, ...missingTabs];
+      // Update store with new tabs
+      setBottomTabOrder(currentTabOrder);
+    }
+    
+    // Filter tabs based on current workflow, then apply user ordering
+    const workflowFilteredTabs = currentTabOrder
+      .filter(id => allowedTabIds.includes(id))
+      .map(id => tabsMap[id])
+      .filter(Boolean);
+    
+    return workflowFilteredTabs;
   };
   
   const [allTabs, setAllTabs] = useState(getOrderedTabs());
@@ -52,11 +125,11 @@ function BottomTabs({ activeTab, onTabChange, isAssetPanelOpen, onToggleAssetPan
   const tabsRef = useRef(null);
   const overflowButtonRef = useRef(null);
 
-  // Update tabs when bottomTabOrder changes (e.g., from localStorage)
+  // Update tabs when bottomTabOrder or viewport changes (e.g., from localStorage or workflow change)
   useEffect(() => {
     const orderedTabs = getOrderedTabs();
     setAllTabs(orderedTabs);
-  }, [bottomTabOrder]);
+  }, [bottomTabOrder, viewport.activeTabId]);
 
   useEffect(() => {
     const calculateVisibleTabs = () => {
@@ -262,6 +335,8 @@ function BottomTabs({ activeTab, onTabChange, isAssetPanelOpen, onToggleAssetPan
       }
     };
   }, []);
+
+  const currentWorkflow = getCurrentWorkflow();
 
   return (
     <div ref={containerRef} className="h-10 bg-slate-900 border-t border-slate-700 border-b border-slate-700 flex items-center relative z-50" suppressHydrationWarning>
