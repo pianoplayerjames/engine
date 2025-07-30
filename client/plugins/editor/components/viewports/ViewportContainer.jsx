@@ -12,6 +12,8 @@ import TextEditor from './TextEditor.jsx';
 import DAWEditor from './DAWEditor.jsx';
 import VideoEditor from './VideoEditor.jsx';
 import PhotoEditor from './PhotoEditor.jsx';
+import ModelPreview from './ModelPreview.jsx';
+import ErrorBoundary from '../ErrorBoundary.jsx';
 
 // Import 3D viewport components
 import RenderPlugin from '@/plugins/render/index.jsx';
@@ -350,6 +352,13 @@ const ViewportContainer = ({
         
       case 'photo-editor':
         return <PhotoEditor />;
+        
+      case 'model-preview':
+        return (
+          <ErrorBoundary>
+            <ModelPreview />
+          </ErrorBoundary>
+        );
         
       default:
         return (

@@ -60,6 +60,9 @@ const workflowTools = {
   'photo-editor': [
     'layers', 'adjustments', 'history', 'colors', 'brushes', 'folder', 'star'
   ],
+  'model-preview': [
+    'scene', 'light', 'effects', 'folder', 'star', 'monitor'
+  ],
   'default': [
     'scene', 'light', 'effects', 'folder', 'star', 'wifi', 'cloud', 'monitor',
     'daw-properties', 'audio-devices', 'mixer-settings', 'vst-plugins', 'master-channels', 'track-properties'

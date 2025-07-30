@@ -53,7 +53,10 @@ const workflowTabs = {
     'media-bin', 'video-timeline', 'color-grading', 'audio-tracks', 'effects', 'console'
   ],
   'photo-editor': [
-    'channels', 'paths', 'actions', 'info', 'console'
+    'assets', 'channels', 'paths', 'actions', 'info', 'console'
+  ],
+  'model-preview': [
+    'assets', 'animation', 'materials', 'info', 'console'
   ],
   'default': [
     'assets', 'scripts', 'animation', 'node-editor', 'timeline', 'console',

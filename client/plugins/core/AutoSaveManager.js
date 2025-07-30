@@ -13,6 +13,11 @@ class AutoSaveManager {
 
   // Set the project manager instance for saving
   setProjectManager(projectManager) {
+    // Prevent duplicate connections
+    if (this.projectManager === projectManager) {
+      return
+    }
+    
     this.projectManager = projectManager
     console.log('🔗 AutoSaveManager connected to ProjectManager')
   }

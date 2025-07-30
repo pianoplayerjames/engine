@@ -70,6 +70,12 @@ const ViewportTabs = () => {
       label: 'Photo Editor',
       icon: Icons.Photo,
       description: 'Create a new photo editing workspace'
+    },
+    {
+      id: 'model-preview',
+      label: 'Model Preview',
+      icon: Icons.Cube,
+      description: 'Preview and analyze 3D models'
     }
   ];
 

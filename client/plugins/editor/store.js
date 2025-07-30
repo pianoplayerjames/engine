@@ -118,6 +118,20 @@ export const editorState = proxy({
         { id: '1', name: 'Open', action: 'open', time: new Date().toLocaleTimeString() }
       ],
       currentHistoryIndex: 0
+    },
+    
+    // Model preview state
+    modelPreview: {
+      model: null,
+      modelInfo: null,
+      viewMode: 'solid', // solid, wireframe, skeleton
+      showGrid: true,
+      autoRotate: false,
+      animations: [],
+      currentAnimation: null,
+      isPlaying: false,
+      cameraDistance: 5,
+      cameraRotation: { x: 0, y: 0 }
     }
   },
 
@@ -1179,6 +1193,40 @@ export const editorActions = {
   },
   updatePhotoBrushSettings: (settings) => {
     Object.assign(editorState.ui.photoEditor.brushSettings, settings)
+  },
+
+  // Model preview actions
+  setModelPreviewModel: (model) => {
+    editorState.ui.modelPreview.model = model
+  },
+  setModelPreviewInfo: (modelInfo) => {
+    editorState.ui.modelPreview.modelInfo = modelInfo
+  },
+  setModelPreviewViewMode: (viewMode) => {
+    editorState.ui.modelPreview.viewMode = viewMode
+  },
+  setModelPreviewGrid: (showGrid) => {
+    editorState.ui.modelPreview.showGrid = showGrid
+  },
+  setModelPreviewAutoRotate: (autoRotate) => {
+    editorState.ui.modelPreview.autoRotate = autoRotate
+  },
+  setModelPreviewAnimations: (animations) => {
+    editorState.ui.modelPreview.animations = animations
+  },
+  setModelPreviewCurrentAnimation: (animationIndex) => {
+    editorState.ui.modelPreview.currentAnimation = animationIndex
+  },
+  setModelPreviewPlaying: (isPlaying) => {
+    editorState.ui.modelPreview.isPlaying = isPlaying
+  },
+  setModelPreviewCamera: (cameraState) => {
+    if (cameraState.distance !== undefined) {
+      editorState.ui.modelPreview.cameraDistance = cameraState.distance
+    }
+    if (cameraState.rotation !== undefined) {
+      Object.assign(editorState.ui.modelPreview.cameraRotation, cameraState.rotation)
+    }
   },
   addPhotoHistoryState: (action) => {
     const history = editorState.ui.photoEditor.history
