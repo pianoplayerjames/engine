@@ -1,5 +1,4 @@
-// plugins/editor/components/TerrainPanel.jsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Icons } from '@/plugins/editor/components/Icons';
 
 const terrainLayers = [

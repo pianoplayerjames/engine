@@ -19,15 +19,18 @@
     "electron:dist-linux": "npm run build && electron-builder --linux"
   },
   "dependencies": {
+    "@babylonjs/core": "^8.20.0",
+    "@babylonjs/inspector": "^8.20.0",
+    "@babylonjs/loaders": "^8.20.0",
+    "@babylonjs/materials": "^8.20.0",
+    "@babylonjs/post-processes": "^8.20.0",
+    "@babylonjs/procedural-textures": "^8.20.0",
+    "@babylonjs/serializers": "^8.20.0",
     "@fastify/multipart": "^9.0.3",
-    "@fastify/one-line-logger": "^2.0.2",
     "@fastify/react": "^1.1.0",
     "@fastify/vite": "^8.1.2",
     "@fastify/websocket": "^11.2.0",
-    "@react-three/drei": "^10.6.0",
-    "@react-three/fiber": "^9.2.0",
     "@tailwindcss/vite": "^4.1.11",
-    "@types/three": "^0.178.1",
     "@unhead/react": "^2.0.8",
     "chokidar": "^4.0.3",
     "fastify": "^5.2.2",
@@ -36,12 +39,11 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router": "^7.5.0",
-    "three": "^0.178.0",
-    "three-stdlib": "^2.36.0",
+    "stats.js": "^0.17.0",
     "valtio": "^2.1.4"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.4",
+    "@vitejs/plugin-react-oxc": "^0.3.0",
     "concurrently": "^9.2.0",
     "electron": "^37.2.4",
     "electron-builder": "^26.0.12",
@@ -49,7 +51,7 @@
     "postcss": "^8.5.3",
     "postcss-preset-env": "^10.1.5",
     "tailwindcss": "^4.1.11",
-    "vite": "^6.2.4",
+    "vite": "npm:rolldown-vite@latest",
     "wait-on": "^8.0.4"
   },
   "build": {
@@ -75,7 +77,9 @@
       {
         "from": "projects",
         "to": "projects",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "mac": {
@@ -83,11 +87,17 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         },
         {
           "target": "zip",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ],
       "icon": "assets/icon.icns"
@@ -96,11 +106,17 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64", "ia32"]
+          "arch": [
+            "x64",
+            "ia32"
+          ]
         },
         {
           "target": "portable",
-          "arch": ["x64", "ia32"]
+          "arch": [
+            "x64",
+            "ia32"
+          ]
         }
       ],
       "icon": "assets/icon.ico"
@@ -109,11 +125,15 @@
       "target": [
         {
           "target": "AppImage",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "deb",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "assets/icon.png",

@@ -1,4 +1,5 @@
-import { proxy, useSnapshot } from 'valtio'
+import { proxy, useSnapshot, ref, subscribe } from 'valtio'
+import { devtools } from 'valtio/utils'
 import { autoSaveManager } from '@/plugins/core/AutoSaveManager.js'
 import { updateUISetting } from '@/plugins/editor/utils/localStorage.js'
 
@@ -84,17 +85,6 @@ export const editorState = proxy({
     topLeftMenuSelected: defaultUISettings.topLeftMenu.selectedItem,
     workflow: defaultUISettings.workflow,
     
-    // Video timeline state
-    videoTimeline: {
-      playheadPosition: 0,
-      isPlaying: false,
-      selectedTool: 'select',
-      zoom: 100,
-      tracks: [
-        { id: 1, name: 'Video Track 1', type: 'video', height: 60, locked: false, muted: false },
-        { id: 2, name: 'Audio Track 1', type: 'audio', height: 40, locked: false, muted: false }
-      ]
-    },
     
     // Photo editor state
     photoEditor: {
@@ -237,12 +227,8 @@ export const editorState = proxy({
     // Instance counters for each viewport type
     instanceCounters: {
       '3d-viewport': 1,
-      'material-editor': 0,
       'node-editor': 0,
-      'animation-editor': 0,
-      'text-editor': 0,
-      'daw-editor': 0,
-      'video-editor': 0
+      'text-editor': 0
     },
     // Tab suspension for performance optimization
     suspendedTabs: new Set(),
@@ -267,290 +253,11 @@ export const editorState = proxy({
     transformMode: 'select', // 'select', 'move', 'rotate', 'scale'
   },
   
-  // Scene objects (3D objects in the viewport)
-  sceneObjects: [
-    // Folder: Environment
-    {
-      id: 'folder-environment',
-      name: 'Environment',
-      type: 'folder',
-      expanded: true,
-      visible: true,
-      children: ['default-platform-1']
-    },
-    {
-      id: 'default-platform-1',
-      name: 'Main Platform',
-      type: 'mesh',
-      position: [0, -2.5, 0],
-      rotation: [0, 0, 0],
-      scale: [100, 5, 100], // Much larger like Unreal's platform
-      geometry: 'box',
-      material: { 
-        color: '#3a3a3a',
-        roughness: 0.9,
-        metalness: 0.05
-      },
-      visible: true,
-      isDefaultPlatform: true,
-      parentId: 'folder-environment'
-    },
-    // Folder: Parkour Objects
-    {
-      id: 'folder-parkour',
-      name: 'Parkour Objects',
-      type: 'folder',
-      expanded: true,
-      visible: true,
-      children: ['parkour-ramp-1', 'parkour-step-1', 'parkour-step-2', 'parkour-step-3', 'parkour-wall-1', 'parkour-pillar-1', 'parkour-platform-1']
-    },
-    // Parkour/Test Objects
-    {
-      id: 'parkour-ramp-1',
-      name: 'Ramp',
-      type: 'mesh',
-      position: [10, 1, 0],
-      rotation: [0, 0, 0.262], // 15 degree ramp
-      scale: [8, 0.5, 4],
-      geometry: 'box',
-      material: { 
-        color: '#555555',
-        roughness: 0.8,
-        metalness: 0.1
-      },
-      visible: true,
-      parentId: 'folder-parkour'
-    },
-    {
-      id: 'parkour-step-1',
-      name: 'Step Block',
-      type: 'mesh',
-      position: [-8, 0.5, 5],
-      rotation: [0, 0, 0],
-      scale: [3, 1, 3],
-      geometry: 'box',
-      material: { 
-        color: '#4a4a4a',
-        roughness: 0.8,
-        metalness: 0.1
-      },
-      visible: true,
-      parentId: 'folder-parkour'
-    },
-    {
-      id: 'parkour-step-2',
-      name: 'Step Block Tall',
-      type: 'mesh',
-      position: [-8, 1.5, 0],
-      rotation: [0, 0, 0],
-      scale: [3, 3, 3],
-      geometry: 'box',
-      material: { 
-        color: '#4a4a4a',
-        roughness: 0.8,
-        metalness: 0.1
-      },
-      visible: true,
-      parentId: 'folder-parkour'
-    },
-    {
-      id: 'parkour-step-3',
-      name: 'Step Block Higher',
-      type: 'mesh',
-      position: [-8, 2.5, -5],
-      rotation: [0, 0, 0],
-      scale: [3, 5, 3],
-      geometry: 'box',
-      material: { 
-        color: '#4a4a4a',
-        roughness: 0.8,
-        metalness: 0.1
-      },
-      visible: true,
-      parentId: 'folder-parkour'
-    },
-    {
-      id: 'parkour-wall-1',
-      name: 'Wall',
-      type: 'mesh',
-      position: [0, 2.5, 15],
-      rotation: [0, 0, 0],
-      scale: [20, 5, 1],
-      geometry: 'box',
-      material: { 
-        color: '#505050',
-        roughness: 0.9,
-        metalness: 0.05
-      },
-      visible: true,
-      parentId: 'folder-parkour'
-    },
-    {
-      id: 'parkour-pillar-1',
-      name: 'Pillar',
-      type: 'mesh',
-      position: [15, 4, 10],
-      rotation: [0, 0, 0],
-      scale: [1.5, 8, 1.5],
-      geometry: 'box',
-      material: { 
-        color: '#606060',
-        roughness: 0.7,
-        metalness: 0.15
-      },
-      visible: true,
-      parentId: 'folder-parkour'
-    },
-    {
-      id: 'parkour-platform-1',
-      name: 'Floating Platform',
-      type: 'mesh',
-      position: [0, 5, -10],
-      rotation: [0, 0, 0],
-      scale: [6, 0.5, 6],
-      geometry: 'box',
-      material: { 
-        color: '#454545',
-        roughness: 0.8,
-        metalness: 0.1
-      },
-      visible: true,
-      parentId: 'folder-parkour'
-    },
-    // Folder: Test Objects
-    {
-      id: 'folder-test-objects',
-      name: 'Test Objects',
-      type: 'folder',
-      expanded: true,
-      visible: true,
-      children: ['demo-sphere-1', 'demo-cylinder-1']
-    },
-    {
-      id: 'demo-sphere-1',
-      name: 'Test Sphere',
-      type: 'mesh',
-      position: [5, 1, 5],
-      rotation: [0, 0, 0],
-      scale: [1, 1, 1],
-      geometry: 'sphere',
-      material: { 
-        color: '#ff6b35',
-        roughness: 0.4,
-        metalness: 0.6
-      },
-      visible: true,
-      parentId: 'folder-test-objects'
-    },
-    {
-      id: 'demo-cylinder-1',
-      name: 'Test Cylinder',
-      type: 'mesh',
-      position: [-5, 1, -5],
-      rotation: [0, 0, 0],
-      scale: [1, 2, 1],
-      geometry: 'cylinder',
-      material: { 
-        color: '#35a7ff',
-        roughness: 0.3,
-        metalness: 0.7
-      },
-      visible: true,
-      parentId: 'folder-test-objects'
-    },
-    // Folder: Lighting
-    {
-      id: 'folder-lighting',
-      name: 'Lighting',
-      type: 'folder',
-      expanded: true,
-      visible: true,
-      children: ['sun-light-1', 'fill-light-1', 'rim-light-1', 'point-light-1']
-    },
-    {
-      id: 'sun-light-1',
-      name: 'Sun Light',
-      type: 'light',
-      lightType: 'directional',
-      position: [10, 10, 5],
-      rotation: [-0.785, 0.524, 0], // Pointing down and slightly angled
-      color: '#ffffff',
-      intensity: 1.2,
-      castShadow: true,
-      visible: true,
-      shadowMapSize: [2048, 2048],
-      shadowCameraFar: 50,
-      shadowCameraLeft: -20,
-      shadowCameraRight: 20,
-      shadowCameraTop: 20,
-      shadowCameraBottom: -20,
-      parentId: 'folder-lighting'
-    },
-    {
-      id: 'fill-light-1',
-      name: 'Fill Light',
-      type: 'light',
-      lightType: 'directional',
-      position: [-8, 8, 3],
-      rotation: [0.524, -0.785, 0], // Angled fill lighting
-      color: '#b3d9ff',
-      intensity: 0.4,
-      castShadow: false,
-      visible: true,
-      parentId: 'folder-lighting'
-    },
-    {
-      id: 'rim-light-1',
-      name: 'Rim Light',
-      type: 'light',
-      lightType: 'directional',
-      position: [-3, 6, -8],
-      rotation: [0.262, 0.785, 0], // Back lighting for rim effect
-      color: '#ffdfb3',
-      intensity: 0.6,
-      castShadow: false,
-      visible: true,
-      parentId: 'folder-lighting'
-    },
-    {
-      id: 'point-light-1',
-      name: 'Point Light',
-      type: 'light',
-      lightType: 'point',
-      position: [0, 3, 0],
-      color: '#ffaa55',
-      intensity: 0.8,
-      distance: 20,
-      decay: 2,
-      castShadow: true,
-      visible: true,
-      shadowMapSize: [1024, 1024],
-      parentId: 'folder-lighting'
-    },
-    // Folder: Cameras
-    {
-      id: 'folder-cameras',
-      name: 'Cameras',
-      type: 'folder',
-      expanded: true,
-      visible: true,
-      children: ['main-camera-1']
-    },
-    {
-      id: 'main-camera-1',
-      name: 'Main Camera',
-      type: 'camera',
-      cameraType: 'perspective',
-      position: [3, 3, 3],
-      rotation: [0, 0, 0],
-      fov: 60,
-      near: 0.1,
-      far: 1000,
-      visible: true,
-      isMainCamera: true,
-      parentId: 'folder-cameras'
-    }
-  ],
+  // Babylon.js scene reference (wrapped in ref() to prevent reactivity)
+  babylonScene: ref({ current: null }),
+  
+  // Scene objects (now managed by Babylon.js - no mock data)
+  sceneObjects: [],
   
   // Editor settings
   settings: {
@@ -574,7 +281,8 @@ export const editorState = proxy({
 })
 
 // Actions that mutate the state directly
-export const editorActions = {
+// Create base actions without DevTools
+const baseEditorActions = {
   // Basic editor actions
   toggle: () => {
     editorState.isOpen = !editorState.isOpen
@@ -851,23 +559,11 @@ export const editorActions = {
         case '3d-viewport':
           name = `Scene ${instanceNumber}`;
           break;
-        case 'material-editor':
-          name = `Material ${instanceNumber}`;
-          break;
         case 'node-editor':
           name = `Nodes ${instanceNumber}`;
           break;
-        case 'animation-editor':
-          name = `Animation ${instanceNumber}`;
-          break;
         case 'text-editor':
           name = `Script ${instanceNumber}`;
-          break;
-        case 'daw-editor':
-          name = `DAW ${instanceNumber}`;
-          break;
-        case 'video-editor':
-          name = `Video ${instanceNumber}`;
           break;
         default:
           name = `${type.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())} ${instanceNumber}`;
@@ -1014,150 +710,13 @@ export const editorActions = {
     editorState.console.handler = handler
   },
   
-  // Scene object management - now works with active tab
-  addSceneObject: (object) => {
-    const activeTab = editorState.viewport.tabs.find(t => t.id === editorState.viewport.activeTabId);
-    if (!activeTab || activeTab.type !== '3d-viewport') return null;
-    
-    const objectWithId = { 
-      id: `${object.type}-${Date.now()}`, 
-      ...object 
-    }
-    
-    if (!activeTab.data.sceneObjects) {
-      activeTab.data.sceneObjects = [];
-    }
-    
-    activeTab.data.sceneObjects.push(objectWithId);
-    activeTab.hasUnsavedChanges = true;
-    return objectWithId;
-  },
   
-  removeSceneObject: (id) => {
-    const activeTab = editorState.viewport.tabs.find(t => t.id === editorState.viewport.activeTabId);
-    if (!activeTab || activeTab.type !== '3d-viewport' || !activeTab.data.sceneObjects) return;
-    
-    const index = activeTab.data.sceneObjects.findIndex(obj => obj.id === id);
-    if (index >= 0) {
-      activeTab.data.sceneObjects.splice(index, 1);
-      activeTab.hasUnsavedChanges = true;
-    }
-  },
-  
-  updateSceneObject: (id, updates) => {
-    const activeTab = editorState.viewport.tabs.find(t => t.id === editorState.viewport.activeTabId);
-    if (!activeTab || activeTab.type !== '3d-viewport' || !activeTab.data.sceneObjects) return;
-    
-    const object = activeTab.data.sceneObjects.find(obj => obj.id === id);
-    if (object) {
-      Object.assign(object, updates);
-      activeTab.hasUnsavedChanges = true;
-    }
+  // Babylon.js scene management
+  updateBabylonScene: (scene) => {
+    editorState.babylonScene.current = scene;
   },
 
-  // Helper to get current scene objects for active tab
-  getCurrentSceneObjects: () => {
-    const activeTab = editorState.viewport.tabs.find(t => t.id === editorState.viewport.activeTabId);
-    if (!activeTab || activeTab.type !== '3d-viewport') return [];
-    return activeTab.data.sceneObjects || [];
-  },
 
-  snapObjectToSurface: (objectId) => {
-    const sceneObjects = editorActions.getCurrentSceneObjects();
-    const object = sceneObjects.find(obj => obj.id === objectId);
-    if (!object) return;
-
-    console.log('🎯 Snapping object to surface:', object.name)
-    
-    // Get the object's current position and scale
-    const currentPos = object.position || [0, 0, 0]
-    const currentScale = object.scale || [1, 1, 1]
-    
-    // Calculate the bottom of the current object
-    const currentObjectBottom = currentPos[1] - (currentScale[1] / 2)
-    
-    // Find the highest surface below the object's bottom
-    let highestSurface = 0 // Ground level (grid)
-    let foundSurface = false
-    
-    // Check other objects as potential surfaces
-    sceneObjects.forEach(otherObject => {
-      if (otherObject.id === objectId) return // Skip self
-      
-      const otherPos = otherObject.position || [0, 0, 0]
-      const otherScale = otherObject.scale || [1, 1, 1]
-      
-      // Check if objects overlap horizontally (within reasonable snapping distance)
-      const horizontalDistance = Math.sqrt(
-        Math.pow(currentPos[0] - otherPos[0], 2) + 
-        Math.pow(currentPos[2] - otherPos[2], 2)
-      )
-      
-      // Consider objects within 3 units as potential surfaces
-      if (horizontalDistance <= 3) {
-        // Calculate the top surface of the other object
-        const objectTop = otherPos[1] + (otherScale[1] / 2)
-        
-        // Only consider surfaces that are below the current object's bottom
-        // and find the highest one among those
-        if (objectTop < currentObjectBottom && objectTop > highestSurface) {
-          highestSurface = objectTop
-          foundSurface = true
-        }
-      }
-    })
-    
-    // Calculate where the center of the current object should be placed
-    const objectHalfHeight = currentScale[1] / 2
-    const snappedY = highestSurface + objectHalfHeight + 0.01 // Small offset to prevent z-fighting
-    
-    const snappedPosition = [currentPos[0], snappedY, currentPos[2]]
-    
-    // Update the object's position
-    editorActions.updateSceneObject(objectId, { position: snappedPosition })
-    
-    console.log('✅ Object snapped from', currentPos, 'to', snappedPosition)
-    console.log('📏 Current object bottom was at Y:', currentObjectBottom)
-    console.log('📏 Highest surface below found at Y:', highestSurface)
-    console.log('📏 Object center placed at Y:', snappedY)
-    
-    if (!foundSurface) {
-      console.log('📋 No surfaces found below object, snapped to ground level')
-    }
-  },
-
-  // Video timeline actions
-  setVideoTimelineState: (newState) => {
-    Object.assign(editorState.ui.videoTimeline, newState)
-  },
-
-  setVideoPlayheadPosition: (position) => {
-    editorState.ui.videoTimeline.playheadPosition = position
-  },
-
-  setVideoPlaying: (isPlaying) => {
-    editorState.ui.videoTimeline.isPlaying = isPlaying
-  },
-
-  addVideoTrack: (trackType) => {
-    const existingTracks = editorState.ui.videoTimeline.tracks.filter(t => t.type === trackType)
-    const newTrack = {
-      id: Date.now(),
-      name: `${trackType.charAt(0).toUpperCase() + trackType.slice(1)} Track ${existingTracks.length + 1}`,
-      type: trackType,
-      height: trackType === 'video' ? 60 : 40,
-      locked: false,
-      muted: false
-    }
-    editorState.ui.videoTimeline.tracks.push(newTrack)
-  },
-
-  updateVideoTrack: (trackId, updates) => {
-    const trackIndex = editorState.ui.videoTimeline.tracks.findIndex(t => t.id === trackId)
-    if (trackIndex !== -1) {
-      Object.assign(editorState.ui.videoTimeline.tracks[trackIndex], updates)
-    }
-  },
   
   // Photo editor actions
   setPhotoEditorTool: (tool) => {
@@ -1246,6 +805,81 @@ export const editorActions = {
     const maxIndex = editorState.ui.photoEditor.history.length - 1
     editorState.ui.photoEditor.currentHistoryIndex = Math.max(0, Math.min(index, maxIndex))
   }
+}
+
+// Export the actions directly
+export const editorActions = baseEditorActions
+
+// Enable Redux DevTools integration
+if (typeof window !== 'undefined') {
+  // Wait for DOM to be ready
+  setTimeout(() => {
+    // Check if Redux DevTools extension is available
+    if (window.__REDUX_DEVTOOLS_EXTENSION__) {
+      // Create a Redux DevTools connection
+      const devToolsConnection = window.__REDUX_DEVTOOLS_EXTENSION__.connect({
+        name: 'Game Engine Editor',
+        features: {
+          pause: true,
+          lock: true,
+          persist: true,
+          export: true,
+          import: 'custom',
+          jump: true,
+          skip: true,
+          reorder: true,
+          dispatch: true,
+          test: true
+        }
+      })
+
+      // Initialize with current state
+      devToolsConnection.init(editorState)
+
+      // Track action names for better debugging
+      let actionCounter = 0
+
+      // Subscribe to all state changes
+      const unsubscribe = subscribe(editorState, (ops) => {
+        actionCounter++
+        
+        // Create a descriptive action name based on the operations
+        let actionName = 'STATE_UPDATE'
+        if (ops && ops.length > 0) {
+          const op = ops[0]
+          if (op && op.path && op.path.length > 0) {
+            actionName = `UPDATE_${op.path.join('_').toUpperCase()}`
+          }
+        }
+
+        // Send the action and new state to DevTools
+        devToolsConnection.send({
+          type: actionName,
+          payload: ops
+        }, editorState)
+      })
+
+      // Handle DevTools actions (like time travel)
+      devToolsConnection.subscribe((message) => {
+        if (message.type === 'DISPATCH' && message.state) {
+          // Handle time travel debugging
+          try {
+            const newState = JSON.parse(message.state)
+            Object.assign(editorState, newState)
+          } catch (e) {
+            console.warn('Failed to parse DevTools state:', e)
+          }
+        }
+      })
+
+      console.log('🎉 Redux DevTools connected successfully!')
+      
+      // Store unsubscribe function globally for cleanup if needed
+      window.__VALTIO_DEVTOOLS_UNSUBSCRIBE__ = unsubscribe
+    } else {
+      console.warn('Redux DevTools Extension not found. Install it from: https://github.com/reduxjs/redux-devtools')
+    }
+  }, 500)
 }
 
 // Register editor store with AutoSaveManager (no localStorage)

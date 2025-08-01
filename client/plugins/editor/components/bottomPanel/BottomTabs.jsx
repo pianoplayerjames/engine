@@ -1,5 +1,4 @@
-// plugins/editor/components/BottomTabs.jsx
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Icons } from '@/plugins/editor/components/Icons';
 import { useSnapshot } from 'valtio';
 import { editorState, editorActions } from '@/plugins/editor/store.js';
@@ -11,11 +10,7 @@ const defaultTabs = [
   { id: 'node-editor', label: 'Node Editor', icon: Icons.AdjustmentsHorizontal },
   { id: 'timeline', label: 'Timeline', icon: Icons.Clock },
   { id: 'console', label: 'Console', icon: Icons.CommandLine },
-  { id: 'materials', label: 'Materials', icon: Icons.Materials },
   { id: 'terrain', label: 'Terrain', icon: Icons.Terrain },
-  { id: 'lighting', label: 'Lighting', icon: Icons.Sun },
-  { id: 'physics', label: 'Physics', icon: Icons.Cube },
-  { id: 'effects', label: 'Effects', icon: Icons.Effects },
   { id: 'mixer', label: 'Mixer', icon: Icons.Mixer },
   { id: 'video-timeline', label: 'Video Timeline', icon: Icons.Film },
   { id: 'media-bin', label: 'Media Bin', icon: Icons.Archive },
@@ -31,14 +26,13 @@ const defaultTabs = [
 // Workflow-based tab configurations
 const workflowTabs = {
   '3d-viewport': [
-    'assets', 'scripts', 'animation', 'materials', 'terrain', 
-    'lighting', 'physics', 'effects', 'console'
+    'assets', 'scripts', 'animation', 'terrain', 'console'
   ],
   'daw-editor': [
     'assets', 'mixer', 'timeline', 'console'
   ],
   'material-editor': [
-    'assets', 'materials', 'console'
+    'assets', 'console'
   ],
   'node-editor': [
     'assets', 'node-editor', 'console'
@@ -50,18 +44,17 @@ const workflowTabs = {
     'assets', 'scripts', 'console'
   ],
   'video-editor': [
-    'media-bin', 'video-timeline', 'color-grading', 'audio-tracks', 'effects', 'console'
+    'media-bin', 'video-timeline', 'color-grading', 'audio-tracks', 'console'
   ],
   'photo-editor': [
     'assets', 'channels', 'paths', 'actions', 'info', 'console'
   ],
   'model-preview': [
-    'assets', 'animation', 'materials', 'info', 'console'
+    'assets', 'animation', 'info', 'console'
   ],
   'default': [
     'assets', 'scripts', 'animation', 'node-editor', 'timeline', 'console',
-    'materials', 'terrain', 'lighting', 'physics', 'effects', 'mixer',
-    'video-timeline', 'media-bin', 'color-grading', 'audio-tracks'
+    'terrain', 'mixer', 'video-timeline', 'media-bin', 'color-grading', 'audio-tracks'
   ]
 };
 

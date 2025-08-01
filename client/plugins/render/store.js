@@ -1,10 +1,11 @@
 import { proxy, subscribe, useSnapshot } from 'valtio'
 import { autoSaveManager } from '@/plugins/core/AutoSaveManager.js'
 
-// Non-serializable objects stored outside proxy
+// Non-serializable objects stored outside proxy (updated for Babylon.js)
 let renderRefs = {
   scene: null,
-  renderer: null
+  engine: null,
+  camera: null
 }
 
 // Create the reactive render state (without non-serializable objects)
@@ -159,10 +160,10 @@ export const renderActions = {
     })
   },
   
-  // Render system management
+  // Render system management (updated for Babylon.js)
   resize: (width, height) => {
-    if (renderRefs.renderer) {
-      renderRefs.renderer.setSize(width, height)
+    if (renderRefs.engine) {
+      renderRefs.engine.resize()
     }
     
     renderState.camera.aspect = width / height
@@ -172,13 +173,18 @@ export const renderActions = {
     renderRefs.scene = scene
   },
   
-  setRenderer: (renderer) => {
-    renderRefs.renderer = renderer
+  setEngine: (engine) => {
+    renderRefs.engine = engine
+  },
+  
+  setCamera: (camera) => {
+    renderRefs.camera = camera
   },
   
   // Getters for non-serializable objects
   getScene: () => renderRefs.scene,
-  getRenderer: () => renderRefs.renderer,
+  getEngine: () => renderRefs.engine,
+  getCamera: () => renderRefs.camera,
   
   // Advanced lighting controls
   setShadowsEnabled: (enabled) => {

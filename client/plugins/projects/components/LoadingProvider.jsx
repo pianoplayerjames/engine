@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext, useContext } from 'react'
+import { useState, useEffect, createContext, useContext } from 'react'
 import { useSnapshot } from 'valtio'
 import { editorState } from '@/plugins/editor/store.js'
 import { projectManager } from '../projectManager.js'

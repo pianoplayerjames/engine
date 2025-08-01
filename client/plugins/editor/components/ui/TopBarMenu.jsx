@@ -120,60 +120,60 @@ function TopBarMenu() {
 
   const menuStructure = {
     File: [
-      { id: 'new', label: 'New Project', icon: Icons.Plus, shortcut: 'Ctrl+N' },
-      { id: 'open', label: 'Open Project', icon: Icons.Folder, shortcut: 'Ctrl+O' },
-      { id: 'save', label: 'Save Project', icon: Icons.Save, shortcut: 'Ctrl+S', action: handleSave },
-      { id: 'save-as', label: 'Save As...', icon: Icons.Save, shortcut: 'Ctrl+Shift+S' },
+      { id: 'new', label: 'New Project', icon: Icons.Plus },
+      { id: 'open', label: 'Open Project', icon: Icons.Folder },
+      { id: 'save', label: 'Save Project', icon: Icons.Save, action: handleSave },
+      { id: 'save-as', label: 'Save As...', icon: Icons.Save },
       { divider: true },
-      { id: 'import', label: 'Import', icon: Icons.Upload, shortcut: 'Ctrl+I' },
-      { id: 'export', label: 'Export', icon: Icons.Download, shortcut: 'Ctrl+E' },
+      { id: 'import', label: 'Import', icon: Icons.Upload },
+      { id: 'export', label: 'Export', icon: Icons.Download },
       { divider: true },
       { id: 'recent', label: 'Recent Projects', icon: Icons.Clock },
     ],
     Edit: [
-      { id: 'undo', label: 'Undo', icon: Icons.Undo, shortcut: 'Ctrl+Z' },
-      { id: 'redo', label: 'Redo', icon: Icons.Redo, shortcut: 'Ctrl+Y' },
+      { id: 'undo', label: 'Undo', icon: Icons.Undo },
+      { id: 'redo', label: 'Redo', icon: Icons.Redo },
       { divider: true },
-      { id: 'cut', label: 'Cut', icon: Icons.Scissors, shortcut: 'Ctrl+X' },
-      { id: 'copy', label: 'Copy', icon: Icons.Copy, shortcut: 'Ctrl+C' },
-      { id: 'paste', label: 'Paste', icon: Icons.Clipboard, shortcut: 'Ctrl+V' },
-      { id: 'duplicate', label: 'Duplicate', icon: Icons.Copy, shortcut: 'Ctrl+D' },
-      { id: 'delete', label: 'Delete', icon: Icons.Trash, shortcut: 'Del' },
+      { id: 'cut', label: 'Cut', icon: Icons.Scissors },
+      { id: 'copy', label: 'Copy', icon: Icons.Copy },
+      { id: 'paste', label: 'Paste', icon: Icons.Clipboard },
+      { id: 'duplicate', label: 'Duplicate', icon: Icons.Copy },
+      { id: 'delete', label: 'Delete', icon: Icons.Trash },
       { divider: true },
-      { id: 'select-all', label: 'Select All', shortcut: 'Ctrl+A' },
+      { id: 'select-all', label: 'Select All' },
     ],
     View: [
-      { id: 'wireframe', label: 'Wireframe Mode', shortcut: 'W' },
-      { id: 'solid', label: 'Solid Mode', shortcut: 'S' },
-      { id: 'material', label: 'Material Preview', shortcut: 'M' },
-      { id: 'rendered', label: 'Rendered Mode', shortcut: 'R' },
+      { id: 'wireframe', label: 'Wireframe Mode' },
+      { id: 'solid', label: 'Solid Mode' },
+      { id: 'material', label: 'Material Preview' },
+      { id: 'rendered', label: 'Rendered Mode' },
       { divider: true },
-      { id: 'grid', label: 'Show Grid', shortcut: 'G' },
-      { id: 'axes', label: 'Show Axes', shortcut: 'X' },
-      { id: 'statistics', label: 'Show Statistics', shortcut: 'F3' },
+      { id: 'grid', label: 'Show Grid' },
+      { id: 'axes', label: 'Show Axes' },
+      { id: 'statistics', label: 'Show Statistics' },
       { divider: true },
-      { id: 'fullscreen', label: 'Fullscreen', shortcut: 'F11' },
+      { id: 'fullscreen', label: 'Fullscreen' },
     ],
     Tools: [
-      { id: 'select', label: 'Select Tool', icon: Icons.MousePointer, shortcut: 'V' },
-      { id: 'move', label: 'Move Tool', icon: Icons.Move, shortcut: 'G' },
-      { id: 'rotate', label: 'Rotate Tool', icon: Icons.RotateCcw, shortcut: 'R' },
-      { id: 'scale', label: 'Scale Tool', icon: Icons.Maximize, shortcut: 'S' },
+      { id: 'select', label: 'Select Tool', icon: Icons.MousePointer },
+      { id: 'move', label: 'Move Tool', icon: Icons.Move },
+      { id: 'rotate', label: 'Rotate Tool', icon: Icons.RotateCcw },
+      { id: 'scale', label: 'Scale Tool', icon: Icons.Maximize },
       { divider: true },
-      { id: 'subdivision', label: 'Subdivision Surface', icon: Icons.Grid3x3, shortcut: 'Ctrl+1' },
-      { id: 'mirror', label: 'Mirror Modifier', icon: Icons.Copy, shortcut: 'Ctrl+M' },
+      { id: 'subdivision', label: 'Subdivision Surface', icon: Icons.Grid3x3 },
+      { id: 'mirror', label: 'Mirror Modifier', icon: Icons.Copy },
       { divider: true },
-      { id: 'camera', label: 'Camera Tool', icon: Icons.Camera, shortcut: 'C' },
-      { id: 'light', label: 'Light Tool', icon: Icons.Sun, shortcut: 'L' },
-      { id: 'mesh', label: 'Add Mesh', icon: Icons.Square, shortcut: 'Shift+A' },
+      { id: 'camera', label: 'Camera Tool', icon: Icons.Camera },
+      { id: 'light', label: 'Light Tool', icon: Icons.Sun },
+      { id: 'mesh', label: 'Add Mesh', icon: Icons.Square },
     ],
     Window: [
-      { id: 'scene-panel', label: 'Scene Panel', shortcut: 'F9' },
-      { id: 'properties-panel', label: 'Properties Panel', shortcut: 'F10' },
-      { id: 'assets-panel', label: 'Assets Panel', shortcut: 'F11' },
-      { id: 'console-panel', label: 'Console Panel', shortcut: 'F12' },
+      { id: 'scene-panel', label: 'Scene Panel' },
+      { id: 'properties-panel', label: 'Properties Panel' },
+      { id: 'assets-panel', label: 'Assets Panel' },
+      { id: 'console-panel', label: 'Console Panel' },
       { divider: true },
-      { id: 'settings', label: 'Settings', icon: Icons.Cog, shortcut: 'Ctrl+,' },
+      { id: 'settings', label: 'Settings', icon: Icons.Cog },
       { id: 'reset-layout', label: 'Reset Layout' },
     ],
   };
@@ -215,18 +215,6 @@ function TopBarMenu() {
     }
   };
 
-  // Close menu on Escape key
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && activeMenu) {
-        setActiveMenu(null);
-        setMenuPosition(null);
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [activeMenu]);
 
   return (
     <>
@@ -334,9 +322,6 @@ function TopBarMenu() {
                         {item.id === 'save' && isSaving ? 'Saving...' : item.label}
                       </span>
                     </div>
-                    {item.shortcut && (
-                      <span className="text-xs text-gray-500">{item.shortcut}</span>
-                    )}
                   </button>
                 )
               ))}

@@ -1,5 +1,4 @@
-// plugins/editor/components/ConsolePanel.jsx
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Icons } from '@/plugins/editor/components/Icons';
 import { projectManager } from '@/plugins/projects/projectManager.js';
 

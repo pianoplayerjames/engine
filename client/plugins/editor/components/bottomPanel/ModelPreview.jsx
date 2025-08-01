@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { assetManager, PRIORITY } from '@/plugins/assets/OptimizedAssetManager.js';
 import { projectManager } from '@/plugins/projects/projectManager.js';
 import { Icons } from '@/plugins/editor/components/Icons';

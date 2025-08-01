@@ -1,6 +1,3 @@
-// client/plugins/editor/components/NodeEditor.jsx
-import React from 'react';
-
 const DotGrid = () => {
   return (
     <div className="absolute inset-0 bg-gray-900">

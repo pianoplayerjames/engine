@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 
 export default function AssetLoader({ isVisible, progress, currentAsset, onComplete }) {
   const [displayProgress, setDisplayProgress] = useState(0)

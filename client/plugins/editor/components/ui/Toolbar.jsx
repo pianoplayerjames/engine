@@ -5,27 +5,6 @@ import { editorState, editorActions } from '@/plugins/editor/store.js';
 
 const defaultTools = [
   { id: 'scene', icon: Icons.Scene, title: 'Scene' },
-  { id: 'light', icon: Icons.Light, title: 'Light' },
-  { id: 'effects', icon: Icons.Effects, title: 'Effects' },
-  { id: 'folder', icon: Icons.FolderOpen, title: 'Folder' },
-  { id: 'star', icon: Icons.Star, title: 'Favorites' },
-  { id: 'wifi', icon: Icons.Wifi, title: 'Network' },
-  { id: 'cloud', icon: Icons.Cloud, title: 'Cloud' },
-  { id: 'monitor', icon: Icons.Monitor, title: 'Display' },
-  { id: 'daw-properties', icon: Icons.Mixer, title: 'DAW Properties' },
-  { id: 'audio-devices', icon: Icons.Audio, title: 'Audio Devices' },
-  { id: 'mixer-settings', icon: Icons.Settings, title: 'Mixer Settings' },
-  { id: 'vst-plugins', icon: Icons.Grid, title: 'VST Plugins' },
-  { id: 'master-channels', icon: Icons.Mixer, title: 'Master Channels' },
-  { id: 'track-properties', icon: Icons.Settings, title: 'Track Properties' },
-  { id: 'video-properties', icon: Icons.Video, title: 'Video Properties' },
-  { id: 'effects-panel', icon: Icons.Effects, title: 'Effects Panel' },
-  { id: 'export-settings', icon: Icons.Film, title: 'Export Settings' },
-  { id: 'layers', icon: Icons.Layers, title: 'Layers' },
-  { id: 'adjustments', icon: Icons.AdjustmentsHorizontal, title: 'Adjustments' },
-  { id: 'history', icon: Icons.Clock, title: 'History' },
-  { id: 'colors', icon: Icons.Palette, title: 'Colors' },
-  { id: 'brushes', icon: Icons.PaintBrush, title: 'Brushes' },
 ];
 
 const defaultBottomTools = [
@@ -37,35 +16,34 @@ const defaultBottomTools = [
 // Workflow-based tool configurations for right panel
 const workflowTools = {
   '3d-viewport': [
-    'scene', 'light', 'effects', 'folder', 'star', 'monitor'
+    'scene'
   ],
   'daw-editor': [
-    'daw-properties', 'audio-devices', 'mixer-settings', 'vst-plugins', 'master-channels', 'track-properties', 'folder', 'star'
+    'scene'
   ],
   'material-editor': [
-    'scene', 'folder', 'star', 'monitor'
+    'scene'
   ],
   'node-editor': [
-    'folder', 'star', 'effects', 'monitor'
+    'scene'
   ],
   'animation-editor': [
-    'scene', 'folder', 'star', 'monitor'
+    'scene'
   ],
   'text-editor': [
-    'folder', 'star', 'monitor'
+    'scene'
   ],
   'video-editor': [
-    'video-properties', 'effects-panel', 'export-settings', 'folder', 'star'
+    'scene'
   ],
   'photo-editor': [
-    'layers', 'adjustments', 'history', 'colors', 'brushes', 'folder', 'star'
+    'scene'
   ],
   'model-preview': [
-    'scene', 'light', 'effects', 'folder', 'star', 'monitor'
+    'scene'
   ],
   'default': [
-    'scene', 'light', 'effects', 'folder', 'star', 'wifi', 'cloud', 'monitor',
-    'daw-properties', 'audio-devices', 'mixer-settings', 'vst-plugins', 'master-channels', 'track-properties'
+    'scene'
   ]
 };
 

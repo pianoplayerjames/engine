@@ -1,5 +1,5 @@
 // Performance monitoring component for asset loading
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { assetManager } from './OptimizedAssetManager.js';
 
 export function AssetPerformanceMonitor({ show = false }) {

@@ -48,14 +48,6 @@ function WorkflowTabs() {
       panels: ['scene', 'render-properties', 'compositor'],
       tools: ['camera', 'light', 'world-settings', 'render-layers']
     },
-    physics: {
-      name: 'Physics',
-      icon: Icons.Zap || Icons.Bolt,
-      description: 'Simulate physics and dynamics',
-      color: 'yellow',
-      panels: ['scene', 'physics-properties', 'cache'],
-      tools: ['rigid-body', 'soft-body', 'fluid', 'particles']
-    }
   };
 
   const handleWorkflowChange = (workflowId) => {

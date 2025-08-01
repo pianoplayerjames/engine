@@ -1,5 +1,3 @@
-import React from 'react';
-
 export const Icons = {
   Cube3D: ({ isHovered = false, ...props }) => (
     <svg viewBox="0 0 24 24" fill="none" {...props}>
@@ -1609,6 +1607,36 @@ Transparency: (props) => (
     <path d="M8 8h8v8H8z" fill="currentColor" fillOpacity="0.3"/>
     <path d="M8 8l8 8"/>
     <path d="M16 8l-8 8"/>
+  </svg>
+),
+
+PlayCircle: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <circle cx="12" cy="12" r="10"/>
+    <polygon points="10,8 16,12 10,16"/>
+  </svg>
+),
+
+Bars3: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <line x1="3" y1="6" x2="21" y2="6"/>
+    <line x1="3" y1="12" x2="21" y2="12"/>
+    <line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+),
+
+Document: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M14,2 L20,8 L20,20 C20,21.1 19.1,22 18,22 L6,22 C4.9,22 4,21.1 4,20 L4,4 C4,2.9 4.9,2 6,2 L14,2 Z"/>
+    <polyline points="14,2 14,8 20,8"/>
+  </svg>
+),
+
+ExclamationTriangle: (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+    <line x1="12" y1="9" x2="12" y2="13"/>
+    <circle cx="12" cy="17" r="1"/>
   </svg>
 ),
 };

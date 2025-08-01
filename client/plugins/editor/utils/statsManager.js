@@ -1,3 +1,5 @@
+import Stats from 'stats.js'
+
 // Stats.js management utility
 class StatsManager {
   constructor() {
@@ -12,9 +14,9 @@ class StatsManager {
     console.log('StatsManager: Initializing...');
     
     // Check if Stats is available globally
-    if (typeof window !== 'undefined' && window.Stats) {
+    if (typeof window !== 'undefined' && Stats) {
       try {
-        this.stats = new window.Stats();
+        this.stats = new Stats();
         this.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
         
         // Style the stats panel

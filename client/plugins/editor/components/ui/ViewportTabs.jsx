@@ -30,40 +30,16 @@ const ViewportTabs = () => {
       description: 'Create a new 3D scene viewport'
     },
     {
-      id: 'material-editor',
-      label: 'Material Editor',
-      icon: Icons.Palette,
-      description: 'Create a new material editor'
-    },
-    {
       id: 'node-editor',
       label: 'Node Editor',
       icon: Icons.Network,
       description: 'Create a new node-based editor'
     },
     {
-      id: 'animation-editor',
-      label: 'Animation Editor',
-      icon: Icons.Play,
-      description: 'Create a new animation timeline'
-    },
-    {
-      id: 'daw-editor',
-      label: 'DAW Editor',
-      icon: Icons.Audio,
-      description: 'Create a new digital audio workstation'
-    },
-    {
       id: 'text-editor',
       label: 'Text Editor',
       icon: Icons.FileText,
       description: 'Create a new script editor'
-    },
-    {
-      id: 'video-editor',
-      label: 'Video Editor',
-      icon: Icons.Video,
-      description: 'Create a new video editing workspace'
     },
     {
       id: 'photo-editor',

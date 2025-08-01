@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Icons } from '@/plugins/editor/components/Icons';
 
 const ContextMenu = ({ items, position, onClose }) => {
@@ -143,7 +143,6 @@ const ContextMenu = ({ items, position, onClose }) => {
                 )}
                 {item.icon && <span className="mr-2">{item.icon}</span>}
                 <span className="flex-1">{item.label}</span>
-                {item.shortcut && <span className="text-gray-500 text-xs">{item.shortcut}</span>}
                 {item.submenu && <Icons.ChevronRight className="w-3 h-3 ml-1" />}
               </button>
             )}

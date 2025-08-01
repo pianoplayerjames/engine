@@ -1,4 +1,3 @@
-// plugins/editor/components/AssetLibrary.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Icons } from '@/plugins/editor/components/Icons';
 import { useSnapshot } from 'valtio';
@@ -1019,18 +1018,6 @@ function AssetLibrary() {
     // TODO: Implement set view functionality
   };
 
-  // Handle keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.ctrlKey && e.key === 'u') {
-        e.preventDefault();
-        handleUploadClick();
-      }
-    };
-    
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
 
   return (
     <div className="h-full flex bg-slate-800 no-select">

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 
 export default function SplashLoader({ onReady }) {
   const [show, setShow] = useState(true)

@@ -31,10 +31,10 @@ function HorizontalToolbar() {
   const showGrid = viewport.showGrid !== false;
   
   const renderModes = [
-    { id: 'wireframe', label: 'Wireframe', icon: Icons.Grid3x3, shortcut: '1' },
-    { id: 'solid', label: 'Solid', icon: Icons.Cube, shortcut: '2' },
-    { id: 'material', label: 'Material', icon: Icons.Palette, shortcut: '3' },
-    { id: 'rendered', label: 'Rendered', icon: Icons.Sun, shortcut: '4' }
+    { id: 'wireframe', label: 'Wireframe', icon: Icons.Grid3x3 },
+    { id: 'solid', label: 'Solid', icon: Icons.Cube },
+    { id: 'material', label: 'Material', icon: Icons.Palette },
+    { id: 'rendered', label: 'Rendered', icon: Icons.Sun }
   ];
   
   const speedPresets = [
@@ -65,15 +65,15 @@ function HorizontalToolbar() {
   const workflowTools = {
     '3d-viewport': [
       // Project tools
-      { id: 'new', icon: Icons.Plus, tooltip: 'New Project', shortcut: 'Ctrl+N' },
-      { id: 'open', icon: Icons.Folder, tooltip: 'Open Project', shortcut: 'Ctrl+O' },
-      { id: 'save', icon: Icons.Save, tooltip: 'Save Project', shortcut: 'Ctrl+S' },
+      { id: 'new', icon: Icons.Plus, tooltip: 'New Project' },
+      { id: 'open', icon: Icons.Folder, tooltip: 'Open Project' },
+      { id: 'save', icon: Icons.Save, tooltip: 'Save Project' },
       
       // Transform tools
-      { id: 'select', icon: Icons.MousePointer, tooltip: 'Select', shortcut: 'V' },
-      { id: 'move', icon: Icons.Move, tooltip: 'Move', shortcut: 'G' },
-      { id: 'rotate', icon: Icons.RotateCcw, tooltip: 'Rotate', shortcut: 'R' },
-      { id: 'scale', icon: Icons.Maximize, tooltip: 'Scale', shortcut: 'S' },
+      { id: 'select', icon: Icons.MousePointer, tooltip: 'Select' },
+      { id: 'move', icon: Icons.Move, tooltip: 'Move' },
+      { id: 'rotate', icon: Icons.RotateCcw, tooltip: 'Rotate' },
+      { id: 'scale', icon: Icons.Maximize, tooltip: 'Scale' },
       
       // Create tools
       { id: 'cube', icon: Icons.Square, tooltip: 'Add Cube' },
@@ -83,10 +83,10 @@ function HorizontalToolbar() {
       { id: 'camera', icon: Icons.Camera, tooltip: 'Add Camera' },
       
       // Edit tools
-      { id: 'duplicate', icon: Icons.Copy, tooltip: 'Duplicate', shortcut: 'Ctrl+D' },
-      { id: 'delete', icon: Icons.Trash, tooltip: 'Delete', shortcut: 'Del' },
-      { id: 'undo', icon: Icons.Undo, tooltip: 'Undo', shortcut: 'Ctrl+Z' },
-      { id: 'redo', icon: Icons.Redo, tooltip: 'Redo', shortcut: 'Ctrl+Y' },
+      { id: 'duplicate', icon: Icons.Copy, tooltip: 'Duplicate' },
+      { id: 'delete', icon: Icons.Trash, tooltip: 'Delete' },
+      { id: 'undo', icon: Icons.Undo, tooltip: 'Undo' },
+      { id: 'redo', icon: Icons.Redo, tooltip: 'Redo' },
       
       // Paint/sculpt tools
       { id: 'paint', icon: Icons.Paintbrush2, tooltip: 'Paint' },
@@ -94,15 +94,15 @@ function HorizontalToolbar() {
     
     'daw-editor': [
       // Project tools
-      { id: 'new', icon: Icons.Plus, tooltip: 'New Project', shortcut: 'Ctrl+N' },
-      { id: 'open', icon: Icons.Folder, tooltip: 'Open Project', shortcut: 'Ctrl+O' },
-      { id: 'save', icon: Icons.Save, tooltip: 'Save Project', shortcut: 'Ctrl+S' },
+      { id: 'new', icon: Icons.Plus, tooltip: 'New Project' },
+      { id: 'open', icon: Icons.Folder, tooltip: 'Open Project' },
+      { id: 'save', icon: Icons.Save, tooltip: 'Save Project' },
       
       // Transport controls
-      { id: 'play', icon: Icons.Play, tooltip: 'Play', shortcut: 'Space' },
-      { id: 'pause', icon: Icons.Pause, tooltip: 'Pause', shortcut: 'Space' },
-      { id: 'stop', icon: Icons.Square, tooltip: 'Stop', shortcut: 'Esc' },
-      { id: 'record', icon: Icons.Circle, tooltip: 'Record', shortcut: 'R' },
+      { id: 'play', icon: Icons.Play, tooltip: 'Play' },
+      { id: 'pause', icon: Icons.Pause, tooltip: 'Pause' },
+      { id: 'stop', icon: Icons.Square, tooltip: 'Stop' },
+      { id: 'record', icon: Icons.Circle, tooltip: 'Record' },
       
       // Track tools
       { id: 'add-track', icon: Icons.Plus, tooltip: 'Add Track' },
@@ -111,11 +111,11 @@ function HorizontalToolbar() {
       { id: 'add-instrument', icon: Icons.Piano, tooltip: 'Add Instrument' },
       
       // Edit tools
-      { id: 'cut', icon: Icons.Scissors, tooltip: 'Cut', shortcut: 'Ctrl+X' },
-      { id: 'copy', icon: Icons.Copy, tooltip: 'Copy', shortcut: 'Ctrl+C' },
-      { id: 'paste', icon: Icons.Clipboard, tooltip: 'Paste', shortcut: 'Ctrl+V' },
-      { id: 'undo', icon: Icons.Undo, tooltip: 'Undo', shortcut: 'Ctrl+Z' },
-      { id: 'redo', icon: Icons.Redo, tooltip: 'Redo', shortcut: 'Ctrl+Y' },
+      { id: 'cut', icon: Icons.Scissors, tooltip: 'Cut' },
+      { id: 'copy', icon: Icons.Copy, tooltip: 'Copy' },
+      { id: 'paste', icon: Icons.Clipboard, tooltip: 'Paste' },
+      { id: 'undo', icon: Icons.Undo, tooltip: 'Undo' },
+      { id: 'redo', icon: Icons.Redo, tooltip: 'Redo' },
       
       // Audio tools
       { id: 'metronome', icon: Icons.Clock, tooltip: 'Metronome' },
@@ -124,9 +124,9 @@ function HorizontalToolbar() {
     
     'material-editor': [
       // Project tools
-      { id: 'new', icon: Icons.Plus, tooltip: 'New Project', shortcut: 'Ctrl+N' },
-      { id: 'open', icon: Icons.Folder, tooltip: 'Open Project', shortcut: 'Ctrl+O' },
-      { id: 'save', icon: Icons.Save, tooltip: 'Save Project', shortcut: 'Ctrl+S' },
+      { id: 'new', icon: Icons.Plus, tooltip: 'New Project' },
+      { id: 'open', icon: Icons.Folder, tooltip: 'Open Project' },
+      { id: 'save', icon: Icons.Save, tooltip: 'Save Project' },
       
       // Material tools
       { id: 'new-material', icon: Icons.Palette, tooltip: 'New Material' },
@@ -134,130 +134,130 @@ function HorizontalToolbar() {
       { id: 'apply', icon: Icons.Check, tooltip: 'Apply Material' },
       
       // Edit tools
-      { id: 'undo', icon: Icons.Undo, tooltip: 'Undo', shortcut: 'Ctrl+Z' },
-      { id: 'redo', icon: Icons.Redo, tooltip: 'Redo', shortcut: 'Ctrl+Y' },
+      { id: 'undo', icon: Icons.Undo, tooltip: 'Undo' },
+      { id: 'redo', icon: Icons.Redo, tooltip: 'Redo' },
     ],
     
     'node-editor': [
       // Project tools
-      { id: 'new', icon: Icons.Plus, tooltip: 'New Project', shortcut: 'Ctrl+N' },
-      { id: 'open', icon: Icons.Folder, tooltip: 'Open Project', shortcut: 'Ctrl+O' },
-      { id: 'save', icon: Icons.Save, tooltip: 'Save Project', shortcut: 'Ctrl+S' },
+      { id: 'new', icon: Icons.Plus, tooltip: 'New Project' },
+      { id: 'open', icon: Icons.Folder, tooltip: 'Open Project' },
+      { id: 'save', icon: Icons.Save, tooltip: 'Save Project' },
       
       // Node tools
       { id: 'add-node', icon: Icons.Plus, tooltip: 'Add Node' },
       { id: 'delete-node', icon: Icons.Trash, tooltip: 'Delete Node' },
-      { id: 'duplicate', icon: Icons.Copy, tooltip: 'Duplicate', shortcut: 'Ctrl+D' },
+      { id: 'duplicate', icon: Icons.Copy, tooltip: 'Duplicate' },
       
       // Edit tools
-      { id: 'undo', icon: Icons.Undo, tooltip: 'Undo', shortcut: 'Ctrl+Z' },
-      { id: 'redo', icon: Icons.Redo, tooltip: 'Redo', shortcut: 'Ctrl+Y' },
+      { id: 'undo', icon: Icons.Undo, tooltip: 'Undo' },
+      { id: 'redo', icon: Icons.Redo, tooltip: 'Redo' },
     ],
     
     'animation-editor': [
       // Project tools
-      { id: 'new', icon: Icons.Plus, tooltip: 'New Project', shortcut: 'Ctrl+N' },
-      { id: 'open', icon: Icons.Folder, tooltip: 'Open Project', shortcut: 'Ctrl+O' },
-      { id: 'save', icon: Icons.Save, tooltip: 'Save Project', shortcut: 'Ctrl+S' },
+      { id: 'new', icon: Icons.Plus, tooltip: 'New Project' },
+      { id: 'open', icon: Icons.Folder, tooltip: 'Open Project' },
+      { id: 'save', icon: Icons.Save, tooltip: 'Save Project' },
       
       // Animation tools
-      { id: 'play', icon: Icons.Play, tooltip: 'Play Animation', shortcut: 'Space' },
-      { id: 'pause', icon: Icons.Pause, tooltip: 'Pause Animation', shortcut: 'Space' },
-      { id: 'keyframe', icon: Icons.Key, tooltip: 'Add Keyframe', shortcut: 'I' },
+      { id: 'play', icon: Icons.Play, tooltip: 'Play Animation' },
+      { id: 'pause', icon: Icons.Pause, tooltip: 'Pause Animation' },
+      { id: 'keyframe', icon: Icons.Key, tooltip: 'Add Keyframe' },
       
       // Edit tools
-      { id: 'undo', icon: Icons.Undo, tooltip: 'Undo', shortcut: 'Ctrl+Z' },
-      { id: 'redo', icon: Icons.Redo, tooltip: 'Redo', shortcut: 'Ctrl+Y' },
+      { id: 'undo', icon: Icons.Undo, tooltip: 'Undo' },
+      { id: 'redo', icon: Icons.Redo, tooltip: 'Redo' },
     ],
     
     'text-editor': [
       // Project tools
-      { id: 'new', icon: Icons.Plus, tooltip: 'New File', shortcut: 'Ctrl+N' },
-      { id: 'open', icon: Icons.Folder, tooltip: 'Open File', shortcut: 'Ctrl+O' },
-      { id: 'save', icon: Icons.Save, tooltip: 'Save File', shortcut: 'Ctrl+S' },
+      { id: 'new', icon: Icons.Plus, tooltip: 'New File' },
+      { id: 'open', icon: Icons.Folder, tooltip: 'Open File' },
+      { id: 'save', icon: Icons.Save, tooltip: 'Save File' },
       
       // Text tools
-      { id: 'find', icon: Icons.Search, tooltip: 'Find', shortcut: 'Ctrl+F' },
-      { id: 'replace', icon: Icons.Replace, tooltip: 'Replace', shortcut: 'Ctrl+H' },
+      { id: 'find', icon: Icons.Search, tooltip: 'Find' },
+      { id: 'replace', icon: Icons.Replace, tooltip: 'Replace' },
       
       // Edit tools
-      { id: 'undo', icon: Icons.Undo, tooltip: 'Undo', shortcut: 'Ctrl+Z' },
-      { id: 'redo', icon: Icons.Redo, tooltip: 'Redo', shortcut: 'Ctrl+Y' },
+      { id: 'undo', icon: Icons.Undo, tooltip: 'Undo' },
+      { id: 'redo', icon: Icons.Redo, tooltip: 'Redo' },
     ],
     
     'video-editor': [
       // Project tools
-      { id: 'new', icon: Icons.Plus, tooltip: 'New Project', shortcut: 'Ctrl+N' },
-      { id: 'open', icon: Icons.Folder, tooltip: 'Open Project', shortcut: 'Ctrl+O' },
-      { id: 'save', icon: Icons.Save, tooltip: 'Save Project', shortcut: 'Ctrl+S' },
+      { id: 'new', icon: Icons.Plus, tooltip: 'New Project' },
+      { id: 'open', icon: Icons.Folder, tooltip: 'Open Project' },
+      { id: 'save', icon: Icons.Save, tooltip: 'Save Project' },
       
       // Transport controls
-      { id: 'play', icon: Icons.Play, tooltip: 'Play', shortcut: 'Space' },
-      { id: 'pause', icon: Icons.Pause, tooltip: 'Pause', shortcut: 'Space' },
-      { id: 'stop', icon: Icons.Square, tooltip: 'Stop', shortcut: 'Esc' },
-      { id: 'record', icon: Icons.Circle, tooltip: 'Record', shortcut: 'R' },
+      { id: 'play', icon: Icons.Play, tooltip: 'Play' },
+      { id: 'pause', icon: Icons.Pause, tooltip: 'Pause' },
+      { id: 'stop', icon: Icons.Square, tooltip: 'Stop' },
+      { id: 'record', icon: Icons.Circle, tooltip: 'Record' },
       
       // Edit tools
-      { id: 'cut', icon: Icons.Cut, tooltip: 'Cut/Razr Tool', shortcut: 'C' },
-      { id: 'trim', icon: Icons.Trim, tooltip: 'Trim Tool', shortcut: 'T' },
-      { id: 'speed', icon: Icons.Speed, tooltip: 'Speed Tool', shortcut: 'S' },
-      { id: 'select', icon: Icons.CursorArrowRays, tooltip: 'Selection Tool', shortcut: 'V' },
+      { id: 'cut', icon: Icons.Cut, tooltip: 'Cut/Razr Tool' },
+      { id: 'trim', icon: Icons.Trim, tooltip: 'Trim Tool' },
+      { id: 'speed', icon: Icons.Speed, tooltip: 'Speed Tool' },
+      { id: 'select', icon: Icons.CursorArrowRays, tooltip: 'Selection Tool' },
       
       // Media tools
-      { id: 'import', icon: Icons.Archive, tooltip: 'Import Media', shortcut: 'Ctrl+I' },
-      { id: 'render', icon: Icons.Film, tooltip: 'Render Video', shortcut: 'Ctrl+R' },
+      { id: 'import', icon: Icons.Archive, tooltip: 'Import Media' },
+      { id: 'render', icon: Icons.Film, tooltip: 'Render Video' },
       
       // Edit actions
-      { id: 'undo', icon: Icons.Undo, tooltip: 'Undo', shortcut: 'Ctrl+Z' },
-      { id: 'redo', icon: Icons.Redo, tooltip: 'Redo', shortcut: 'Ctrl+Y' },
+      { id: 'undo', icon: Icons.Undo, tooltip: 'Undo' },
+      { id: 'redo', icon: Icons.Redo, tooltip: 'Redo' },
     ],
     
     'photo-editor': [
       // Project tools
-      { id: 'new', icon: Icons.Plus, tooltip: 'New Image', shortcut: 'Ctrl+N' },
-      { id: 'open', icon: Icons.Folder, tooltip: 'Open Image', shortcut: 'Ctrl+O' },
-      { id: 'save', icon: Icons.Save, tooltip: 'Save Image', shortcut: 'Ctrl+S' },
+      { id: 'new', icon: Icons.Plus, tooltip: 'New Image' },
+      { id: 'open', icon: Icons.Folder, tooltip: 'Open Image' },
+      { id: 'save', icon: Icons.Save, tooltip: 'Save Image' },
       
       // Selection tools
-      { id: 'move', icon: Icons.HandRaised, tooltip: 'Move Tool', shortcut: 'V' },
-      { id: 'select-rectangle', icon: Icons.Rectangle, tooltip: 'Rectangular Marquee Tool', shortcut: 'M' },
-      { id: 'select-ellipse', icon: Icons.Circle, tooltip: 'Elliptical Marquee Tool', shortcut: 'M' },
-      { id: 'lasso', icon: Icons.Lasso, tooltip: 'Lasso Tool', shortcut: 'L' },
-      { id: 'magic-wand', icon: Icons.Sparkles, tooltip: 'Magic Wand Tool', shortcut: 'W' },
+      { id: 'move', icon: Icons.HandRaised, tooltip: 'Move Tool' },
+      { id: 'select-rectangle', icon: Icons.Rectangle, tooltip: 'Rectangular Marquee Tool' },
+      { id: 'select-ellipse', icon: Icons.Circle, tooltip: 'Elliptical Marquee Tool' },
+      { id: 'lasso', icon: Icons.Lasso, tooltip: 'Lasso Tool' },
+      { id: 'magic-wand', icon: Icons.Sparkles, tooltip: 'Magic Wand Tool' },
       
       // Transform tools
-      { id: 'crop', icon: Icons.Crop, tooltip: 'Crop Tool', shortcut: 'C' },
-      { id: 'eyedropper', icon: Icons.EyeDropper, tooltip: 'Eyedropper Tool', shortcut: 'I' },
+      { id: 'crop', icon: Icons.Crop, tooltip: 'Crop Tool' },
+      { id: 'eyedropper', icon: Icons.EyeDropper, tooltip: 'Eyedropper Tool' },
       
       // Paint tools
-      { id: 'brush', icon: Icons.PaintBrush, tooltip: 'Brush Tool', shortcut: 'B' },
-      { id: 'pencil', icon: Icons.Pencil, tooltip: 'Pencil Tool', shortcut: 'B' },
-      { id: 'eraser', icon: Icons.Eraser, tooltip: 'Eraser Tool', shortcut: 'E' },
-      { id: 'gradient', icon: Icons.Gradient, tooltip: 'Gradient Tool', shortcut: 'G' },
-      { id: 'paint-bucket', icon: Icons.PaintBucket, tooltip: 'Paint Bucket Tool', shortcut: 'G' },
+      { id: 'brush', icon: Icons.PaintBrush, tooltip: 'Brush Tool' },
+      { id: 'pencil', icon: Icons.Pencil, tooltip: 'Pencil Tool' },
+      { id: 'eraser', icon: Icons.Eraser, tooltip: 'Eraser Tool' },
+      { id: 'gradient', icon: Icons.Gradient, tooltip: 'Gradient Tool' },
+      { id: 'paint-bucket', icon: Icons.PaintBucket, tooltip: 'Paint Bucket Tool' },
       
       // Retouch tools
-      { id: 'healing', icon: Icons.Healing, tooltip: 'Healing Brush Tool', shortcut: 'J' },
-      { id: 'clone', icon: Icons.Clone, tooltip: 'Clone Stamp Tool', shortcut: 'S' },
-      { id: 'blur', icon: Icons.Blur, tooltip: 'Blur Tool', shortcut: 'R' },
-      { id: 'sharpen', icon: Icons.Sharpen, tooltip: 'Sharpen Tool', shortcut: 'R' },
-      { id: 'smudge', icon: Icons.Smudge, tooltip: 'Smudge Tool', shortcut: 'R' },
-      { id: 'dodge', icon: Icons.Dodge, tooltip: 'Dodge Tool', shortcut: 'O' },
-      { id: 'burn', icon: Icons.Burn, tooltip: 'Burn Tool', shortcut: 'O' },
-      { id: 'sponge', icon: Icons.Sponge, tooltip: 'Sponge Tool', shortcut: 'O' },
+      { id: 'healing', icon: Icons.Healing, tooltip: 'Healing Brush Tool' },
+      { id: 'clone', icon: Icons.Clone, tooltip: 'Clone Stamp Tool' },
+      { id: 'blur', icon: Icons.Blur, tooltip: 'Blur Tool' },
+      { id: 'sharpen', icon: Icons.Sharpen, tooltip: 'Sharpen Tool' },
+      { id: 'smudge', icon: Icons.Smudge, tooltip: 'Smudge Tool' },
+      { id: 'dodge', icon: Icons.Dodge, tooltip: 'Dodge Tool' },
+      { id: 'burn', icon: Icons.Burn, tooltip: 'Burn Tool' },
+      { id: 'sponge', icon: Icons.Sponge, tooltip: 'Sponge Tool' },
       
       // Creative tools
-      { id: 'text', icon: Icons.Type, tooltip: 'Type Tool', shortcut: 'T' },
-      { id: 'path', icon: Icons.BezierCurve, tooltip: 'Pen Tool', shortcut: 'P' },
-      { id: 'shape', icon: Icons.Shapes, tooltip: 'Shape Tool', shortcut: 'U' },
+      { id: 'text', icon: Icons.Type, tooltip: 'Type Tool' },
+      { id: 'path', icon: Icons.BezierCurve, tooltip: 'Pen Tool' },
+      { id: 'shape', icon: Icons.Shapes, tooltip: 'Shape Tool' },
       
       // Navigation tools
-      { id: 'zoom', icon: Icons.MagnifyingGlass, tooltip: 'Zoom Tool', shortcut: 'Z' },
-      { id: 'hand', icon: Icons.Hand, tooltip: 'Hand Tool', shortcut: 'H' },
+      { id: 'zoom', icon: Icons.MagnifyingGlass, tooltip: 'Zoom Tool' },
+      { id: 'hand', icon: Icons.Hand, tooltip: 'Hand Tool' },
       
       // Edit actions
-      { id: 'undo', icon: Icons.Undo, tooltip: 'Undo', shortcut: 'Ctrl+Z' },
-      { id: 'redo', icon: Icons.Redo, tooltip: 'Redo', shortcut: 'Ctrl+Y' },
+      { id: 'undo', icon: Icons.Undo, tooltip: 'Undo' },
+      { id: 'redo', icon: Icons.Redo, tooltip: 'Redo' },
     ]
   };
   
@@ -470,9 +470,6 @@ function HorizontalToolbar() {
                   {/* Tooltip */}
                   <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-gray-900/95 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
                     {tool.tooltip}
-                    {tool.shortcut && (
-                      <span className="ml-2 text-gray-400">({tool.shortcut})</span>
-                    )}
                     <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900/95" />
                   </div>
                 </button>
@@ -570,7 +567,7 @@ function HorizontalToolbar() {
                             ? 'bg-blue-600 text-white'
                             : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                         }`}
-                        title={`${mode.label} (${mode.shortcut})`}
+                        title={mode.label}
                       >
                         <mode.icon className="w-3 h-3" />
                         <span>{mode.label}</span>

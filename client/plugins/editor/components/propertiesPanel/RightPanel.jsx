@@ -1,4 +1,3 @@
-import React from 'react';
 import Toolbar from '@/plugins/editor/components/ui/Toolbar';
 import ScenePanel from '@/plugins/editor/components/propertiesPanel/ScenePanel';
 

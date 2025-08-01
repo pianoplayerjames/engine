@@ -1,20 +1,15 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { projectManager } from '@/plugins/projects/projectManager.js'
 import { assetManager, PRIORITY } from '@/plugins/assets/OptimizedAssetManager.js'
 import AssetLoader from '@/plugins/projects/components/AssetLoader.jsx'
-import SplashLoader from './SplashLoader.jsx'
-import ProjectSplash from './ProjectSplash.jsx'
 
 // Only include systems that actually need async loading
 const ENGINE_SYSTEMS = [
   { name: 'Project System', isAsync: true } // Only this one does real async work
 ]
 
-export default function EngineLoader({ children, onLoadComplete, showSplash: enableSplash = false, showProjectSelection = true }) {
-  const [showProjectSplash, setShowProjectSplash] = useState(showProjectSelection)
-  const [selectedProject, setSelectedProject] = useState(null)
-  const [showSplash, setShowSplash] = useState(enableSplash)
-  const [isLoading, setIsLoading] = useState(false) 
+export default function EngineLoader({ children, onLoadComplete }) {
+  const [isLoading, setIsLoading] = useState(true) 
   const [progress, setProgress] = useState(0)
   const [currentSystem, setCurrentSystem] = useState('')
   const [engineReady, setEngineReady] = useState(false)
@@ -22,22 +17,17 @@ export default function EngineLoader({ children, onLoadComplete, showSplash: ena
   useEffect(() => {
     let isMounted = true
     
-    const initializeEngine = async (projectName) => {
+    const initializeEngine = async () => {
       try {
         console.log('🚀 Renzora Engine starting...')
         setIsLoading(true)
         setCurrentSystem('Initializing Project System')
         setProgress(10)
         
-        // Initialize with selected project or default
+        // Initialize with default project
         try {
-          if (projectName) {
-            await projectManager.loadProject(projectName)
-            console.log(`✅ Project system initialized with project: ${projectName}`)
-          } else {
-            await projectManager.initializeDefaultProject()
-            console.log('✅ Project system initialized with default project')
-          }
+          await projectManager.initializeDefaultProject()
+          console.log('✅ Project system initialized with default project')
         } catch (error) {
           console.warn('⚠️ Project system initialization failed:', error)
           // Continue anyway with fallback
@@ -182,66 +172,23 @@ export default function EngineLoader({ children, onLoadComplete, showSplash: ena
       }
     }
 
-    // Store initializeEngine for various callbacks
-    window._initializeEngine = initializeEngine
-    
-    // Start immediately if no splash and no project selection
-    if (!enableSplash && !showProjectSelection) {
-      const timer = setTimeout(() => initializeEngine(), 10)
-      return () => {
-        isMounted = false
-        clearTimeout(timer)
-        delete window._initializeEngine
-      }
-    }
+    // Start engine initialization immediately
+    const timer = setTimeout(() => initializeEngine(), 10)
     
     return () => {
       isMounted = false
-      delete window._initializeEngine
+      clearTimeout(timer)
     }
-  }, [onLoadComplete, showProjectSelection])
-
-  const handleProjectSelected = (projectName) => {
-    setSelectedProject(projectName)
-    setShowProjectSplash(false)
-    
-    if (enableSplash) {
-      setShowSplash(true)
-    } else {
-      setIsLoading(true)
-      if (window._initializeEngine) {
-        window._initializeEngine(projectName)
-      }
-    }
-  }
+  }, [onLoadComplete])
 
   return (
     <div data-engine-loader="true">
       {/* Always render children (main UI) in background */}
       {children}
       
-      {/* Show project selection splash first */}
-      {showProjectSplash && (
-        <ProjectSplash onProjectSelected={handleProjectSelected} />
-      )}
-      
-      {/* Show brand splash screen (if enabled) */}
-      {showSplash && enableSplash && !showProjectSplash && (
-        <SplashLoader 
-          onReady={() => {
-            setShowSplash(false)
-            setIsLoading(true)
-            // Start engine initialization after splash
-            if (window._initializeEngine) {
-              window._initializeEngine(selectedProject)
-            }
-          }}
-        />
-      )}
-      
       {/* Show loading screen while engine initializes */}
       <AssetLoader
-        isVisible={isLoading && !showSplash && !showProjectSplash}
+        isVisible={isLoading}
         progress={progress}
         currentAsset={currentSystem}
         onComplete={() => {

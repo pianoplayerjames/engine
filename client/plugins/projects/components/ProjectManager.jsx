@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { projectManager } from '../projectManager.js'
 import { ProjectLoadingState } from './AssetLoader.jsx'
 import { useLoading } from './LoadingProvider.jsx'

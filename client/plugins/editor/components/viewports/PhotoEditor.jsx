@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useSnapshot } from 'valtio';
 import { Icons } from '@/plugins/editor/components/Icons';
 import { editorState, editorActions } from '@/plugins/editor/store.js';
@@ -164,85 +164,6 @@ const PhotoEditor = () => {
     }
   }, [image?.src]);
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      // Don't trigger shortcuts if user is typing in an input
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-
-      const panStep = 50;
-      const zoomStep = 10;
-
-      switch (e.key.toLowerCase()) {
-        // Pan with arrow keys
-        case 'arrowleft':
-          e.preventDefault();
-          setPanX(prev => prev + panStep);
-          break;
-        case 'arrowright':
-          e.preventDefault();
-          setPanX(prev => prev - panStep);
-          break;
-        case 'arrowup':
-          e.preventDefault();
-          setPanY(prev => prev + panStep);
-          break;
-        case 'arrowdown':
-          e.preventDefault();
-          setPanY(prev => prev - panStep);
-          break;
-        
-        // Zoom shortcuts
-        case '+':
-        case '=':
-          e.preventDefault();
-          handleZoomChange(Math.min(500, zoom + zoomStep));
-          break;
-        case '-':
-          e.preventDefault();
-          handleZoomChange(Math.max(10, zoom - zoomStep));
-          break;
-        case '0':
-          e.preventDefault();
-          handleZoomChange(100);
-          setPanX(0);
-          setPanY(0);
-          break;
-        
-        // Fit to screen
-        case 'f':
-          if (!e.ctrlKey && !e.metaKey) {
-            e.preventDefault();
-            fitToScreen();
-          }
-          break;
-        
-        // Actual size
-        case '1':
-          if (!e.ctrlKey && !e.metaKey) {
-            e.preventDefault();
-            handleZoomChange(100);
-            centerImage();
-          }
-          break;
-      }
-    };
-
-    const handleKeyUp = (e) => {
-      // Stop panning when releasing space
-      if (e.key === ' ') {
-        setIsDragging(false);
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('keyup', handleKeyUp);
-    
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('keyup', handleKeyUp);
-    };
-  }, [zoom, panX, panY, image]);
 
   // Mouse event listeners for drag panning
   useEffect(() => {

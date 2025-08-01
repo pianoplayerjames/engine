@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { projectManager } from './projectManager.js'
 
 export default function ProjectsPlugin() {
@@ -33,33 +33,6 @@ export default function ProjectsPlugin() {
       timer = setTimeout(initializeProject, 500)
     }
     
-    // Set up keyboard shortcuts for project management
-    const handleKeyDown = (event) => {
-      if (event.ctrlKey || event.metaKey) {
-        switch (event.key.toLowerCase()) {
-          case 's':
-            event.preventDefault()
-            handleSaveProject()
-            break
-          case 'o':
-            event.preventDefault()
-            // This would trigger the project manager modal
-            document.dispatchEvent(new CustomEvent('open-project-manager'))
-            break
-          case 'n':
-            event.preventDefault()
-            // This would trigger new project creation
-            document.dispatchEvent(new CustomEvent('new-project'))
-            break
-          case 'e':
-            if (event.shiftKey) {
-              event.preventDefault()
-              handleExportProject()
-            }
-            break
-        }
-      }
-    }
 
     const handleSaveProject = async () => {
       const currentProject = projectManager.getCurrentProject()
@@ -86,7 +59,6 @@ export default function ProjectsPlugin() {
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown)
     
     // Set up auto-save interval (every 30 seconds)
     const autoSaveInterval = setInterval(() => {
@@ -100,7 +72,6 @@ export default function ProjectsPlugin() {
     return () => {
       if (timer) clearTimeout(timer)
       clearInterval(autoSaveInterval)
-      window.removeEventListener('keydown', handleKeyDown)
     }
   }, [])
 

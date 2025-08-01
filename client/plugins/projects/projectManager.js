@@ -1,6 +1,3 @@
-// Renzora Engine Project Manager
-// Handles .ren file extraction and packaging
-
 import { editorState } from '@/plugins/editor/store.js'
 import { sceneState, sceneActions } from '@/plugins/scene/store.js'
 import { autoSaveManager } from '@/plugins/core/AutoSaveManager.js'

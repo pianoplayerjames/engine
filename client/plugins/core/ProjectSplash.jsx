@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Icons } from '@/plugins/editor/components/Icons'
 
 export default function ProjectSplash({ onProjectSelected }) {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Icons } from '@/plugins/editor/components/Icons';
 import { useSnapshot } from 'valtio';
 import { editorState, editorActions } from '@/plugins/editor/store.js';
@@ -15,10 +15,10 @@ export default function CameraHelpers() {
   const showGrid = viewport.showGrid !== false; // default true
   
   const renderModes = [
-    { id: 'wireframe', label: 'Wireframe', icon: Icons.Grid3x3, shortcut: '1' },
-    { id: 'solid', label: 'Solid', icon: Icons.Cube, shortcut: '2' },
-    { id: 'material', label: 'Material', icon: Icons.Palette, shortcut: '3' },
-    { id: 'rendered', label: 'Rendered', icon: Icons.Sun, shortcut: '4' }
+    { id: 'wireframe', label: 'Wireframe', icon: Icons.Grid3x3 },
+    { id: 'solid', label: 'Solid', icon: Icons.Cube },
+    { id: 'material', label: 'Material', icon: Icons.Palette },
+    { id: 'rendered', label: 'Rendered', icon: Icons.Sun }
   ];
   
   const speedPresets = [

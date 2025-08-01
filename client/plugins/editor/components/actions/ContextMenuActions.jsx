@@ -12,11 +12,11 @@ export const useContextMenuActions = (editorActions) => {
     if (item) {
       // Scene object context menu - different items based on object type
       const baseItems = [
-        { label: 'Rename', action: () => handleRename(item.id), icon: <Icons.Pencil className="w-4 h-4" />, shortcut: 'F2' },
+        { label: 'Rename', action: () => handleRename(item.id), icon: <Icons.Pencil className="w-4 h-4" /> },
         { separator: true },
-        { label: 'Copy', action: () => handleCopy(item.id), icon: <Icons.Copy className="w-4 h-4" />, shortcut: 'Ctrl+C' },
-        { label: 'Duplicate', action: () => handleDuplicate(item.id), icon: <Icons.DocumentDuplicate className="w-4 h-4" />, shortcut: 'Ctrl+D' },
-        { label: 'Delete', action: () => handleDelete(item.id), icon: <Icons.Trash className="w-4 h-4" />, shortcut: 'Del' },
+        { label: 'Copy', action: () => handleCopy(item.id), icon: <Icons.Copy className="w-4 h-4" /> },
+        { label: 'Duplicate', action: () => handleDuplicate(item.id), icon: <Icons.DocumentDuplicate className="w-4 h-4" /> },
+        { label: 'Delete', action: () => handleDelete(item.id), icon: <Icons.Trash className="w-4 h-4" /> },
         { separator: true },
       ];
 
@@ -27,7 +27,6 @@ export const useContextMenuActions = (editorActions) => {
         typeSpecificItems.push(
           { label: 'Add Material', action: () => handleAddMaterial(item.id), icon: <Icons.Cube className="w-4 h-4" /> },
           { label: 'Add Script', action: () => handleAddScript(item.id), icon: <Icons.CodeBracket className="w-4 h-4" /> },
-          { label: 'Add Physics', action: () => handleAddPhysics(item.id), icon: <Icons.Lightning className="w-4 h-4" /> },
         );
       }
 
@@ -65,10 +64,10 @@ export const useContextMenuActions = (editorActions) => {
           { label: 'Camera', action: () => handleCreateObject('camera'), icon: <Icons.Camera className="w-4 h-4" /> },
         ]},
         { separator: true },
-        { label: 'Paste', action: () => handlePaste(), icon: <Icons.Clipboard className="w-4 h-4" />, shortcut: 'Ctrl+V' },
+        { label: 'Paste', action: () => handlePaste(), icon: <Icons.Clipboard className="w-4 h-4" /> },
         { separator: true },
-        { label: 'Undo', action: () => handleUndo(), icon: <Icons.Undo className="w-4 h-4" />, shortcut: 'Ctrl+Z' },
-        { label: 'Redo', action: () => handleRedo(), icon: <Icons.Redo className="w-4 h-4" />, shortcut: 'Ctrl+Y' },
+        { label: 'Undo', action: () => handleUndo(), icon: <Icons.Undo className="w-4 h-4" /> },
+        { label: 'Redo', action: () => handleRedo(), icon: <Icons.Redo className="w-4 h-4" /> },
       ];
 
       if (context === 'viewport') {
@@ -76,20 +75,20 @@ export const useContextMenuActions = (editorActions) => {
         return [
           ...baseGeneralItems,
           { separator: true },
-          { label: 'Frame All', action: () => handleFrameAll(), icon: <Icons.ArrowsPointingOut className="w-4 h-4" />, shortcut: 'F' },
-          { label: 'Frame Selected', action: () => handleFocusSelected(), icon: <Icons.MagnifyingGlass className="w-4 h-4" />, shortcut: 'Shift+F' },
+          { label: 'Frame All', action: () => handleFrameAll(), icon: <Icons.ArrowsPointingOut className="w-4 h-4" /> },
+          { label: 'Frame Selected', action: () => handleFocusSelected(), icon: <Icons.MagnifyingGlass className="w-4 h-4" /> },
           { separator: true },
           { label: 'Reset View', action: () => handleResetView(), icon: <Icons.ArrowPath className="w-4 h-4" /> },
-          { label: 'Top View', action: () => handleSetView('top'), icon: <Icons.ArrowUp className="w-4 h-4" />, shortcut: 'Numpad 7' },
-          { label: 'Front View', action: () => handleSetView('front'), icon: <Icons.ArrowRight className="w-4 h-4" />, shortcut: 'Numpad 1' },
-          { label: 'Right View', action: () => handleSetView('right'), icon: <Icons.ArrowDown className="w-4 h-4" />, shortcut: 'Numpad 3' },
+          { label: 'Top View', action: () => handleSetView('top'), icon: <Icons.ArrowUp className="w-4 h-4" /> },
+          { label: 'Front View', action: () => handleSetView('front'), icon: <Icons.ArrowRight className="w-4 h-4" /> },
+          { label: 'Right View', action: () => handleSetView('right'), icon: <Icons.ArrowDown className="w-4 h-4" /> },
         ];
       } else {
         // Scene panel context menu
         return [
           ...baseGeneralItems,
           { separator: true },
-          { label: 'Select All', action: () => handleSelectAll(), icon: <Icons.CursorArrowRays className="w-4 h-4" />, shortcut: 'Ctrl+A' },
+          { label: 'Select All', action: () => handleSelectAll(), icon: <Icons.CursorArrowRays className="w-4 h-4" /> },
           { label: 'Expand All', action: () => handleExpandAll(), icon: <Icons.PlusCircle className="w-4 h-4" /> },
           { label: 'Collapse All', action: () => handleCollapseAll(), icon: <Icons.MinusCircle className="w-4 h-4" /> },
         ];
@@ -128,10 +127,6 @@ export const useContextMenuActions = (editorActions) => {
     setActiveTab('scripts');
   };
 
-  const handleAddPhysics = (itemId) => {
-    console.log('Add Physics', itemId);
-    setSelectedRightTool('physics');
-  };
 
   const handleEditTerrain = (itemId) => {
     console.log('Edit Terrain', itemId);
@@ -235,7 +230,6 @@ export const useContextMenuActions = (editorActions) => {
     handleDuplicate,
     handleAddMaterial,
     handleAddScript,
-    handleAddPhysics,
     handleEditTerrain,
     handlePaintTexture,
     handleColorCode,

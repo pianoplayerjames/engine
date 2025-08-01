@@ -1,6 +1,6 @@
 // High-performance asset loading system with priority queues and intelligent caching
 import { proxy } from 'valtio';
-import { getThumbnailGenerator } from './SimpleThumbnailGenerator.js';
+// TODO: Re-implement thumbnail generation for Babylon.js
 
 // Asset loading priorities
 const PRIORITY = {
@@ -144,20 +144,16 @@ class OptimizedAssetManager {
     }
     
     try {
-      const generator = getThumbnailGenerator();
-      if (!generator) {
-        throw new Error('Thumbnail generator not available');
-      }
-      
-      const url = `/api/projects/${this.currentProject}/assets/file/${asset.path}`;
-      const thumbnail = await generator.generateThumbnail(url, asset.extension, asset.id);
+      // TODO: Re-implement thumbnail generation for Babylon.js
+      // For now, return a placeholder
+      const placeholder = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0yOCAyMEgzNlYyOEgyOFYyMFoiIGZpbGw9IiM2QjcyODAiLz4KPHA+YXRoIGQ9Ik0yMCAzNkgyOFY0NEgyMFYzNloiIGZpbGw9IiM2QjcyODAiLz4KPHA+YXRoIGQ9Ik0zNiAzNkg0NFY0NEgzNlYzNloiIGZpbGw9IiM2QjcyODAiLz4KPC9zdmc+';
       
       // Cache the result
-      this.cache.set(cacheKey, thumbnail);
-      this.updateCacheSize(cacheKey, thumbnail.length);
+      this.cache.set(cacheKey, placeholder);
+      this.updateCacheSize(cacheKey, placeholder.length);
       this.stats.totalRequests++;
       
-      return thumbnail;
+      return placeholder;
       
     } catch (error) {
       console.warn(`Thumbnail generation failed for ${asset.id}:`, error);

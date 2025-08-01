@@ -1,14 +1,7 @@
-// plugins/editor/components/ScenePanel.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Icons } from '@/plugins/editor/components/Icons.jsx';
 import SliderWithTooltip from '@/plugins/editor/components/ui/SliderWithTooltip.jsx';
 import CollapsibleSection from '@/plugins/editor/components/ui/CollapsibleSection.jsx';
-import ContextMenu from '@/plugins/editor/components/ui/ContextMenu.jsx';
-import DAWPropertiesPanel from './DAWPropertiesPanel.jsx';
-import VSTPluginsPanel from './VSTPluginsPanel.jsx';
-import MasterChannelsPanel from './MasterChannelsPanel.jsx';
-import TrackPropertiesPanel from './TrackPropertiesPanel.jsx';
-import VideoPropertiesPanel from './VideoPropertiesPanel.jsx';
 import EffectsLibraryPanel from './EffectsLibraryPanel.jsx';
 import ExportSettingsPanel from './ExportSettingsPanel.jsx';
 import LayersPanel from './LayersPanel.jsx';
@@ -18,11 +11,6 @@ import ColorsPanel from './ColorsPanel.jsx';
 import BrushesPanel from './BrushesPanel.jsx';
 import { useSnapshot } from 'valtio';
 import { editorState, editorActions } from '@/plugins/editor/store.js';
-import { renderState, renderActions } from '@/plugins/render/store.js';
-import { HDR_ENVIRONMENTS, getHDREnvironment } from '@/plugins/render/environmentLoader.js';
-import statsManager from '@/plugins/editor/utils/statsManager.js';
-
-// Mock data removed - now using actual sceneObjects from store
 
 function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selectedTool, onToolSelect, onContextMenu }) {
   const [expandedItems, setExpandedItems] = useState(['scene']);
@@ -43,17 +31,116 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
     dragStartDepth: 0
   });
   
-  const { sceneObjects, settings } = useSnapshot(editorState);
+  const { settings, babylonScene } = useSnapshot(editorState);
   const { grid: gridSettings, viewport: viewportSettings } = settings;
-  const { removeSceneObject, setSelectedEntity, setTransformMode, updateSceneObject, updateGridSettings, updateViewportSettings } = editorActions;
+  const { setSelectedEntity, setTransformMode, updateGridSettings, updateViewportSettings } = editorActions;
   
-  // Get selected object data
-  const selectedObjectData = sceneObjects.find(obj => obj.id === selectedObject);
+  // Get selected object data from Babylon.js scene
+  const selectedObjectData = useMemo(() => {
+    if (!selectedObject) return null;
+    
+    const scene = babylonScene?.current;
+    if (!scene) return null;
+    
+    const babylonObjects = [];
+    
+    // Check meshes
+    if (scene.meshes) {
+      scene.meshes.forEach(mesh => {
+        if ((mesh.uniqueId || mesh.name) === selectedObject) {
+          babylonObjects.push({
+            id: mesh.uniqueId || mesh.name,
+            name: mesh.name,
+            type: 'mesh',
+            position: mesh.position ? [mesh.position.x, mesh.position.y, mesh.position.z] : [0, 0, 0],
+            rotation: mesh.rotation ? [mesh.rotation.x, mesh.rotation.y, mesh.rotation.z] : [0, 0, 0],
+            scale: mesh.scaling ? [mesh.scaling.x, mesh.scaling.y, mesh.scaling.z] : [1, 1, 1],
+            visible: mesh.isVisible !== false,
+            babylonObject: mesh
+          });
+        }
+      });
+    }
+    
+    // Check lights
+    if (scene.lights) {
+      scene.lights.forEach(light => {
+        if ((light.uniqueId || light.name) === selectedObject) {
+          babylonObjects.push({
+            id: light.uniqueId || light.name,
+            name: light.name,
+            type: 'light',
+            lightType: light.getClassName().toLowerCase().replace('light', ''),
+            position: light.position ? [light.position.x, light.position.y, light.position.z] : [0, 0, 0],
+            rotation: light.rotation ? [light.rotation.x, light.rotation.y, light.rotation.z] : [0, 0, 0],
+            visible: light.isEnabled(),
+            intensity: light.intensity || 1,
+            color: light.diffuse ? `rgb(${Math.round(light.diffuse.r * 255)}, ${Math.round(light.diffuse.g * 255)}, ${Math.round(light.diffuse.b * 255)})` : '#ffffff',
+            castShadow: light.shadowEnabled || false,
+            babylonObject: light
+          });
+        }
+      });
+    }
+    
+    // Check cameras
+    if (scene.cameras) {
+      scene.cameras.forEach(camera => {
+        if ((camera.uniqueId || camera.name) === selectedObject) {
+          babylonObjects.push({
+            id: camera.uniqueId || camera.name,
+            name: camera.name,
+            type: 'camera',
+            position: camera.position ? [camera.position.x, camera.position.y, camera.position.z] : [0, 0, 0],
+            rotation: camera.rotation ? [camera.rotation.x, camera.rotation.y, camera.rotation.z] : [0, 0, 0],
+            cameraType: camera.getClassName().toLowerCase().replace('camera', ''),
+            fov: camera.fov ? camera.fov * 180 / Math.PI : 60,
+            near: camera.minZ || 0.1,
+            far: camera.maxZ || 1000,
+            visible: true,
+            babylonObject: camera
+          });
+        }
+      });
+    }
+    
+    return babylonObjects.length > 0 ? babylonObjects[0] : null;
+  }, [selectedObject, babylonScene]);
   
   // Handle object deletion
   const handleDeleteObject = (objectId, e) => {
     e.stopPropagation();
-    removeSceneObject(objectId);
+    
+    const scene = babylonScene?.current;
+    if (!scene) return;
+    
+    // Find and dispose the object in Babylon.js scene
+    let foundObject = null;
+    
+    // Check meshes
+    if (scene.meshes) {
+      foundObject = scene.meshes.find(mesh => (mesh.uniqueId || mesh.name) === objectId);
+    }
+    
+    // Check lights
+    if (!foundObject && scene.lights) {
+      foundObject = scene.lights.find(light => (light.uniqueId || light.name) === objectId);
+    }
+    
+    // Check cameras
+    if (!foundObject && scene.cameras) {
+      foundObject = scene.cameras.find(camera => (camera.uniqueId || camera.name) === objectId);
+    }
+    
+    // Check transform nodes
+    if (!foundObject && scene.transformNodes) {
+      foundObject = scene.transformNodes.find(node => (node.uniqueId || node.name) === objectId);
+    }
+    
+    if (foundObject) {
+      foundObject.dispose();
+    }
+    
     // Clear selection if deleted object was selected
     if (selectedObject === objectId) {
       setSelectedEntity(null);
@@ -61,20 +148,25 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
     }
   };
   
-  // Handle property changes
+  // Handle property changes for Babylon.js objects
   const handlePropertyChange = (property, axis, value) => {
-    if (selectedObjectData) {
-      const newValue = [...selectedObjectData[property]];
-      const axisIndex = axis === 'x' ? 0 : axis === 'y' ? 1 : 2;
-      
-      if (property === 'rotation') {
-        // Value is already converted to radians in the onChange handler
-        newValue[axisIndex] = parseFloat(value) || 0;
-      } else {
-        newValue[axisIndex] = parseFloat(value) || 0;
-      }
-      
-      updateSceneObject(selectedObject, { [property]: newValue });
+    if (!selectedObjectData?.babylonObject) return;
+    
+    const numValue = parseFloat(value) || 0;
+    const babylonObj = selectedObjectData.babylonObject;
+    
+    if (property === 'position' && babylonObj.position) {
+      if (axis === 'x') babylonObj.position.x = numValue;
+      else if (axis === 'y') babylonObj.position.y = numValue;
+      else if (axis === 'z') babylonObj.position.z = numValue;
+    } else if (property === 'rotation' && babylonObj.rotation) {
+      if (axis === 'x') babylonObj.rotation.x = numValue;
+      else if (axis === 'y') babylonObj.rotation.y = numValue;
+      else if (axis === 'z') babylonObj.rotation.z = numValue;
+    } else if (property === 'scale' && babylonObj.scaling) {
+      if (axis === 'x') babylonObj.scaling.x = numValue;
+      else if (axis === 'y') babylonObj.scaling.y = numValue;
+      else if (axis === 'z') babylonObj.scaling.z = numValue;
     }
   };
 
@@ -147,36 +239,99 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
     return color || '#ff0000';
   };
   
-  // Convert scene objects to hierarchy format
-  const hierarchyData = [
-    {
-      id: 'scene',
-      name: 'Scene',
-      type: 'scene',
-      visible: true,
-      children: sceneObjects
-        .filter(obj => !obj.parentId) // Only show top-level objects (including folders)
-        .map(obj => ({
-          id: obj.id,
-          name: obj.name,
-          type: obj.type,
-          lightType: obj.lightType,
-          visible: obj.visible,
-          children: obj.type === 'folder' && obj.children ? 
-            obj.children.map(childId => {
-              const childObj = sceneObjects.find(child => child.id === childId);
-              return childObj ? {
-                id: childObj.id,
-                name: childObj.name,
-                type: childObj.type,
-                lightType: childObj.lightType,
-                visible: childObj.visible,
-                children: []
-              } : null;
-            }).filter(Boolean) : []
-        }))
+  // Convert Babylon.js scene to hierarchy format
+  const hierarchyData = useMemo(() => {
+    const scene = babylonScene?.current;
+    if (!scene) {
+      return [
+        {
+          id: 'scene',
+          name: 'Scene',
+          type: 'scene',
+          visible: true,
+          children: []
+        }
+      ];
     }
-  ];
+
+    // Extract hierarchy from Babylon.js scene
+    const babylonObjects = [];
+    
+    // Add all meshes
+    if (scene.meshes) {
+      scene.meshes.forEach(mesh => {
+        if (mesh.name && mesh.name !== '__root__') {
+          babylonObjects.push({
+            id: mesh.uniqueId || mesh.name,
+            name: mesh.name,
+            type: 'mesh',
+            visible: mesh.isVisible !== false,
+            babylonObject: mesh,
+            children: []
+          });
+        }
+      });
+    }
+    
+    // Add all lights
+    if (scene.lights) {
+      scene.lights.forEach(light => {
+        if (light.name && !light.name.startsWith('Default')) {
+          babylonObjects.push({
+            id: light.uniqueId || light.name,
+            name: light.name,
+            type: 'light',
+            lightType: light.getClassName().toLowerCase().replace('light', ''),
+            visible: light.isEnabled(),
+            babylonObject: light,
+            children: []
+          });
+        }
+      });
+    }
+    
+    // Add all cameras
+    if (scene.cameras) {
+      scene.cameras.forEach(camera => {
+        if (camera.name && camera.name !== 'camera') {
+          babylonObjects.push({
+            id: camera.uniqueId || camera.name,
+            name: camera.name,
+            type: 'camera',
+            visible: true,
+            babylonObject: camera,
+            children: []
+          });
+        }
+      });
+    }
+    
+    // Add transform nodes
+    if (scene.transformNodes) {
+      scene.transformNodes.forEach(node => {
+        if (node.name && node.name !== '__root__') {
+          babylonObjects.push({
+            id: node.uniqueId || node.name,
+            name: node.name,
+            type: 'transform',
+            visible: true,
+            babylonObject: node,
+            children: []
+          });
+        }
+      });
+    }
+
+    return [
+      {
+        id: 'scene',
+        name: 'Scene',
+        type: 'scene',
+        visible: true,
+        children: babylonObjects
+      }
+    ];
+  }, [babylonScene]);
   
   const containerRef = useRef(null);
   const headerRef = useRef(null);
@@ -417,21 +572,27 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
         return <Icons.Cube className="w-4 h-4 text-gray-400" />;
       case 'mesh':
         return <Icons.Cube3D className="w-4 h-4 text-blue-400" />;
+      case 'transform':
+        return <Icons.Cube className="w-4 h-4 text-purple-400" />;
       case 'light':
         switch (lightType) {
           case 'directional':
-            return <Icons.LightDirectional className="w-4 h-4" />;
+            return <Icons.LightDirectional className="w-4 h-4 text-yellow-400" />;
           case 'point':
-            return <Icons.LightPoint className="w-4 h-4" />;
+            return <Icons.LightPoint className="w-4 h-4 text-yellow-400" />;
           case 'spot':
-            return <Icons.LightSpot className="w-4 h-4" />;
+            return <Icons.LightSpot className="w-4 h-4 text-yellow-400" />;
+          case 'hemispheric':
+            return <Icons.LightBulb className="w-4 h-4 text-yellow-400" />;
           default:
             return <Icons.LightBulb className="w-4 h-4 text-yellow-400" />;
         }
       case 'camera':
-        return <Icons.CameraScene className="w-4 h-4" />;
+        return <Icons.CameraScene className="w-4 h-4 text-green-400" />;
       case 'folder':
         return <Icons.Folder className="w-4 h-4 text-yellow-500" />;
+      case 'scene':
+        return <Icons.Cube className="w-4 h-4 text-gray-300" />;
       default:
         return <Icons.Cube className="w-4 h-4 text-gray-400" />;
     }
@@ -529,13 +690,8 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
       case 'cloud': return 'Cloud';
       case 'monitor': return 'Display';
       case 'settings': return 'Settings';
-      case 'daw-properties': return 'DAW Properties';
       case 'audio-devices': return 'Audio Devices';
       case 'mixer-settings': return 'Mixer Settings';
-      case 'vst-plugins': return 'VST Plugins';
-      case 'master-channels': return 'Master Channels';
-      case 'track-properties': return 'Track Properties';
-      case 'video-properties': return 'Video Properties';
       case 'effects-panel': return 'Effects Panel';
       case 'export-settings': return 'Export Settings';
       case 'layers': return 'Layers';
@@ -1110,132 +1266,6 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
               </div>
             </CollapsibleSection>
 
-            {/* Skybox Section */}
-            <CollapsibleSection title="Skybox" defaultOpen={false} index={2}>
-              <div className="space-y-4">
-                {/* Environment Presets */}
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">Environment</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => updateViewportSettings({ backgroundColor: '#87CEEB' })}
-                      className="flex items-center p-2 bg-slate-800 border border-slate-600 rounded-lg hover:border-blue-500 transition-colors text-left"
-                    >
-                      <div className="w-4 h-4 rounded mr-2" style={{ background: 'linear-gradient(to bottom, #87CEEB, #E0F6FF)' }}></div>
-                      <span className="text-xs text-slate-300">Blue Sky</span>
-                    </button>
-                    <button
-                      onClick={() => updateViewportSettings({ backgroundColor: '#FF6B35' })}
-                      className="flex items-center p-2 bg-slate-800 border border-slate-600 rounded-lg hover:border-blue-500 transition-colors text-left"
-                    >
-                      <div className="w-4 h-4 rounded mr-2" style={{ background: 'linear-gradient(to bottom, #FF6B35, #FFD700)' }}></div>
-                      <span className="text-xs text-slate-300">Sunset</span>
-                    </button>
-                    <button
-                      onClick={() => updateViewportSettings({ backgroundColor: '#1a1a2e' })}
-                      className="flex items-center p-2 bg-slate-800 border border-slate-600 rounded-lg hover:border-blue-500 transition-colors text-left"
-                    >
-                      <div className="w-4 h-4 rounded mr-2" style={{ background: 'linear-gradient(to bottom, #1a1a2e, #16213e)' }}></div>
-                      <span className="text-xs text-slate-300">Night</span>
-                    </button>
-                    <button
-                      onClick={() => updateViewportSettings({ backgroundColor: '#FFB6C1' })}
-                      className="flex items-center p-2 bg-slate-800 border border-slate-600 rounded-lg hover:border-blue-500 transition-colors text-left"
-                    >
-                      <div className="w-4 h-4 rounded mr-2" style={{ background: 'linear-gradient(to bottom, #FFB6C1, #FF69B4)' }}></div>
-                      <span className="text-xs text-slate-300">Dawn</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* HDR Environment Maps */}
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">HDR Environments</label>
-                  <div className="space-y-1">
-                    {HDR_ENVIRONMENTS.map((env) => (
-                      <button
-                        key={env.id}
-                        onClick={() => {
-                          try {
-                            const environment = getHDREnvironment(env.id);
-                            const { setEnvironment } = renderActions;
-                            
-                            if (environment.type === 'room') {
-                              setEnvironment(null, 1.0, 'hdr', 'room');
-                            } else if (environment.preset) {
-                              setEnvironment(environment.preset, 1.0, 'hdr', 'preset');
-                            }
-                          } catch (error) {
-                            console.error('Failed to set HDR environment:', error);
-                          }
-                        }}
-                        className="w-full flex items-center p-2 bg-slate-800 border border-slate-600 rounded-lg hover:border-blue-500 transition-colors text-left"
-                      >
-                        <Icons.Image className="w-4 h-4 mr-2 text-slate-400" />
-                        <div className="flex flex-col">
-                          <span className="text-xs text-slate-300">{env.name}</span>
-                          <span className="text-xs text-slate-500">{env.description}</span>
-                        </div>
-                      </button>
-                    ))}
-                    
-                    {/* Clear Environment Button */}
-                    <button
-                      onClick={() => {
-                        const { clearEnvironment } = renderActions;
-                        clearEnvironment();
-                        // Also reset the background color
-                        updateViewportSettings({ backgroundColor: '#1a202c' });
-                      }}
-                      className="w-full flex items-center p-2 bg-slate-800 border border-slate-600 rounded-lg hover:border-red-500 transition-colors text-left"
-                    >
-                      <Icons.XMark className="w-4 h-4 mr-2 text-red-400" />
-                      <span className="text-xs text-slate-300">Clear Environment</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Environment Intensity */}
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">Environment Intensity</label>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="range"
-                      min="0"
-                      max="2"
-                      step="0.1"
-                      defaultValue="1"
-                      onChange={(e) => {
-                        const intensity = parseFloat(e.target.value);
-                        const { setEnvironmentIntensity } = renderActions;
-                        setEnvironmentIntensity(intensity);
-                        // Update the display value
-                        const display = e.target.parentElement.querySelector('.intensity-display');
-                        if (display) display.textContent = intensity.toFixed(1);
-                      }}
-                      className="flex-1 h-2 bg-slate-700 rounded-lg appearance-none slider"
-                    />
-                    <span className="text-xs text-slate-400 w-8 intensity-display">1.0</span>
-                  </div>
-                </div>
-
-                {/* Custom Color Fallback */}
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">Custom Background</label>
-                  <div className="flex items-center gap-2">
-                    <input 
-                      type="color" 
-                      value={viewportSettings.backgroundColor} 
-                      onChange={(e) => updateViewportSettings({ backgroundColor: e.target.value })}
-                      className="w-10 h-10 rounded-lg border border-slate-600 bg-slate-800 cursor-pointer" 
-                    />
-                    <div className="flex-1 bg-slate-800/80 border border-slate-600 rounded-lg p-2">
-                      <div className="text-xs text-gray-300">{viewportSettings.backgroundColor.toUpperCase()}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CollapsibleSection>
             
             <CollapsibleSection title="Performance" defaultOpen={false} index={3}>
               <div className="space-y-4">
@@ -1267,8 +1297,6 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
           </div>
         );
 
-      case 'daw-properties':
-        return <DAWPropertiesPanel />;
 
       case 'audio-devices':
         return (
@@ -1423,16 +1451,6 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
           </div>
         );
 
-      case 'vst-plugins':
-        return <VSTPluginsPanel />;
-
-      case 'master-channels':
-        return <MasterChannelsPanel />;
-
-      case 'track-properties':
-        return <TrackPropertiesPanel />;
-      case 'video-properties':
-        return <VideoPropertiesPanel />;
       case 'effects-panel':
         return <EffectsLibraryPanel />;
       case 'export-settings':
@@ -1481,7 +1499,7 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
         </div>
         {selectedTool === 'scene' && (
           <div className="text-xs text-gray-400 uppercase tracking-wide">
-            SCENE OBJECTS ({sceneObjects.length})
+            SCENE OBJECTS ({hierarchyData[0]?.children?.length || 0})
           </div>
         )}
       </div>
