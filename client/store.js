@@ -1,4 +1,4 @@
-import { proxy, useSnapshot, ref } from 'valtio'
+import { proxy, ref } from 'valtio'
 import { devtools } from 'valtio/utils'
 import { autoSaveManager } from '@/plugins/core/AutoSaveManager.js'
 import { updateUISetting } from '@/plugins/editor/utils/localStorage.js'
@@ -129,7 +129,7 @@ export const globalStore = proxy({
       instanceCounters: {
         '3d-viewport': 1
       },
-      suspendedTabs: new Set(),
+      suspendedTabs: [],
       suspensionDelay: 5000
     },
     
@@ -592,8 +592,9 @@ export const actions = {
         globalStore.editor.viewport.activeTabId = globalStore.editor.viewport.tabs[newActiveIndex].id;
       }
 
-      // Clean up suspended tabs set
-      globalStore.editor.viewport.suspendedTabs.delete(tabId);
+      // Clean up suspended tabs array
+      const index = globalStore.editor.viewport.suspendedTabs.indexOf(tabId);
+      if (index > -1) globalStore.editor.viewport.suspendedTabs.splice(index, 1);
       
       // Remove the tab
       globalStore.editor.viewport.tabs.splice(tabIndex, 1);
@@ -615,17 +616,20 @@ export const actions = {
 
     // Tab suspension management
     suspendTab: (tabId) => {
-      globalStore.editor.viewport.suspendedTabs.add(tabId);
+      if (!globalStore.editor.viewport.suspendedTabs.includes(tabId)) {
+        globalStore.editor.viewport.suspendedTabs.push(tabId);
+      }
       console.log(`🔌 Tab suspended: ${tabId}`);
     },
 
     resumeTab: (tabId) => {
-      globalStore.editor.viewport.suspendedTabs.delete(tabId);
+      const index = globalStore.editor.viewport.suspendedTabs.indexOf(tabId);
+      if (index > -1) globalStore.editor.viewport.suspendedTabs.splice(index, 1);
       console.log(`⚡ Tab resumed: ${tabId}`);
     },
 
     isTabSuspended: (tabId) => {
-      return globalStore.editor.viewport.suspendedTabs.has(tabId);
+      return globalStore.editor.viewport.suspendedTabs.includes(tabId);
     },
 
     pinViewportTab: (tabId) => {
@@ -842,7 +846,7 @@ export const actions = {
         active: true,
         parent: null,
         children: [],
-        components: new Set()
+        components: []
       }
       
       globalStore.scene.entities[id] = entity
@@ -924,8 +928,10 @@ export const actions = {
       // Add component data to the appropriate object
       globalStore.scene.components[componentType][entityId] = componentData
       
-      // Add component type to entity's component set
-      entity.components.add(componentType)
+      // Add component type to entity's component array
+      if (!entity.components.includes(componentType)) {
+        entity.components.push(componentType)
+      }
       
       actions.scene.invalidateQueryCache()
     },
@@ -937,8 +943,9 @@ export const actions = {
       // Remove component data
       delete globalStore.scene.components[componentType][entityId]
       
-      // Remove from entity's component set
-      entity.components.delete(componentType)
+      // Remove from entity's component array
+      const index = entity.components.indexOf(componentType)
+      if (index > -1) entity.components.splice(index, 1)
       
       actions.scene.invalidateQueryCache()
     },
@@ -971,13 +978,13 @@ export const actions = {
       const entities = []
       
       Object.entries(globalStore.scene.entities).forEach(([entityId, entity]) => {
-        // Ensure components is a Set (handle restoration edge cases)
-        if (!entity.components || typeof entity.components.has !== 'function') {
-          entity.components = new Set(entity.components || [])
+        // Ensure components is an array (handle restoration edge cases)
+        if (!Array.isArray(entity.components)) {
+          entity.components = []
         }
         
         const hasAllComponents = componentTypes.every(type => 
-          entity.components.has(type)
+          entity.components.includes(type)
         )
         
         if (hasAllComponents && entity.active) {
@@ -1353,12 +1360,51 @@ export const actions = {
   }
 }
 
-// Setup Redux DevTools for debugging
-if (typeof window !== 'undefined' && window.__REDUX_DEVTOOLS_EXTENSION__) {
-  devtools(globalStore, {
-    name: 'Game Engine Global Store',
-    enabled: process.env.NODE_ENV === 'development'
-  })
+// Setup Redux DevTools for debugging (TEMPORARILY DISABLED)
+console.log('🚀 Store.js loading...')
+
+if (typeof window !== 'undefined') {
+  console.log('🌐 Window available, setting up debug tools')
+  
+  // Temporarily disable devtools to isolate the circular reference issue
+  console.log('⚠️ DevTools temporarily disabled to debug circular references')
+  
+  // Expose store globally for debugging with safe wrappers
+  try {
+    window.globalStore = globalStore
+    console.log('✅ globalStore exposed')
+    
+    window.storeActions = actions
+    console.log('✅ storeActions exposed')
+    
+    // Create a safe toggle function to test
+    window.testToggle = () => {
+      try {
+        console.log('Testing toggle...')
+        console.log('Current isOpen:', globalStore.editor.isOpen)
+        globalStore.editor.isOpen = !globalStore.editor.isOpen
+        console.log('New isOpen:', globalStore.editor.isOpen)
+        console.log('Toggle successful!')
+        return 'SUCCESS'
+      } catch (error) {
+        console.error('Toggle failed:', error)
+        return 'FAILED: ' + error.message
+      }
+    }
+    console.log('✅ testToggle function created')
+    
+    // Test basic store access
+    console.log('🧪 Testing basic store access...')
+    console.log('globalStore.editor.isOpen:', globalStore.editor.isOpen)
+    
+  } catch (error) {
+    console.error('❌ Failed to expose debug tools:', error)
+  }
+  
+  console.log('🔧 Store exposed globally for debugging')
+  console.log('🧪 Use window.testToggle() for safe testing')
+} else {
+  console.log('❌ Window not available (server-side)')
 }
 
 // Initialize default scene and setup
@@ -1432,7 +1478,7 @@ if (typeof window !== 'undefined') {
               id,
               {
                 ...entity,
-                components: new Set(entity.components)
+                components: Array.from(entity.components || [])
               }
             ]))
           }
@@ -1472,18 +1518,7 @@ if (typeof window !== 'undefined') {
   }, 100)
 }
 
-// Export legacy compatibility functions
-export const useGlobalSnapshot = () => useSnapshot(globalStore)
-
-// Legacy store exports for backward compatibility
-export const editorState = globalStore.editor
-export const editorActions = actions.editor
-export const sceneState = globalStore.scene  
-export const sceneActions = actions.scene
-export const renderState = globalStore.render
-export const renderActions = actions.render
-export const assetsState = globalStore.assets
-export const assetsActions = actions.assets
+// The globalStore and actions are already exported above where they're defined
 
 // Photo editor store factory for backward compatibility
 export const createPhotoEditorStore = () => {
@@ -1610,7 +1645,7 @@ export const createPhotoEditorStore = () => {
   };
 
   // Setup Redux DevTools for debugging
-  if (typeof window !== 'undefined' && window.__REDUX_DEVTOOLS_EXTENSION__) {
+  if (typeof window !== 'undefined') {
     devtools(state, {
       name: 'Photo Editor Store Instance',
       enabled: process.env.NODE_ENV === 'development'
@@ -1750,7 +1785,7 @@ export const modelPreviewActions = {
 }
 
 // Setup Redux DevTools for model preview store
-if (typeof window !== 'undefined' && window.__REDUX_DEVTOOLS_EXTENSION__) {
+if (typeof window !== 'undefined') {
   devtools(modelPreviewState, {
     name: 'Model Preview Store (Legacy)',
     enabled: process.env.NODE_ENV === 'development'

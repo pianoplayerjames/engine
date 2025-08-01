@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSnapshot } from 'valtio';
-import { editorState, editorActions } from '../store.js';
+import { globalStore, actions } from '@/store.js';
 import PanelResizer from '@/plugins/editor/components/ui/PanelResizer.jsx';
 import RightPanel from '@/plugins/editor/components/propertiesPanel/RightPanel';
 import BottomPanel from '@/plugins/editor/components/bottomPanel/BottomPanel';
@@ -14,7 +14,7 @@ import { useContextMenuActions } from '@/plugins/editor/components/actions/Conte
 const EditorLayout = () => {
   const [contextMenu, setContextMenu] = useState(null);
   
-  const { selection, ui, panels, console: consoleState } = useSnapshot(editorState);
+  const { selection, ui, panels, console: consoleState } = useSnapshot(globalStore.editor);
   const { entity: selectedObject } = selection;
   const { selectedTool: selectedRightTool, selectedBottomTab: activeTab, rightPanelWidth, bottomPanelHeight } = ui;
   const { isScenePanelOpen, isAssetPanelOpen } = panels;
@@ -31,10 +31,10 @@ const EditorLayout = () => {
     setSelectedEntity, setContextMenuHandler, setTransformMode,
     setSelectedTool: setSelectedRightTool, setSelectedBottomTab: setActiveTab,
     setIsScenePanelOpen, setIsAssetPanelOpen
-  } = editorActions;
+  } = actions.editor;
 
-  const panelResize = usePanelResize(editorActions);
-  const contextMenuActions = useContextMenuActions(editorActions);
+  const panelResize = usePanelResize(actions.editor);
+  const contextMenuActions = useContextMenuActions(actions.editor);
 
   const handleObjectSelect = (objectId) => {
     setSelectedEntity(objectId);
@@ -103,7 +103,7 @@ const EditorLayout = () => {
           <ViewportContainer 
             onContextMenu={(e) => e.preventDefault()}
             contextMenuHandler={contextMenuHandler}
-            showGrid={editorState.viewport.showGrid}
+            showGrid={globalStore.editor.viewport.showGrid}
           />
         </div>
         

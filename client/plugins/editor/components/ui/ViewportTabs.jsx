@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Icons } from '@/plugins/editor/components/Icons';
-import { useViewportTabs } from '@/hooks/useStoreSnapshot.js';
-import { editorActions } from "@/store.js";
+import { useSnapshot } from 'valtio';
+import { globalStore, actions } from "@/store.js";
 
 const ViewportTabs = () => {
   const [isAddDropdownOpen, setIsAddDropdownOpen] = useState(false);
@@ -9,8 +9,7 @@ const ViewportTabs = () => {
   const [contextMenu, setContextMenu] = useState(null);
   const [editingTab, setEditingTab] = useState(null);
   const [editingName, setEditingName] = useState('');
-  const { tabs, activeTabId } = useViewportTabs();
-  const suspendedTabs = new Set(); // Get suspended tabs from viewport state if needed
+  const { tabs, activeTabId, suspendedTabs } = useSnapshot(globalStore.editor.viewport);
   
   const {
     addViewportTab,
@@ -20,7 +19,7 @@ const ViewportTabs = () => {
     duplicateViewportTab,
     updateViewportTab,
     renameViewportTab
-  } = editorActions;
+  } = actions.editor;
 
   const availableViewportTypes = [
     {
@@ -102,13 +101,13 @@ const ViewportTabs = () => {
           action: () => duplicateViewportTab(tab.id)
         },
         {
-          label: suspendedTabs.has(tab.id) ? 'Resume Tab' : 'Suspend Tab',
-          icon: suspendedTabs.has(tab.id) ? Icons.Play : Icons.Pause,
+          label: (suspendedTabs || []).includes(tab.id) ? 'Resume Tab' : 'Suspend Tab',
+          icon: (suspendedTabs || []).includes(tab.id) ? Icons.Play : Icons.Pause,
           action: () => {
-            if (suspendedTabs.has(tab.id)) {
-              editorActions.resumeTab(tab.id);
+            if ((suspendedTabs || []).includes(tab.id)) {
+              actions.editor.resumeTab(tab.id);
             } else {
-              editorActions.suspendTab(tab.id);
+              actions.editor.suspendTab(tab.id);
             }
           },
           disabled: tab.id === activeTabId // Can't suspend the active tab
@@ -205,7 +204,7 @@ const ViewportTabs = () => {
                 )}
                 
                 {/* Suspended Indicator */}
-                {suspendedTabs.has(tab.id) && (
+                {(suspendedTabs || []).includes(tab.id) && (
                   <Icons.Pause className="w-3 h-3 text-gray-500 flex-shrink-0" title="Tab Suspended" />
                 )}
                 

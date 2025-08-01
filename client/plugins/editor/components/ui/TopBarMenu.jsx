@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Icons } from '@/plugins/editor/components/Icons';
 import { useSnapshot } from 'valtio';
-import { editorState, editorActions } from "@/store.js";
+import { globalStore, actions } from "@/store.js";
 import { autoSaveManager } from '@/plugins/core/AutoSaveManager.js';
 import { projectManager } from '@/plugins/projects/projectManager.js';
 import ProjectManager from '@/plugins/projects/components/ProjectManager.jsx';
@@ -16,9 +16,9 @@ function TopBarMenu() {
   const [selectedTool, setSelectedTool] = useState('select');
   const [flashingTool, setFlashingTool] = useState(null);
   const [menuPosition, setMenuPosition] = useState(null);
-  const { ui, selection } = useSnapshot(editorState);
+  const { ui, selection } = useSnapshot(globalStore.editor);
   const { transformMode } = selection;
-  const { setTransformMode } = editorActions;
+  const { setTransformMode } = actions.editor;
   const currentProject = projectManager.getCurrentProject();
 
   const handleSave = async () => {
@@ -27,10 +27,10 @@ function TopBarMenu() {
     try {
       setIsSaving(true);
       await autoSaveManager.saveNow();
-      editorActions.addConsoleMessage('Project saved successfully', 'success');
+      actions.editor.addConsoleMessage('Project saved successfully', 'success');
     } catch (error) {
       console.error('Save failed:', error);
-      editorActions.addConsoleMessage('Failed to save project', 'error');
+      actions.editor.addConsoleMessage('Failed to save project', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -199,16 +199,16 @@ function TopBarMenu() {
       setShowProjectManager(true);
     } else if (item.id === 'subdivision') {
       // Handle subdivision surface
-      editorActions.addConsoleMessage('Subdivision Surface applied to selected object', 'success');
+      actions.editor.addConsoleMessage('Subdivision Surface applied to selected object', 'success');
     } else if (item.id === 'mirror') {
       // Handle mirror modifier
-      editorActions.addConsoleMessage('Mirror Modifier applied to selected object', 'success');
+      actions.editor.addConsoleMessage('Mirror Modifier applied to selected object', 'success');
     } else if (item.id === 'settings') {
       // Handle settings
-      editorActions.addConsoleMessage('Settings functionality removed', 'info');
+      actions.editor.addConsoleMessage('Settings functionality removed', 'info');
     } else {
       console.log('Menu item clicked:', item.id);
-      editorActions.addConsoleMessage(`Menu action: ${item.label}`, 'info');
+      actions.editor.addConsoleMessage(`Menu action: ${item.label}`, 'info');
     }
   };
 
@@ -332,7 +332,7 @@ function TopBarMenu() {
         <ProjectManager
           onProjectLoad={(name, path) => {
             console.log(`Project loaded: ${name} at ${path}`)
-            editorActions.addConsoleMessage(`Project "${name}" loaded successfully`, 'success')
+            actions.editor.addConsoleMessage(`Project "${name}" loaded successfully`, 'success')
           }}
           onClose={() => setShowProjectManager(false)}
         />

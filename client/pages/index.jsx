@@ -1,9 +1,9 @@
-import { useEffect, useCallback } from 'react'
-import AssetsPlugin from '@/plugins/assets/index.jsx'
+import { useEffect, useCallback, Suspense } from 'react'
+// AssetsPlugin removed - using Babylon.js native asset loading
 import EditorPlugin from '@/plugins/editor/index.jsx'
 import ProjectsPlugin from '@/plugins/projects/index.jsx'
 import LoadingProvider from '@/plugins/projects/components/LoadingProvider.jsx'
-import EngineLoader from '@/plugins/core/EngineLoader.jsx'
+import EngineLoader from '@/plugins/core/SimpleEngineLoader.jsx'
 import statsManager from '@/plugins/editor/utils/statsManager.js'
 
 export default function Index() {
@@ -18,12 +18,13 @@ export default function Index() {
   }, []);
 
   return (
-    <EngineLoader onLoadComplete={handleLoadComplete}>
-      <LoadingProvider>
-        <AssetsPlugin />
-        <EditorPlugin />
-        <ProjectsPlugin />
-      </LoadingProvider>
-    </EngineLoader>
+    <Suspense>
+      <EngineLoader onLoadComplete={handleLoadComplete}>
+        <LoadingProvider>
+          <EditorPlugin />
+          <ProjectsPlugin />
+        </LoadingProvider>
+      </EngineLoader>
+    </Suspense>
   )
 }

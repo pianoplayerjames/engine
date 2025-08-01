@@ -1,2 +1,5 @@
 node_modules
 projects
+.DS_Store
+client/dist/*
+client/electron-dist

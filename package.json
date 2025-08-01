@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "node server.js --dev",
     "start": "NODE_ENV=production node server.js",
-    "build": "NODE_ENV=production vite build",
+    "build": "NODE_ENV=production vite build && node scripts/post-build.js",
     "lint": "oxlint",
     "electron": "NODE_ENV=development electron .",
     "electron:dev": "node electron/dev.js",

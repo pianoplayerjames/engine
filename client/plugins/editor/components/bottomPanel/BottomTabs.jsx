@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Icons } from '@/plugins/editor/components/Icons';
-import { useBottomTabsState, useEditorViewport } from '@/hooks/useStoreSnapshot.js';
-import { editorActions } from "@/store.js";
+import { useSnapshot } from 'valtio';
+import { globalStore, actions } from "@/store.js";
 
 const defaultTabs = [
   { id: 'assets', label: 'Assets', icon: Icons.Cube },
@@ -18,9 +18,9 @@ const workflowTabs = {
 };
 
 function BottomTabs({ activeTab, onTabChange, isAssetPanelOpen, onToggleAssetPanel, rightPanelWidth, isScenePanelOpen }) {
-  const { selectedBottomTab, bottomTabOrder } = useBottomTabsState();
-  const viewport = useEditorViewport();
-  const { setBottomTabOrder, hydrateFromLocalStorage } = editorActions;
+  const { selectedBottomTab, bottomTabOrder } = useSnapshot(globalStore.editor.ui);
+  const viewport = useSnapshot(globalStore.editor.viewport);
+  const { setBottomTabOrder, hydrateFromLocalStorage } = actions.editor;
   
   // Get current active viewport type for workflow filtering
   const getCurrentWorkflow = () => {

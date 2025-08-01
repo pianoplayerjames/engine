@@ -1,5 +1,4 @@
-import { editorState } from '@/plugins/editor/store.js'
-import { sceneState, sceneActions } from '@/plugins/scene/store.js'
+import { globalStore, actions } from '@/store.js'
 import { autoSaveManager } from '@/plugins/core/AutoSaveManager.js'
 
 const PROJECT_VERSION = '1.0.0'
@@ -308,11 +307,11 @@ class ProjectManager {
       
       // Only initialize with default scene if forcing new or no existing scene data
       this.updateLoadingProgress(80, 'Setting up project')  
-      if (forceNew || sceneState.entities.size === 0) {
+      if (forceNew || Object.keys(globalStore.scene.entities).length === 0) {
         console.log('Initializing with default scene')
-        sceneActions.clear()
-        const rootEntity = sceneActions.createEntity('Scene')
-        sceneActions.setSceneRoot(rootEntity)
+        actions.scene.clear()
+        const rootEntity = actions.scene.createEntity('Scene')
+        actions.scene.setSceneRoot(rootEntity)
       } else {
         console.log('Preserving existing scene data')
       }
@@ -396,49 +395,50 @@ class ProjectManager {
     if (!sceneData) return
     
     // Clear current scene
-    sceneActions.clear()
+    actions.scene.clear()
     
     // Load entities
     if (sceneData.entities) {
-      sceneState.entityCounter = sceneData.entityCounter || 0
+      globalStore.scene.entityCounter = sceneData.entityCounter || 0
       
       for (const [entityId, entityData] of Object.entries(sceneData.entities)) {
-        sceneState.entities.set(parseInt(entityId), entityData)
+        globalStore.scene.entities[parseInt(entityId)] = entityData
       }
     }
     
     // Load components
     if (sceneData.components) {
       for (const [componentType, componentData] of Object.entries(sceneData.components)) {
-        if (sceneState.components[componentType]) {
+        if (globalStore.scene.components[componentType]) {
           for (const [entityId, data] of Object.entries(componentData)) {
-            sceneState.components[componentType].set(parseInt(entityId), data)
+            globalStore.scene.components[componentType][parseInt(entityId)] = data
           }
         }
       }
     }
     
-    // Load scene objects (legacy format)
+    // Load scene objects (legacy format) - Note: this might need to be updated based on new structure
     if (sceneData.sceneObjects) {
-      editorState.sceneObjects = sceneData.sceneObjects
+      // This might need to be updated based on how sceneObjects are stored in globalStore
+      console.warn('Legacy sceneObjects loading may need updating for unified store')
     }
     
     // Set scene root
     if (sceneData.sceneRoot) {
-      sceneActions.setSceneRoot(sceneData.sceneRoot)
+      actions.scene.setSceneRoot(sceneData.sceneRoot)
     }
   }
 
   collectSceneData() {
     const entities = {}
-    sceneState.entities.forEach((entity, id) => {
-      entities[id] = { ...entity, components: Array.from(entity.components) }
+    Object.entries(globalStore.scene.entities).forEach(([id, entity]) => {
+      entities[id] = { ...entity, components: Array.from(entity.components || []) }
     })
     
     const components = {}
-    for (const [componentType, componentMap] of Object.entries(sceneState.components)) {
+    for (const [componentType, componentMap] of Object.entries(globalStore.scene.components)) {
       components[componentType] = {}
-      componentMap.forEach((data, entityId) => {
+      Object.entries(componentMap).forEach(([entityId, data]) => {
         components[componentType][entityId] = data
       })
     }
@@ -446,9 +446,8 @@ class ProjectManager {
     return {
       entities,
       components,
-      sceneObjects: editorState.sceneObjects, // Legacy format
-      entityCounter: sceneState.entityCounter,
-      sceneRoot: sceneState.sceneRoot
+      entityCounter: globalStore.scene.entityCounter,
+      sceneRoot: globalStore.scene.sceneRoot
     }
   }
 
@@ -458,7 +457,7 @@ class ProjectManager {
     if (editorData.settings) {
       // Only load scene-specific settings like grid configuration for this project
       if (editorData.settings.editor) {
-        Object.assign(editorState.settings.editor, editorData.settings.editor)
+        Object.assign(globalStore.editor.settings.editor, editorData.settings.editor)
       }
     }
     
@@ -469,7 +468,7 @@ class ProjectManager {
     // Only save project-specific settings, not UI layout preferences
     return {
       settings: {
-        editor: { ...editorState.settings.editor }
+        editor: { ...globalStore.editor.settings.editor }
         // Don't save UI layout settings - those stay in localStorage
         // Don't save grid/viewport settings - those are user preferences
       }
@@ -639,7 +638,7 @@ class ProjectManager {
       this.currentProjectPath = DEFAULT_PROJECT_NAME
       
       // Only setup default scene if no scene data exists
-      if (sceneState.entities.size === 0) {
+      if (Object.keys(globalStore.scene.entities).length === 0) {
         console.log('No scene data found, setting up default scene')
         this.setupDefaultScene()
       } else {
@@ -653,26 +652,11 @@ class ProjectManager {
 
   // Set up a basic default scene
   setupDefaultScene() {
-    sceneActions.clear()
-    const rootEntity = sceneActions.createEntity('Scene')
-    sceneActions.setSceneRoot(rootEntity)
+    actions.scene.clear()
+    const rootEntity = actions.scene.createEntity('Scene')
+    actions.scene.setSceneRoot(rootEntity)
     
-    // Add some default objects if sceneObjects exist (legacy format)
-    if (editorState.sceneObjects && editorState.sceneObjects.length === 0) {
-      editorState.sceneObjects = [
-        {
-          id: 'cube-1',
-          name: 'Cube',
-          type: 'mesh',
-          position: [0, 0, 0],
-          rotation: [0, 0, 0],
-          scale: [1, 1, 1],
-          geometry: 'box',
-          material: { color: 'orange' },
-          visible: true
-        }
-      ]
-    }
+    console.log('Default scene created with root entity:', rootEntity)
   }
 
   // Save current project info to localStorage

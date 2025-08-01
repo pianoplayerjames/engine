@@ -1,6 +1,6 @@
 import { useState, useEffect, createContext, useContext } from 'react'
 import { useSnapshot } from 'valtio'
-import { editorState } from "@/store.js"
+import { globalStore } from "@/store.js"
 import { projectManager } from '../projectManager.js'
 import AssetLoader from './AssetLoader.jsx'
 
@@ -24,7 +24,7 @@ export default function LoadingProvider({ children }) {
   })
   
   // Get editor state to check for panel resizing
-  const { panels } = useSnapshot(editorState)
+  const { panels } = useSnapshot(globalStore.editor)
 
   useEffect(() => {
     // Subscribe to project manager loading events

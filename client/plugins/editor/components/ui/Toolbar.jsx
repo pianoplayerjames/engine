@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Icons } from '@/plugins/editor/components/Icons';
 import { useSnapshot } from 'valtio';
-import { editorState, editorActions } from "@/store.js";
+import { globalStore, actions } from "@/store.js";
 
 const defaultTools = [
   { id: 'scene', icon: Icons.Scene, title: 'Scene' },
@@ -48,9 +48,9 @@ const workflowTools = {
 };
 
 function Toolbar({ selectedTool, onToolSelect, scenePanelOpen, onScenePanelToggle }) {
-  const { ui, viewport } = useSnapshot(editorState);
+  const { ui, viewport } = useSnapshot(globalStore.editor);
   const { toolbarTabOrder, toolbarBottomTabOrder } = ui;
-  const { setToolbarTabOrder, setToolbarBottomTabOrder } = editorActions;
+  const { setToolbarTabOrder, setToolbarBottomTabOrder } = actions.editor;
   
   // Get current active viewport type for workflow filtering
   const getCurrentWorkflow = () => {
@@ -242,12 +242,12 @@ function Toolbar({ selectedTool, onToolSelect, scenePanelOpen, onScenePanelToggl
       // Persist both arrays to store
       if (dragState.draggedFromBottom) {
         // Moving from bottom to top
-        editorActions.setToolbarBottomTabOrder(newSourceArray.map(tool => tool.id));
-        editorActions.setToolbarTabOrder(newTargetArray.map(tool => tool.id));
+        actions.editor.setToolbarBottomTabOrder(newSourceArray.map(tool => tool.id));
+        actions.editor.setToolbarTabOrder(newTargetArray.map(tool => tool.id));
       } else {
         // Moving from top to bottom
-        editorActions.setToolbarTabOrder(newSourceArray.map(tool => tool.id));
-        editorActions.setToolbarBottomTabOrder(newTargetArray.map(tool => tool.id));
+        actions.editor.setToolbarTabOrder(newSourceArray.map(tool => tool.id));
+        actions.editor.setToolbarBottomTabOrder(newTargetArray.map(tool => tool.id));
       }
     } else {
       // Handle reordering within the same section
@@ -263,9 +263,9 @@ function Toolbar({ selectedTool, onToolSelect, scenePanelOpen, onScenePanelToggl
         // Persist to store
         const newOrder = newArray.map(tool => tool.id);
         if (isBottomArea) {
-          editorActions.setToolbarBottomTabOrder(newOrder);
+          actions.editor.setToolbarBottomTabOrder(newOrder);
         } else {
-          editorActions.setToolbarTabOrder(newOrder);
+          actions.editor.setToolbarTabOrder(newOrder);
         }
       }
     }
@@ -399,12 +399,12 @@ function Toolbar({ selectedTool, onToolSelect, scenePanelOpen, onScenePanelToggl
             // Persist to store
             if (dragState.draggedFromBottom) {
               // Moving from bottom to top
-              editorActions.setToolbarBottomTabOrder(newSourceArray.map(tool => tool.id));
-              editorActions.setToolbarTabOrder(newTargetArray.map(tool => tool.id));
+              actions.editor.setToolbarBottomTabOrder(newSourceArray.map(tool => tool.id));
+              actions.editor.setToolbarTabOrder(newTargetArray.map(tool => tool.id));
             } else {
               // Moving from top to bottom
-              editorActions.setToolbarTabOrder(newSourceArray.map(tool => tool.id));
-              editorActions.setToolbarBottomTabOrder(newTargetArray.map(tool => tool.id));
+              actions.editor.setToolbarTabOrder(newSourceArray.map(tool => tool.id));
+              actions.editor.setToolbarBottomTabOrder(newTargetArray.map(tool => tool.id));
             }
             
             setDragState({

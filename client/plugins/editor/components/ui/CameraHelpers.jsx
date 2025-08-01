@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Icons } from '@/plugins/editor/components/Icons';
 import { useSnapshot } from 'valtio';
-import { editorState, editorActions } from "@/store.js";
+import { globalStore, actions } from "@/store.js";
 
 export default function CameraHelpers() {
   const [isExpanded, setIsExpanded] = useState(false);
-  const { camera, viewport } = useSnapshot(editorState);
-  const { setCameraSpeed, setCameraSensitivity, setRenderMode, setGridSnapping, setShowGrid } = editorActions;
+  const { camera, viewport } = useSnapshot(globalStore.editor);
+  const { setCameraSpeed, setCameraSensitivity, setRenderMode, setGridSnapping, setShowGrid } = actions.editor;
   
   const cameraSpeed = camera.speed || 5;
   const mouseSensitivity = camera.mouseSensitivity || 0.002;

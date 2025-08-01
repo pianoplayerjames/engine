@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react';
 import { useSnapshot } from 'valtio';
-import { editorState, editorActions } from "@/store.js";
+import { globalStore, actions } from "@/store.js";
 import { Icons } from '@/plugins/editor/components/Icons';
 
 // Import viewport components
@@ -12,12 +12,12 @@ import RenderPlugin from '@/plugins/render/index.jsx';
 
 // Suspension-aware 3D viewport wrapper
 const Suspended3DViewport = ({ tab, contextMenuHandler, showGrid }) => {
-  const { viewport } = useSnapshot(editorState);
+  const { viewport } = useSnapshot(globalStore.editor);
   const { suspendedTabs } = viewport;
   
   useEffect(() => {
     // Control performance monitoring based on suspension state
-    const isSuspended = suspendedTabs.has(tab.id);
+    const isSuspended = (suspendedTabs || []).includes(tab.id);
     if (window.renderPerformanceMonitoring) {
       if (isSuspended) {
         window.renderPerformanceMonitoring.stop();
@@ -49,11 +49,11 @@ const ViewportContainer = ({
   contextMenuHandler, 
   showGrid 
 }) => {
-  const { viewport } = useSnapshot(editorState);
+  const { viewport } = useSnapshot(globalStore.editor);
   const { tabs, activeTabId, suspendedTabs } = viewport;
   
   const activeTab = tabs.find(tab => tab.id === activeTabId);
-  const isActiveTabSuspended = suspendedTabs.has(activeTabId);
+  const isActiveTabSuspended = (suspendedTabs || []).includes(activeTabId);
 
   const renderSuspendedPlaceholder = (tab) => (
     <div className="w-full h-full bg-gray-800 flex items-center justify-center">
@@ -64,7 +64,7 @@ const ViewportContainer = ({
         <div className="text-lg text-gray-400 mb-2">Tab Suspended</div>
         <div className="text-sm text-gray-500 mb-4">"{tab.name}" is suspended to save resources</div>
         <button
-          onClick={() => editorActions.resumeTab(tab.id)}
+          onClick={() => actions.editor.resumeTab(tab.id)}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
         >
           Resume Tab
@@ -77,7 +77,7 @@ const ViewportContainer = ({
     if (!tab) return null;
     
     // Show suspended placeholder if tab is suspended
-    if (suspendedTabs.has(tab.id)) {
+    if ((suspendedTabs || []).includes(tab.id)) {
       return renderSuspendedPlaceholder(tab);
     }
     

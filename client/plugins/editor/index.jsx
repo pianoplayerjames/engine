@@ -6,5 +6,5 @@ function EditorPlugin() {
 
 export default EditorPlugin;
 
-// Export store references for backward compatibility
-export { editorState, editorActions } from '@/store.js'
+// Editor functionality is now part of the unified store
+// Access via: globalStore.editor and actions.editor

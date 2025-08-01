@@ -8,14 +8,14 @@ import AdjustmentsPanel from './AdjustmentsPanel.jsx';
 import HistoryPanel from './HistoryPanel.jsx';
 import ColorsPanel from './ColorsPanel.jsx';
 import BrushesPanel from './BrushesPanel.jsx';
+import { globalStore, actions } from "@/store.js";
 import { useSnapshot } from 'valtio';
-import { editorState, editorActions } from "@/store.js";
 
 function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selectedTool, onToolSelect, onContextMenu }) {
   const [expandedItems, setExpandedItems] = useState(['scene']);
-  const { ui } = useSnapshot(editorState);
+  const ui = useSnapshot(globalStore.editor.ui);
   const { scenePropertiesHeight: bottomPanelHeight } = ui;
-  const { setScenePropertiesHeight: setBottomPanelHeight } = editorActions;
+  const { setScenePropertiesHeight: setBottomPanelHeight } = actions.editor;
   const [isResizing, setIsResizing] = useState(false);
   const [isTestToggleOn, setIsTestToggleOn] = useState(false);
   const [roughness, setRoughness] = useState(0.5);
@@ -30,9 +30,10 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
     dragStartDepth: 0
   });
   
-  const { settings, babylonScene } = useSnapshot(editorState);
+  const settings = useSnapshot(globalStore.editor.settings);
+  const babylonScene = globalStore.editor.babylonScene;
   const { grid: gridSettings, viewport: viewportSettings } = settings;
-  const { setSelectedEntity, setTransformMode, updateGridSettings, updateViewportSettings } = editorActions;
+  const { setSelectedEntity, setTransformMode, updateGridSettings, updateViewportSettings } = actions.editor;
   
   // Get selected object data from Babylon.js scene
   const selectedObjectData = useMemo(() => {
@@ -1282,9 +1283,9 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
                       const newValue = !settings.editor.showStats;
                       console.log('ScenePanel: Stats toggle clicked, newValue:', newValue);
                       
-                      editorActions.updateEditorSettings({ showStats: newValue });
+                      actions.editor.updateEditorSettings({ showStats: newValue });
                       
-                      editorActions.addConsoleMessage(`Performance stats ${newValue ? 'enabled' : 'disabled'}`, 'success');
+                      actions.editor.addConsoleMessage(`Performance stats ${newValue ? 'enabled' : 'disabled'}`, 'success');
                     }}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-200 ${settings.editor.showStats ? 'bg-blue-500 shadow-lg shadow-blue-500/30' : 'bg-slate-600'}`}
                   >

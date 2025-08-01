@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Icons } from '@/plugins/editor/components/Icons';
 import { useSnapshot } from 'valtio';
-import { editorState, editorActions } from "@/store.js";
+import { globalStore, actions } from "@/store.js";
 
 function WorkflowTabs() {
   const [activeWorkflow, setActiveWorkflow] = useState('modeling');
-  const { ui } = useSnapshot(editorState);
+  const { ui } = useSnapshot(globalStore.editor);
 
   const workflows = {
     modeling: {
@@ -55,8 +55,8 @@ function WorkflowTabs() {
     const workflow = workflows[workflowId];
     
     // Configure UI for the selected workflow
-    editorActions.setWorkflowMode(workflowId);
-    editorActions.addConsoleMessage(`Switched to ${workflow.name} workflow`, 'info');
+    actions.editor.setWorkflowMode(workflowId);
+    actions.editor.addConsoleMessage(`Switched to ${workflow.name} workflow`, 'info');
     
     // You could also automatically open/close relevant panels here
     // based on workflow.panels array

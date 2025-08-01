@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Icons } from '@/plugins/editor/components/Icons';
 import { useSnapshot } from 'valtio';
-import { editorState, editorActions } from "@/store.js";
+import { globalStore, actions } from "@/store.js";
 import ProjectManager from '@/plugins/projects/components/ProjectManager.jsx';
 
 function HorizontalToolbar() {
@@ -9,10 +9,10 @@ function HorizontalToolbar() {
   const [flashingTool, setFlashingTool] = useState(null);
   const [isCameraExpanded, setIsCameraExpanded] = useState(false);
   const cameraRef = useRef(null);
-  const { selection, ui, camera, viewport } = useSnapshot(editorState);
+  const { selection, ui, camera, viewport } = useSnapshot(globalStore.editor);
   const { selectedTool } = ui;
   const { transformMode } = selection;
-  const { setSelectedTool, setTransformMode, setCameraSpeed, setCameraSensitivity, setRenderMode, setGridSnapping, setShowGrid } = editorActions;
+  const { setSelectedTool, setTransformMode, setCameraSpeed, setCameraSensitivity, setRenderMode, setGridSnapping, setShowGrid } = actions.editor;
   
   // Get current active viewport type for workflow filtering
   const getCurrentWorkflow = () => {
@@ -280,7 +280,7 @@ function HorizontalToolbar() {
     if (['new', 'open', 'save'].includes(toolId)) {
       if (toolId === 'save') {
         // Handle save directly
-        editorActions.addConsoleMessage('Project saved', 'success');
+        actions.editor.addConsoleMessage('Project saved', 'success');
       } else {
         setShowProjectManager(true);
       }
@@ -292,7 +292,7 @@ function HorizontalToolbar() {
     }
     // Handle create tools
     else if (['cube', 'sphere', 'cylinder'].includes(toolId)) {
-      editorActions.addSceneObject({
+      actions.editor.addSceneObject({
         type: 'mesh',
         geometry: toolId === 'cube' ? 'box' : toolId,
         position: [0, 0, 0],
@@ -300,10 +300,10 @@ function HorizontalToolbar() {
         scale: [1, 1, 1],
         visible: true,
       });
-      editorActions.addConsoleMessage(`Created ${toolId}`, 'success');
+      actions.editor.addConsoleMessage(`Created ${toolId}`, 'success');
     }
     else if (toolId === 'light') {
-      editorActions.addSceneObject({
+      actions.editor.addSceneObject({
         type: 'light',
         lightType: 'directional',
         position: [5, 5, 5],
@@ -313,10 +313,10 @@ function HorizontalToolbar() {
         visible: true,
         castShadow: true,
       });
-      editorActions.addConsoleMessage('Created directional light', 'success');
+      actions.editor.addConsoleMessage('Created directional light', 'success');
     }
     else if (toolId === 'camera') {
-      editorActions.addSceneObject({
+      actions.editor.addSceneObject({
         type: 'camera',
         position: [0, 0, 5],
         rotation: [0, 0, 0],
@@ -325,49 +325,49 @@ function HorizontalToolbar() {
         far: 1000,
         visible: true,
       });
-      editorActions.addConsoleMessage('Created camera', 'success');
+      actions.editor.addConsoleMessage('Created camera', 'success');
     }
     // Handle DAW transport controls
     else if (['play', 'pause', 'stop', 'record'].includes(toolId)) {
       setFlashingTool(toolId);
       setTimeout(() => setFlashingTool(null), 300);
-      editorActions.addConsoleMessage(`Transport: ${toolId}`, 'info');
+      actions.editor.addConsoleMessage(`Transport: ${toolId}`, 'info');
     }
     // Handle DAW track tools
     else if (['add-track', 'add-audio-track', 'add-midi-track', 'add-instrument'].includes(toolId)) {
-      editorActions.addConsoleMessage(`Added ${toolId.replace('add-', '').replace('-', ' ')}`, 'success');
+      actions.editor.addConsoleMessage(`Added ${toolId.replace('add-', '').replace('-', ' ')}`, 'success');
     }
     // Handle DAW audio tools
     else if (['metronome', 'loop'].includes(toolId)) {
       setFlashingTool(toolId);
       setTimeout(() => setFlashingTool(null), 200);
-      editorActions.addConsoleMessage(`${toolId} toggled`, 'info');
+      actions.editor.addConsoleMessage(`${toolId} toggled`, 'info');
     }
     // Handle text editor tools
     else if (['find', 'replace'].includes(toolId)) {
-      editorActions.addConsoleMessage(`${toolId} dialog opened`, 'info');
+      actions.editor.addConsoleMessage(`${toolId} dialog opened`, 'info');
     }
     // Handle video editor tools
     else if (['cut', 'trim', 'speed', 'select'].includes(toolId)) {
       setSelectedTool(toolId);
-      editorActions.addConsoleMessage(`Video tool: ${toolId}`, 'info');
+      actions.editor.addConsoleMessage(`Video tool: ${toolId}`, 'info');
     }
     else if (['import', 'render'].includes(toolId)) {
       setFlashingTool(toolId);
       setTimeout(() => setFlashingTool(null), 300);
-      editorActions.addConsoleMessage(`${toolId === 'import' ? 'Import media' : 'Render video'} triggered`, 'info');
+      actions.editor.addConsoleMessage(`${toolId === 'import' ? 'Import media' : 'Render video'} triggered`, 'info');
     }
     // Handle material editor tools
     else if (['new-material', 'apply'].includes(toolId)) {
-      editorActions.addConsoleMessage(`Material tool: ${toolId}`, 'info');
+      actions.editor.addConsoleMessage(`Material tool: ${toolId}`, 'info');
     }
     // Handle node editor tools
     else if (['add-node', 'delete-node'].includes(toolId)) {
-      editorActions.addConsoleMessage(`Node tool: ${toolId}`, 'info');
+      actions.editor.addConsoleMessage(`Node tool: ${toolId}`, 'info');
     }
     // Handle animation tools
     else if (['keyframe'].includes(toolId)) {
-      editorActions.addConsoleMessage('Keyframe added', 'success');
+      actions.editor.addConsoleMessage('Keyframe added', 'success');
     }
     // Handle photo editor tools
     else if ([
@@ -376,24 +376,24 @@ function HorizontalToolbar() {
       'blur', 'sharpen', 'smudge', 'dodge', 'burn', 'sponge', 'text', 'path', 'shape', 'zoom', 'hand'
     ].includes(toolId)) {
       setSelectedTool(toolId);
-      editorActions.setPhotoEditorTool(toolId);
-      editorActions.addConsoleMessage(`Photo tool: ${toolId}`, 'info');
+      actions.editor.setPhotoEditorTool(toolId);
+      actions.editor.addConsoleMessage(`Photo tool: ${toolId}`, 'info');
     }
     // Handle action tools (undo/redo)
     else if (['undo', 'redo'].includes(toolId)) {
       setFlashingTool(toolId);
       setTimeout(() => setFlashingTool(null), 200);
-      editorActions.addConsoleMessage(`${toolId} action triggered`, 'info');
+      actions.editor.addConsoleMessage(`${toolId} action triggered`, 'info');
     }
     // Handle edit tools (cut/copy/paste)
     else if (['cut', 'copy', 'paste'].includes(toolId)) {
       setFlashingTool(toolId);
       setTimeout(() => setFlashingTool(null), 200);
-      editorActions.addConsoleMessage(`${toolId} action triggered`, 'info');
+      actions.editor.addConsoleMessage(`${toolId} action triggered`, 'info');
     }
     // Handle other tools
     else {
-      editorActions.addConsoleMessage(`Tool activated: ${toolId}`, 'info');
+      actions.editor.addConsoleMessage(`Tool activated: ${toolId}`, 'info');
     }
   };
 
@@ -616,13 +616,13 @@ function HorizontalToolbar() {
               <>
                 <button
                   className="px-2 py-1 text-xs text-gray-400 hover:text-gray-200 hover:bg-slate-800 rounded transition-colors"
-                  onClick={() => editorActions.addConsoleMessage('Grid toggled', 'info')}
+                  onClick={() => actions.editor.addConsoleMessage('Grid toggled', 'info')}
                 >
                   Grid
                 </button>
                 <button
                   className="px-2 py-1 text-xs text-gray-400 hover:text-gray-200 hover:bg-slate-800 rounded transition-colors"
-                  onClick={() => editorActions.addConsoleMessage('Snap toggled', 'info')}
+                  onClick={() => actions.editor.addConsoleMessage('Snap toggled', 'info')}
                 >
                   Snap
                 </button>
@@ -637,7 +637,7 @@ function HorizontalToolbar() {
         <ProjectManager
           onProjectLoad={(name, path) => {
             console.log(`Project loaded: ${name} at ${path}`)
-            editorActions.addConsoleMessage(`Project "${name}" loaded successfully`, 'success')
+            actions.editor.addConsoleMessage(`Project "${name}" loaded successfully`, 'success')
           }}
           onClose={() => setShowProjectManager(false)}
         />

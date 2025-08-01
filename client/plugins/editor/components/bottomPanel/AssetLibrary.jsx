@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Icons } from '@/plugins/editor/components/Icons';
 import { useSnapshot } from 'valtio';
-import { editorState, editorActions } from "@/store.js";
+import { globalStore, actions } from "@/store.js";
 import { projectManager } from '@/plugins/projects/projectManager.js';
-import { assetManager, PRIORITY } from '@/plugins/assets/OptimizedAssetManager.js';
+// Using simple on-demand loading instead of complex asset manager
 import ContextMenu from '@/plugins/editor/components/ui/ContextMenu.jsx';
 import { useContextMenuActions } from '@/plugins/editor/components/actions/ContextMenuActions.jsx';
 
@@ -18,12 +18,12 @@ function AssetLibrary() {
   const [assets, setAssets] = useState([]);
   const [folderTree, setFolderTree] = useState(null);
   const [assetCategories, setAssetCategories] = useState(null);
-  const [expandedFolders, setExpandedFolders] = useState(new Set(['']));
+  const [expandedFolders, setExpandedFolders] = useState(['']);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [loadedAssets, setLoadedAssets] = useState(new Set());
-  const [preloadingAssets, setPreloadingAssets] = useState(new Set());
-  const [failedAssets, setFailedAssets] = useState(new Set());
+  const [loadedAssets, setLoadedAssets] = useState([]);
+  const [preloadingAssets, setPreloadingAssets] = useState([]);
+  const [failedAssets, setFailedAssets] = useState([]);
   const [showLoadingBar, setShowLoadingBar] = useState(true);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -39,18 +39,18 @@ function AssetLibrary() {
   const cacheRef = useRef({
     folderTree: null,
     folderTreeTimestamp: null,
-    assetsByPath: new Map(), // path -> { assets, timestamp }
+    assetsByPath: {}, // path -> { assets, timestamp }
     categories: null,
     categoriesTimestamp: null,
     lastProjectName: null
   });
   
-  const { ui } = useSnapshot(editorState);
+  const { ui } = useSnapshot(globalStore.editor);
   const { assetsLibraryWidth: treePanelWidth } = ui;
-  const { setAssetsLibraryWidth: setTreePanelWidth } = editorActions;
+  const { setAssetsLibraryWidth: setTreePanelWidth } = actions.editor;
   
   // Get context menu actions
-  const { handleCreateObject } = useContextMenuActions(editorActions);
+  const { handleCreateObject } = useContextMenuActions(actions.editor);
 
   // Cache expiry time (5 minutes)
   const CACHE_EXPIRY_MS = 5 * 60 * 1000;
@@ -76,7 +76,7 @@ function AssetLibrary() {
       cacheRef.current = {
         folderTree: null,
         folderTreeTimestamp: null,
-        assetsByPath: new Map(),
+        assetsByPath: {},
         categories: null,
         categoriesTimestamp: null,
         lastProjectName: currentProject.name
@@ -293,34 +293,9 @@ function AssetLibrary() {
   }, [currentPath]);
 
   // Optimized asset loading using asset manager
-  const queueAssetForLoading = (asset, priority = PRIORITY.MEDIUM) => {
-    // Set current project for asset manager
-    const currentProject = projectManager.getCurrentProject();
-    assetManager.setCurrentProject(currentProject.name);
-    
-    // Queue asset for loading
-    assetManager.queueAsset(asset, priority);
-    
-    // Update UI state based on asset manager state
-    const state = assetManager.getAssetState(asset.id);
-    
-    if (state === 'loading') {
-      setPreloadingAssets(prev => new Set([...prev, asset.id]));
-    } else if (state === 'loaded') {
-      setLoadedAssets(prev => new Set([...prev, asset.id]));
-      setPreloadingAssets(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(asset.id);
-        return newSet;
-      });
-    } else if (state === 'error') {
-      setFailedAssets(prev => new Set([...prev, asset.id]));
-      setPreloadingAssets(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(asset.id);
-        return newSet;
-      });
-    }
+  const queueAssetForLoading = (asset) => {
+    // Simple on-demand loading - assets loaded by Babylon.js when needed
+    console.log('Asset available for loading:', asset.name);
   };
 
   // Generate breadcrumb navigation (folder view only)
@@ -476,28 +451,28 @@ function AssetLibrary() {
     // Initialize asset manager for current project if not already done
     const currentProject = projectManager.getCurrentProject();
     if (currentProject.name) {
-      assetManager.setCurrentProject(currentProject.name);
+      // Project context available for asset loading
     }
     
     // Update UI state for assets that were already loaded during engine initialization
-    const newLoadedAssets = new Set();
-    const newFailedAssets = new Set();
-    const newPreloadingAssets = new Set();
+    const newLoadedAssets = [];
+    const newFailedAssets = [];
+    const newPreloadingAssets = [];
     
     assets.forEach(asset => {
       if (asset.type === 'file') {
-        const state = assetManager.getAssetState(asset.id);
+        // Simplified asset state - no complex tracking needed
         
         if (state === 'loaded') {
-          newLoadedAssets.add(asset.id);
+          newLoadedAssets.push(asset.id);
         } else if (state === 'error') {
-          newFailedAssets.add(asset.id);
+          newFailedAssets.push(asset.id);
         } else if (state === 'loading') {
-          newPreloadingAssets.add(asset.id);
+          newPreloadingAssets.push(asset.id);
         } else if (state === 'idle') {
           // Queue assets that weren't preloaded during engine initialization
           const isVisible = filteredAssets.includes(asset);
-          const priority = isVisible ? PRIORITY.HIGH : PRIORITY.MEDIUM;
+          // Asset is visible and can be loaded on-demand
           queueAssetForLoading(asset, priority);
         }
       }
@@ -511,24 +486,16 @@ function AssetLibrary() {
     // Set up periodic state checking to update UI
     const stateCheckInterval = setInterval(() => {
       assets.forEach(asset => {
-        const state = assetManager.getAssetState(asset.id);
+        // Simplified asset state - no complex tracking needed
         
-        if (state === 'loaded' && !loadedAssets.has(asset.id)) {
-          setLoadedAssets(prev => new Set([...prev, asset.id]));
-          setPreloadingAssets(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(asset.id);
-            return newSet;
-          });
-        } else if (state === 'error' && !failedAssets.has(asset.id)) {
-          setFailedAssets(prev => new Set([...prev, asset.id]));
-          setPreloadingAssets(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(asset.id);
-            return newSet;
-          });
-        } else if (state === 'loading' && !preloadingAssets.has(asset.id)) {
-          setPreloadingAssets(prev => new Set([...prev, asset.id]));
+        if (state === 'loaded' && !loadedAssets.includes(asset.id)) {
+          setLoadedAssets(prev => prev.includes(asset.id) ? prev : [...prev, asset.id]);
+          setPreloadingAssets(prev => prev.filter(id => id !== asset.id));
+        } else if (state === 'error' && !failedAssets.includes(asset.id)) {
+          setFailedAssets(prev => prev.includes(asset.id) ? prev : [...prev, asset.id]);
+          setPreloadingAssets(prev => prev.filter(id => id !== asset.id));
+        } else if (state === 'loading' && !preloadingAssets.includes(asset.id)) {
+          setPreloadingAssets(prev => prev.includes(asset.id) ? prev : [...prev, asset.id]);
         }
       });
     }, 300); // Check every 300ms (more frequent for better responsiveness)
@@ -542,7 +509,7 @@ function AssetLibrary() {
 
     const totalAssets = filteredAssets.length;
     const completedAssets = filteredAssets.filter(asset => 
-      loadedAssets.has(asset.id) || failedAssets.has(asset.id)
+      loadedAssets.includes(asset.id) || failedAssets.includes(asset.id)
     ).length;
     const stillLoading = preloadingAssets.size > 0;
 
@@ -563,7 +530,7 @@ function AssetLibrary() {
       // Check if any assets actually need loading
       const needsLoading = filteredAssets.some(asset => {
         if (asset.type !== 'file') return false;
-        const state = assetManager.getAssetState(asset.id);
+        // Simplified asset state - no complex tracking needed
         return state === 'idle' || state === 'loading';
       });
       
@@ -908,13 +875,11 @@ function AssetLibrary() {
 
   const handleFolderToggle = (folderPath) => {
     setExpandedFolders(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(folderPath)) {
-        newSet.delete(folderPath);
+      if (prev.includes(folderPath)) {
+        return prev.filter(path => path !== folderPath);
       } else {
-        newSet.add(folderPath);
+        return [...prev, folderPath];
       }
-      return newSet;
     });
   };
 
@@ -933,7 +898,7 @@ function AssetLibrary() {
   const renderFolderTree = (node, depth = 0) => {
     if (!node) return null;
 
-    const isExpanded = expandedFolders.has(node.path);
+    const isExpanded = expandedFolders.includes(node.path);
     const isSelected = currentPath === node.path;
     const hasChildren = node.children && node.children.length > 0;
     
@@ -1253,12 +1218,12 @@ function AssetLibrary() {
                     <div 
                       className="h-full bg-green-500 transition-all duration-300 rounded-full"
                       style={{ 
-                        width: `${(filteredAssets.filter(asset => loadedAssets.has(asset.id)).length / filteredAssets.length) * 100}%` 
+                        width: `${(filteredAssets.filter(asset => loadedAssets.includes(asset.id)).length / filteredAssets.length) * 100}%` 
                       }}
                     />
                   </div>
                   <span className="text-xs text-gray-400">
-                    {filteredAssets.filter(asset => loadedAssets.has(asset.id)).length}/{filteredAssets.length}
+                    {filteredAssets.filter(asset => loadedAssets.includes(asset.id)).length}/{filteredAssets.length}
                   </span>
                 </div>
               )}
@@ -1300,7 +1265,7 @@ function AssetLibrary() {
                     </div>
                   ) : (() => {
                     const fileAssets = filteredAssets.filter(asset => asset.type === 'file');
-                    const loadedFiles = fileAssets.filter(asset => loadedAssets.has(asset.id));
+                    const loadedFiles = fileAssets.filter(asset => loadedAssets.includes(asset.id));
                     return loadedFiles.length === fileAssets.length;
                   })() ? (
                     /* All loaded state */
@@ -1311,7 +1276,7 @@ function AssetLibrary() {
                   ) : (() => {
                     /* Partial loading state */
                     const fileAssets = filteredAssets.filter(asset => asset.type === 'file');
-                    const loadedFiles = fileAssets.filter(asset => loadedAssets.has(asset.id));
+                    const loadedFiles = fileAssets.filter(asset => loadedAssets.includes(asset.id));
                     
                     if (fileAssets.length === 0) {
                       return (
@@ -1441,16 +1406,14 @@ function AssetLibrary() {
                 onClick={(e) => {
                   if (asset.type === 'file') {
                     // If asset failed to load, retry on click
-                    if (failedAssets.has(asset.id)) {
+                    if (failedAssets.includes(asset.id)) {
                       e.preventDefault();
                       console.log(`🔄 Retrying failed asset: ${asset.name}`);
                       // Remove from failed set and retry with high priority
                       setFailedAssets(prev => {
-                        const newSet = new Set(prev);
-                        newSet.delete(asset.id);
-                        return newSet;
+                        return prev.filter(id => id !== asset.id);
                       });
-                      queueAssetForLoading(asset, PRIORITY.CRITICAL);
+                      queueAssetForLoading(asset);
                     }
                   }
                 }}
@@ -1633,9 +1596,9 @@ function AssetLibrary() {
                       <Icons.Folder className="w-12 h-12 text-yellow-400 group-hover:scale-110 transition-all" />
                     ) : (
                       <div className={`w-14 h-14 bg-gray-700 rounded flex items-center justify-center transition-all group-hover:scale-110 ${
-                          loadedAssets.has(asset.id) 
+                          loadedAssets.includes(asset.id) 
                             ? 'opacity-100' 
-                            : failedAssets.has(asset.id) 
+                            : failedAssets.includes(asset.id) 
                               ? 'opacity-40 grayscale' 
                               : 'opacity-60'
                         }`}>
@@ -1653,19 +1616,19 @@ function AssetLibrary() {
                     {/* Loading/Status Indicator - Bottom right (files only) */}
                     {asset.type === 'file' && (
                       <div className="absolute -bottom-1 -right-1">
-                        {preloadingAssets.has(asset.id) ? (
+                        {preloadingAssets.includes(asset.id) ? (
                           // Loading spinner
                           <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
                             <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                           </div>
-                        ) : failedAssets.has(asset.id) ? (
+                        ) : failedAssets.includes(asset.id) ? (
                           // Error cross
                           <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center" title={`Failed to load ${asset.name}`}>
                             <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
                             </svg>
                           </div>
-                        ) : loadedAssets.has(asset.id) ? (
+                        ) : loadedAssets.includes(asset.id) ? (
                           // Success tick
                           <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
                             <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1709,16 +1672,14 @@ function AssetLibrary() {
                     onClick={(e) => {
                       if (asset.type === 'file') {
                         // If asset failed to load, retry on click
-                        if (failedAssets.has(asset.id)) {
+                        if (failedAssets.includes(asset.id)) {
                           e.preventDefault();
                           console.log(`🔄 Retrying failed asset: ${asset.name}`);
                           // Remove from failed set and retry with high priority
                           setFailedAssets(prev => {
-                            const newSet = new Set(prev);
-                            newSet.delete(asset.id);
-                            return newSet;
+                            return prev.filter(id => id !== asset.id);
                           });
-                          queueAssetForLoading(asset, PRIORITY.CRITICAL);
+                          queueAssetForLoading(asset);
                         }
                       }
                     }}
@@ -1899,9 +1860,9 @@ function AssetLibrary() {
                         <Icons.Folder className="w-6 h-6 text-yellow-400" />
                       ) : (
                         <div className={`w-6 h-6 bg-gray-700 rounded flex items-center justify-center ${
-                            loadedAssets.has(asset.id) 
+                            loadedAssets.includes(asset.id) 
                               ? 'opacity-100' 
-                              : failedAssets.has(asset.id) 
+                              : failedAssets.includes(asset.id) 
                                 ? 'opacity-40 grayscale' 
                                 : 'opacity-60'
                           }`}>
@@ -1912,17 +1873,17 @@ function AssetLibrary() {
                       {/* Status Indicator */}
                       {asset.type === 'file' && (
                         <div className="absolute -bottom-1 -right-1">
-                          {preloadingAssets.has(asset.id) ? (
+                          {preloadingAssets.includes(asset.id) ? (
                             <div className="w-3 h-3 bg-yellow-500 rounded-full flex items-center justify-center">
                               <div className="w-1.5 h-1.5 border border-white border-t-transparent rounded-full animate-spin"></div>
                             </div>
-                          ) : failedAssets.has(asset.id) ? (
+                          ) : failedAssets.includes(asset.id) ? (
                             <div className="w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
                               <svg className="w-2 h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
                               </svg>
                             </div>
-                          ) : loadedAssets.has(asset.id) ? (
+                          ) : loadedAssets.includes(asset.id) ? (
                             <div className="w-3 h-3 bg-green-500 rounded-full flex items-center justify-center">
                               <svg className="w-2 h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />

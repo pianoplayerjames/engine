@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'react'
 import * as BABYLON from '@babylonjs/core'
 import '@babylonjs/core/Cameras/arcRotateCamera'
-import { editorActions } from '@/store.js'
+import { actions } from '@/store.js'
 
 function Viewport({ children, style = {}, onContextMenu }) {
   const canvasRef = useRef()
@@ -48,7 +48,7 @@ function Viewport({ children, style = {}, onContextMenu }) {
     }
 
     // Notify editor that scene is ready
-    editorActions.updateBabylonScene(scene)
+    actions.editor.updateBabylonScene(scene)
 
     // Start render loop
     engine.runRenderLoop(() => {
@@ -63,7 +63,7 @@ function Viewport({ children, style = {}, onContextMenu }) {
 
     return () => {
       window.removeEventListener('resize', handleResize)
-      editorActions.updateBabylonScene(null)
+      actions.editor.updateBabylonScene(null)
       scene.dispose()
       engine.dispose()
     }
@@ -127,5 +127,5 @@ export default function RenderPlugin({ children, embedded = false, style = {}, o
 
 export { Viewport as ViewportCanvas }
 
-// Export the render store for other plugins to use
-export { renderState, renderActions } from '@/store.js'
+// Render functionality is now part of the unified store
+// Access via: globalStore.render and actions.render

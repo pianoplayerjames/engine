@@ -23,6 +23,7 @@ export default {
     plugins: () => [viteReact()]
   },
   build: {
+    outDir: resolve(import.meta.dirname, 'dist'),
     rollupOptions: {
       output: {
         assetFileNames: (assetInfo) => {
