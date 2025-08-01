@@ -1,0 +1,1 @@
+import{Suspense as e}from"react";import{jsx as t}from"react/jsx-runtime";function n({children:n}){return t(e,{children:n})}export{n as default};

@@ -1,0 +1,1 @@
+import"./shaderStore-e8RCqiF-.js";import{b as e}from"./procedural.vertex-Ct6q4XkS.js";export{e as proceduralVertexShaderWGSL};

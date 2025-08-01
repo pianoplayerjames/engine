@@ -1,0 +1,1 @@
+const e={};function t(t,n){e[t]=n}function n(t){return e[t]}export{n as b,t as c};

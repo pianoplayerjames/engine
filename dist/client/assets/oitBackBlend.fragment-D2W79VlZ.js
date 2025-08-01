@@ -1,0 +1,2 @@
+import{b as e}from"./shaderStore-e8RCqiF-.js";const t=`oitBackBlendPixelShader`,n=`precision highp float;uniform sampler2D uBackColor;void main() {glFragColor=texelFetch(uBackColor,ivec2(gl_FragCoord.xy),0);if (glFragColor.a==0.0) { 
+discard;}}`;e.ShadersStore[t]||(e.ShadersStore[t]=n);const r={name:t,shader:n};export{r as b};

@@ -1,12 +1,14 @@
 import { resolve } from 'node:path'
+import { defineConfig } from 'vite'
 
-import viteReact from '@vitejs/plugin-react'
+import viteReact from '@vitejs/plugin-react-oxc'
 import viteFastifyReact from '@fastify/react/plugin'
 import tailwindcss from '@tailwindcss/vite'
 import Inspect from 'vite-plugin-inspect'
 
-export default {
+export default defineConfig({
   root: resolve(import.meta.dirname, 'client'),
+
   plugins: [
     viteReact(),
     viteFastifyReact(),
@@ -27,11 +29,13 @@ export default {
     rollupOptions: {
       output: {
         assetFileNames: (assetInfo) => {
-          // Keep worker files in assets directory
           if (assetInfo.name && assetInfo.name.includes('Worker')) {
             return 'assets/[name]-[hash][extname]'
           }
           return 'assets/[name]-[hash][extname]'
+        },
+        advancedChunks: {
+          groups: [{ name: 'vendor', test: /\/react(?:-dom)?/ }]
         }
       }
     }
@@ -41,4 +45,7 @@ export default {
       'use-sync-external-store'
     ]
   },
-}
+  experimental: {
+    enableNativePlugin: false
+  }
+})

@@ -1,0 +1,1 @@
+import"./shaderStore-e8RCqiF-.js";import{b as e}from"./lightVxFragmentDeclaration-BNXqF6AG.js";export{e as lightVxFragmentDeclaration};

@@ -1,0 +1,1 @@
+import"./shaderStore-e8RCqiF-.js";import{b as e}from"./bonesDeclaration-BRyzFOxA.js";export{e as bonesDeclarationWGSL};

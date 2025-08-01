@@ -1,0 +1,1 @@
+import"./shaderStore-e8RCqiF-.js";import{b as e}from"./lightUboDeclaration-DpMoS1Rd.js";export{e as lightUboDeclaration};

@@ -619,13 +619,13 @@ export const actions = {
       if (!globalStore.editor.viewport.suspendedTabs.includes(tabId)) {
         globalStore.editor.viewport.suspendedTabs.push(tabId);
       }
-      console.log(`🔌 Tab suspended: ${tabId}`);
+      // Tab suspended
     },
 
     resumeTab: (tabId) => {
       const index = globalStore.editor.viewport.suspendedTabs.indexOf(tabId);
       if (index > -1) globalStore.editor.viewport.suspendedTabs.splice(index, 1);
-      console.log(`⚡ Tab resumed: ${tabId}`);
+      // Tab resumed
     },
 
     isTabSuspended: (tabId) => {
@@ -1361,50 +1361,43 @@ export const actions = {
 }
 
 // Setup Redux DevTools for debugging (TEMPORARILY DISABLED)
-console.log('🚀 Store.js loading...')
+// Store.js loading...
 
 if (typeof window !== 'undefined') {
-  console.log('🌐 Window available, setting up debug tools')
+  // Window available, setting up debug tools
   
   // Temporarily disable devtools to isolate the circular reference issue
-  console.log('⚠️ DevTools temporarily disabled to debug circular references')
+  // DevTools temporarily disabled to debug circular references
   
   // Expose store globally for debugging with safe wrappers
   try {
     window.globalStore = globalStore
-    console.log('✅ globalStore exposed')
+    // globalStore exposed
     
     window.storeActions = actions
-    console.log('✅ storeActions exposed')
+    // storeActions exposed
     
     // Create a safe toggle function to test
     window.testToggle = () => {
       try {
-        console.log('Testing toggle...')
-        console.log('Current isOpen:', globalStore.editor.isOpen)
+        // Testing toggle...
         globalStore.editor.isOpen = !globalStore.editor.isOpen
-        console.log('New isOpen:', globalStore.editor.isOpen)
-        console.log('Toggle successful!')
+        // Toggle successful!
         return 'SUCCESS'
       } catch (error) {
         console.error('Toggle failed:', error)
         return 'FAILED: ' + error.message
       }
     }
-    console.log('✅ testToggle function created')
-    
-    // Test basic store access
-    console.log('🧪 Testing basic store access...')
-    console.log('globalStore.editor.isOpen:', globalStore.editor.isOpen)
+    // testToggle function created
     
   } catch (error) {
     console.error('❌ Failed to expose debug tools:', error)
   }
   
-  console.log('🔧 Store exposed globally for debugging')
-  console.log('🧪 Use window.testToggle() for safe testing')
+  // Store exposed globally for debugging
 } else {
-  console.log('❌ Window not available (server-side)')
+  // Window not available (server-side)
 }
 
 // Initialize default scene and setup

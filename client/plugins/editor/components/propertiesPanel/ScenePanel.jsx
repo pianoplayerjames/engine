@@ -2,12 +2,6 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { Icons } from '@/plugins/editor/components/Icons.jsx';
 import SliderWithTooltip from '@/plugins/editor/components/ui/SliderWithTooltip.jsx';
 import CollapsibleSection from '@/plugins/editor/components/ui/CollapsibleSection.jsx';
-import ExportSettingsPanel from './ExportSettingsPanel.jsx';
-import LayersPanel from './LayersPanel.jsx';
-import AdjustmentsPanel from './AdjustmentsPanel.jsx';
-import HistoryPanel from './HistoryPanel.jsx';
-import ColorsPanel from './ColorsPanel.jsx';
-import BrushesPanel from './BrushesPanel.jsx';
 import { globalStore, actions } from "@/store.js";
 import { useSnapshot } from 'valtio';
 
@@ -32,8 +26,8 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
   
   const settings = useSnapshot(globalStore.editor.settings);
   const babylonScene = globalStore.editor.babylonScene;
-  const { grid: gridSettings, viewport: viewportSettings } = settings;
-  const { setSelectedEntity, setTransformMode, updateGridSettings, updateViewportSettings } = actions.editor;
+  const { viewport: viewportSettings } = settings;
+  const { setSelectedEntity, setTransformMode, updateViewportSettings } = actions.editor;
   
   // Get selected object data from Babylon.js scene
   const selectedObjectData = useMemo(() => {
@@ -696,12 +690,6 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
       case 'settings': return 'Settings';
       case 'audio-devices': return 'Audio Devices';
       case 'mixer-settings': return 'Mixer Settings';
-      case 'export-settings': return 'Export Settings';
-      case 'layers': return 'Layers';
-      case 'adjustments': return 'Adjustments';
-      case 'history': return 'History';
-      case 'colors': return 'Colors';
-      case 'brushes': return 'Brushes';
       default: return 'Properties';
     }
   };
@@ -1056,167 +1044,6 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
         return (
           <div className="flex-1 overflow-y-auto scrollbar-thin">
             <div>
-            <CollapsibleSection title="Grid Helper" defaultOpen={true} index={0}>
-              <div className="space-y-4">
-                {/* Grid Toggle */}
-                <div className="flex items-center justify-between p-3 bg-slate-800/40 rounded-lg border border-slate-700/50">
-                  <label className="text-xs font-medium text-gray-300">Enable Grid</label>
-                  <button
-                    onClick={() => updateGridSettings({ enabled: !gridSettings.enabled })}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-200 ${gridSettings.enabled ? 'bg-blue-500 shadow-lg shadow-blue-500/30' : 'bg-slate-600'}`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 shadow-sm ${gridSettings.enabled ? 'translate-x-6' : 'translate-x-1'}`}
-                    />
-                  </button>
-                </div>
-
-                {/* Grid Settings - with slide animation */}
-                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${gridSettings.enabled ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                  <div className="space-y-4">
-                    {/* Grid Size - only show when infinite grid is disabled */}
-                    {!gridSettings.infiniteGrid && (
-                      <div className="space-y-2">
-                        <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">Grid Size</label>
-                        <input 
-                          type="number" 
-                          step="10"
-                          min="10"
-                          max="1000"
-                          value={gridSettings.size} 
-                          onChange={(e) => updateGridSettings({ size: parseInt(e.target.value) || 100 })}
-                          className="w-full bg-slate-800/80 border border-slate-600 text-white text-xs p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all" 
-                        />
-                      </div>
-                    )}
-
-                    {/* Cell Size */}
-                    <div className="space-y-2">
-                      <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">Cell Size</label>
-                      <input 
-                        type="number" 
-                        step="0.1"
-                        min="0.1"
-                        max="10"
-                        value={gridSettings.cellSize} 
-                        onChange={(e) => updateGridSettings({ cellSize: parseFloat(e.target.value) || 1 })}
-                        className="w-full bg-slate-800/80 border border-slate-600 text-white text-xs p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all" 
-                      />
-                    </div>
-
-                    {/* Grid Position */}
-                    <div className="space-y-2">
-                      <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">Grid Position</label>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className="relative">
-                          <input 
-                            type="number" 
-                            step="0.1"
-                            value={gridSettings.position[0]} 
-                            onChange={(e) => {
-                              const newPos = [...gridSettings.position];
-                              newPos[0] = parseFloat(e.target.value) || 0;
-                              updateGridSettings({ position: newPos });
-                            }}
-                            className="w-full bg-slate-800/80 border border-slate-600 text-white text-xs p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all" 
-                          />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">X</span>
-                        </div>
-                        <div className="relative">
-                          <input 
-                            type="number" 
-                            step="0.1"
-                            value={gridSettings.position[1]} 
-                            onChange={(e) => {
-                              const newPos = [...gridSettings.position];
-                              newPos[1] = parseFloat(e.target.value) || 0;
-                              updateGridSettings({ position: newPos });
-                            }}
-                            className="w-full bg-slate-800/80 border border-slate-600 text-white text-xs p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all" 
-                          />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">Y</span>
-                        </div>
-                        <div className="relative">
-                          <input 
-                            type="number" 
-                            step="0.1"
-                            value={gridSettings.position[2]} 
-                            onChange={(e) => {
-                              const newPos = [...gridSettings.position];
-                              newPos[2] = parseFloat(e.target.value) || 0;
-                              updateGridSettings({ position: newPos });
-                            }}
-                            className="w-full bg-slate-800/80 border border-slate-600 text-white text-xs p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all" 
-                          />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">Z</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Grid Colors */}
-                    <div className="space-y-3">
-                      <div className="space-y-2">
-                        <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">Cell Color</label>
-                        <div className="flex items-center gap-2">
-                          <input 
-                            type="color" 
-                            value={gridSettings.cellColor} 
-                            onChange={(e) => updateGridSettings({ cellColor: e.target.value })}
-                            className="w-10 h-10 rounded-lg border border-slate-600 bg-slate-800 cursor-pointer" 
-                          />
-                          <div className="flex-1 bg-slate-800/80 border border-slate-600 rounded-lg p-2">
-                            <div className="text-xs text-gray-300">{gridSettings.cellColor.toUpperCase()}</div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">Section Color</label>
-                        <div className="flex items-center gap-2">
-                          <input 
-                            type="color" 
-                            value={gridSettings.sectionColor} 
-                            onChange={(e) => updateGridSettings({ sectionColor: e.target.value })}
-                            className="w-10 h-10 rounded-lg border border-slate-600 bg-slate-800 cursor-pointer" 
-                          />
-                          <div className="flex-1 bg-slate-800/80 border border-slate-600 rounded-lg p-2">
-                            <div className="text-xs text-gray-300">{gridSettings.sectionColor.toUpperCase()}</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Advanced Settings */}
-                    <div className="space-y-3">
-                      <div className="space-y-2">
-                        <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">Section Size</label>
-                        <input 
-                          type="number" 
-                          step="1"
-                          min="1"
-                          max="50"
-                          value={gridSettings.sectionSize} 
-                          onChange={(e) => updateGridSettings({ sectionSize: parseInt(e.target.value) || 10 })}
-                          className="w-full bg-slate-800/80 border border-slate-600 text-white text-xs p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all" 
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-slate-800/40 rounded-lg border border-slate-700/50">
-                        <label className="text-xs font-medium text-gray-300">Infinite Grid</label>
-                        <button
-                          onClick={() => updateGridSettings({ infiniteGrid: !gridSettings.infiniteGrid })}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-200 ${gridSettings.infiniteGrid ? 'bg-blue-500 shadow-lg shadow-blue-500/30' : 'bg-slate-600'}`}
-                        >
-                          <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 shadow-sm ${gridSettings.infiniteGrid ? 'translate-x-6' : 'translate-x-1'}`}
-                          />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CollapsibleSection>
 
             <CollapsibleSection title="Viewport" defaultOpen={true} index={1}>
               <div className="space-y-4">
@@ -1454,18 +1281,6 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
           </div>
         );
 
-      case 'export-settings':
-        return <ExportSettingsPanel />;
-      case 'layers':
-        return <LayersPanel />;
-      case 'adjustments':
-        return <AdjustmentsPanel />;
-      case 'history':
-        return <HistoryPanel />;
-      case 'colors':
-        return <ColorsPanel />;
-      case 'brushes':
-        return <BrushesPanel />;
       
       default:
         return (

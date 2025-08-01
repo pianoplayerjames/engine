@@ -1,0 +1,1 @@
+import{createRoutes as e}from"@fastify/react/server";var t={routes:e(import(`./assets/routes-Cd84hiWz.js`)),create:import(`./assets/create-kt1MIYly.js`),context:import(`./assets/context-DtwvdnqG.js`)};export{t as default};

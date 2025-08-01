@@ -19,7 +19,7 @@ class AutoSaveManager {
     }
     
     this.projectManager = projectManager
-    console.log('🔗 AutoSaveManager connected to ProjectManager')
+    // AutoSaveManager connected to ProjectManager
   }
 
   // Register a plugin store for auto-saving
@@ -71,7 +71,7 @@ class AutoSaveManager {
     }
 
     this.saveTimeout = setTimeout(() => {
-      console.log('⚡ Auto-save timeout fired, performing save')
+      // Auto-save timeout fired
       this.performAutoSave()
     }, this.debounceTime)
   }
@@ -122,7 +122,7 @@ class AutoSaveManager {
       
       // Check if data has actually changed
       if (!this.hasDataChanged(currentData, this.lastSavedData)) {
-        console.log('⏸️ Skipping auto-save - no changes detected')
+        // No changes detected, skipping save
         return
       }
 
@@ -142,7 +142,7 @@ class AutoSaveManager {
   // Load data from project into all registered stores
   loadFromProject(projectData) {
     console.log('🔄 AutoSaveManager loadFromProject called with:', projectData)
-    console.log('🔌 Registered stores:', Array.from(this.pluginStores.keys()))
+    // Registered stores for auto-saving
     
     if (!projectData) {
       console.warn('❌ No project data provided to loadFromProject')
@@ -184,7 +184,7 @@ class AutoSaveManager {
     // After loading, store the current data as our baseline for change detection
     setTimeout(() => {
       this.lastSavedData = JSON.parse(JSON.stringify(this.getAllStoreData()))
-      console.log('📋 Baseline data set for change detection')
+      // Baseline data set for change detection
     }, 100) // Small delay to ensure all stores have been restored
   }
 

@@ -1,0 +1,1 @@
+import"./shaderStore-e8RCqiF-.js";import{b as e}from"./blackAndWhite.fragment-B32UeTHL.js";export{e as blackAndWhitePixelShader};

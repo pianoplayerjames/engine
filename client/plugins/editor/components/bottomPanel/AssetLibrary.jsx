@@ -61,7 +61,7 @@ function AssetLibrary() {
     return {
       folderTreeCached: !!cache.folderTree,
       categoriesCached: !!cache.categories,
-      pathsCached: cache.assetsByPath.size,
+      pathsCached: Object.keys(cache.assetsByPath).length,
       project: cache.lastProjectName
     };
   };
@@ -69,10 +69,7 @@ function AssetLibrary() {
   // Clear cache when project changes
   const clearCacheIfProjectChanged = (currentProject) => {
     if (cacheRef.current.lastProjectName !== currentProject.name) {
-      console.log('🗑️ Clearing cache due to project change', {
-        from: cacheRef.current.lastProjectName,
-        to: currentProject.name
-      });
+      // Clearing cache due to project change
       cacheRef.current = {
         folderTree: null,
         folderTreeTimestamp: null,
@@ -81,8 +78,6 @@ function AssetLibrary() {
         categoriesTimestamp: null,
         lastProjectName: currentProject.name
       };
-    } else {
-      console.log('📊 Cache stats:', getCacheStats());
     }
   };
 
@@ -94,13 +89,12 @@ function AssetLibrary() {
   // Cached folder tree fetcher
   const fetchFolderTree = async (currentProject) => {
     if (cacheRef.current.folderTree && isCacheValid(cacheRef.current.folderTreeTimestamp)) {
-      console.log('📂 Using cached folder tree');
+      // Using cached folder tree
       setFolderTree(cacheRef.current.folderTree);
       return;
     }
 
     try {
-      console.log('📂 Fetching folder tree from server');
       const response = await fetch(`/api/projects/${currentProject.name}/assets/tree`);
       if (!response.ok) {
         throw new Error('Failed to fetch folder tree');
@@ -119,7 +113,7 @@ function AssetLibrary() {
   // Cached asset categories fetcher
   const fetchAssetCategories = async (currentProject) => {
     if (cacheRef.current.categories && isCacheValid(cacheRef.current.categoriesTimestamp)) {
-      console.log('📊 Using cached asset categories');
+      // Using cached asset categories
       setAssetCategories(cacheRef.current.categories);
       
       // Set initial assets for the selected category
@@ -130,7 +124,6 @@ function AssetLibrary() {
     }
 
     try {
-      console.log('📊 Fetching asset categories from server');
       const response = await fetch(`/api/projects/${currentProject.name}/assets/categories`);
       
       if (!response.ok) {
@@ -157,9 +150,9 @@ function AssetLibrary() {
 
   // Cached assets fetcher by path
   const fetchAssets = async (currentProject, path = currentPath) => {
-    const cachedData = cacheRef.current.assetsByPath.get(path);
+    const cachedData = cacheRef.current.assetsByPath[path];
     if (cachedData && isCacheValid(cachedData.timestamp)) {
-      console.log(`📁 Using cached assets for path: ${path || 'root'}`);
+      // Using cached assets
       setAssets(cachedData.assets);
       setLoading(false);
       return;
@@ -169,7 +162,6 @@ function AssetLibrary() {
       setLoading(true);
       setError(null);
 
-      console.log(`📁 Fetching assets from server for path: ${path || 'root'}`);
       const response = await fetch(`/api/projects/${currentProject.name}/assets?folder=${encodeURIComponent(path)}`);
       if (!response.ok) {
         throw new Error('Failed to fetch assets');
@@ -179,10 +171,10 @@ function AssetLibrary() {
       const newAssets = data.assets || [];
       
       // Cache the result
-      cacheRef.current.assetsByPath.set(path, {
+      cacheRef.current.assetsByPath[path] = {
         assets: newAssets,
         timestamp: Date.now()
-      });
+      };
       
       setAssets(newAssets);
       setLoading(false);
@@ -198,23 +190,38 @@ function AssetLibrary() {
   useEffect(() => {
     const currentProject = projectManager.getCurrentProject();
     
-    // Add debugging to understand the project state
-    console.log('🔍 AssetLibrary checking project:', {
-      viewMode,
-      projectName: currentProject?.name,
-      projectPath: currentProject?.path,
-      hasProject: projectManager.hasCurrentProject()
-    });
-    
     if (!currentProject?.name) {
-      // Try again after a short delay in case project is still loading
+      // Set loading state and wait for project to be available
       setLoading(true);
-      const retryTimeout = setTimeout(() => {
+      setError(null);
+      
+      // Add a loading listener to be notified when projects are loaded
+      const handleProjectLoaded = ({ progress, operation, isLoading }) => {
+        if (!isLoading && progress === 0) {
+          // Loading finished, check if project is now available
+          const newProject = projectManager.getCurrentProject();
+          if (newProject?.name) {
+            setError(null);
+            if (viewMode === 'folder') {
+              fetchFolderTree(newProject);
+              fetchAssets(newProject);
+            } else {
+              fetchAssetCategories(newProject);
+            }
+          }
+        }
+      };
+      
+      projectManager.addLoadingListener(handleProjectLoaded);
+      
+      // Also try a simple retry mechanism as fallback
+      let retryCount = 0;
+      const maxRetries = 5;
+      
+      const retryProjectLoad = () => {
         const retryProject = projectManager.getCurrentProject();
-        console.log('🔄 Retry project check:', retryProject);
         
         if (retryProject?.name) {
-          // Project loaded, retry the effect
           setError(null);
           if (viewMode === 'folder') {
             fetchFolderTree(retryProject);
@@ -223,12 +230,28 @@ function AssetLibrary() {
             fetchAssetCategories(retryProject);
           }
         } else {
-          setError('No project loaded');
-          setLoading(false);
+          retryCount++;
+          if (retryCount < maxRetries) {
+            setTimeout(retryProjectLoad, 500 * retryCount);
+          } else {
+            // Final check - if project manager says it's initialized but no project, show appropriate error
+            if (projectManager.initialized) {
+              setError('Project loading failed');
+            } else {
+              setError('Initializing project...');
+            }
+            setLoading(false);
+          }
         }
-      }, 100);
-
-      return () => clearTimeout(retryTimeout);
+      };
+      
+      // Start retry process after a brief delay
+      setTimeout(retryProjectLoad, 200);
+      
+      // Clean up the loading listener
+      return () => {
+        projectManager.removeLoadingListener(handleProjectLoaded);
+      };
     }
 
     clearCacheIfProjectChanged(currentProject);
@@ -247,12 +270,8 @@ function AssetLibrary() {
 
     // Handle real-time file changes from WebSocket
     const handleFileChange = (changeData) => {
-      console.log('📁 File change detected in assets:', changeData);
-      
       // Intelligently invalidate cache based on what changed
       if (changeData.path.startsWith('assets/') || changeData.type === 'assets_directory_recreated') {
-        console.log('🗑️ Invalidating cache due to file change:', changeData.path);
-        
         // Invalidate folder tree cache
         cacheRef.current.folderTree = null;
         cacheRef.current.folderTreeTimestamp = null;
@@ -262,10 +281,9 @@ function AssetLibrary() {
         cacheRef.current.categoriesTimestamp = null;
         
         // Clear all cached assets by path since file structure might have changed
-        cacheRef.current.assetsByPath.clear();
+        cacheRef.current.assetsByPath = {};
         
         // Refresh data based on current view mode
-        console.log('🔄 Refreshing assets due to change:', changeData.path);
         if (viewMode === 'folder') {
           fetchFolderTree(currentProject);
           fetchAssets(currentProject);
@@ -295,7 +313,7 @@ function AssetLibrary() {
   // Optimized asset loading using asset manager
   const queueAssetForLoading = (asset) => {
     // Simple on-demand loading - assets loaded by Babylon.js when needed
-    console.log('Asset available for loading:', asset.name);
+    // Asset available for loading
   };
 
   // Generate breadcrumb navigation (folder view only)
@@ -444,64 +462,20 @@ function AssetLibrary() {
     }
   }, [viewMode, selectedCategory, assetCategories]);
 
-  // Check asset loading states (most assets should already be preloaded during engine initialization)
+  // Simple asset state management for UI feedback
   useEffect(() => {
     if (assets.length === 0) return;
 
-    // Initialize asset manager for current project if not already done
-    const currentProject = projectManager.getCurrentProject();
-    if (currentProject.name) {
-      // Project context available for asset loading
-    }
-    
-    // Update UI state for assets that were already loaded during engine initialization
+    // Initialize with empty state for all assets - they'll be loaded on-demand
     const newLoadedAssets = [];
     const newFailedAssets = [];
     const newPreloadingAssets = [];
     
-    assets.forEach(asset => {
-      if (asset.type === 'file') {
-        // Simplified asset state - no complex tracking needed
-        
-        if (state === 'loaded') {
-          newLoadedAssets.push(asset.id);
-        } else if (state === 'error') {
-          newFailedAssets.push(asset.id);
-        } else if (state === 'loading') {
-          newPreloadingAssets.push(asset.id);
-        } else if (state === 'idle') {
-          // Queue assets that weren't preloaded during engine initialization
-          const isVisible = filteredAssets.includes(asset);
-          // Asset is visible and can be loaded on-demand
-          queueAssetForLoading(asset, priority);
-        }
-      }
-    });
-    
-    // Update state with preloaded assets
+    // Update state with initial empty arrays
     setLoadedAssets(newLoadedAssets);
     setFailedAssets(newFailedAssets);
     setPreloadingAssets(newPreloadingAssets);
-    
-    // Set up periodic state checking to update UI
-    const stateCheckInterval = setInterval(() => {
-      assets.forEach(asset => {
-        // Simplified asset state - no complex tracking needed
-        
-        if (state === 'loaded' && !loadedAssets.includes(asset.id)) {
-          setLoadedAssets(prev => prev.includes(asset.id) ? prev : [...prev, asset.id]);
-          setPreloadingAssets(prev => prev.filter(id => id !== asset.id));
-        } else if (state === 'error' && !failedAssets.includes(asset.id)) {
-          setFailedAssets(prev => prev.includes(asset.id) ? prev : [...prev, asset.id]);
-          setPreloadingAssets(prev => prev.filter(id => id !== asset.id));
-        } else if (state === 'loading' && !preloadingAssets.includes(asset.id)) {
-          setPreloadingAssets(prev => prev.includes(asset.id) ? prev : [...prev, asset.id]);
-        }
-      });
-    }, 300); // Check every 300ms (more frequent for better responsiveness)
-    
-    return () => clearInterval(stateCheckInterval);
-  }, [assets, filteredAssets]);
+  }, [assets]);
 
   // Monitor loading completion and fade out progress bar
   useEffect(() => {
@@ -629,7 +603,7 @@ function AssetLibrary() {
         }
         
         const result = await response.json();
-        console.log(`✅ Uploaded ${file.name} to ${result.path}`);
+        // File uploaded successfully
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -819,7 +793,7 @@ function AssetLibrary() {
       }
 
       const result = await response.json();
-      console.log(`📁 Item moved: ${result.sourcePath} → ${result.targetPath}`);
+      // Item moved successfully
       
       // The file watcher will automatically refresh the assets list
     } catch (error) {
@@ -859,7 +833,7 @@ function AssetLibrary() {
       }
 
       const result = await response.json();
-      console.log(`📁 Folder created: ${result.path}`);
+      // Folder created successfully
       
       // The file watcher will automatically refresh the assets list
     } catch (error) {
@@ -995,22 +969,18 @@ function AssetLibrary() {
 
   // Define view action handlers
   const handleFrameAll = () => {
-    console.log('Frame All');
     // TODO: Implement frame all functionality
   };
 
   const handleFocusSelected = () => {
-    console.log('Focus Selected');
     // TODO: Implement focus selected functionality
   };
 
   const handleResetView = () => {
-    console.log('Reset View');
     // TODO: Implement reset view functionality
   };
 
   const handleSetView = (view) => {
-    console.log('Set View', view);
     // TODO: Implement set view functionality
   };
 
@@ -1086,7 +1056,7 @@ function AssetLibrary() {
               </div>
             ) : (
               <div className="p-4 text-center text-gray-500 text-xs">
-                Loading directory tree...
+                {error ? error : 'Loading directory tree...'}
               </div>
             )
           ) : (
@@ -1119,7 +1089,7 @@ function AssetLibrary() {
               </div>
             ) : (
               <div className="p-4 text-center text-gray-500 text-xs">
-                Loading asset categories...
+                {error ? error : 'Loading asset categories...'}
               </div>
             )
           )}
@@ -1408,7 +1378,6 @@ function AssetLibrary() {
                     // If asset failed to load, retry on click
                     if (failedAssets.includes(asset.id)) {
                       e.preventDefault();
-                      console.log(`🔄 Retrying failed asset: ${asset.name}`);
                       // Remove from failed set and retry with high priority
                       setFailedAssets(prev => {
                         return prev.filter(id => id !== asset.id);
@@ -1419,14 +1388,11 @@ function AssetLibrary() {
                 }}
                 onDoubleClick={() => handleAssetDoubleClick(asset)}
                 onDragStart={(e) => {
-                  console.log('🔥 Drag start triggered for:', asset.name, asset.type);
-                  
                   // Mark this as an internal drag (originating from within the page)
                   setIsInternalDrag(true);
                   
                   // Handle both files and folders
                   if (asset.type === 'file') {
-                    console.log('✅ Starting drag for file:', asset.name);
                     
                     // Determine category based on file extension
                     const getAssetCategory = (extension) => {
@@ -1501,7 +1467,6 @@ function AssetLibrary() {
                     }, 0);
                     
                   } else if (asset.type === 'folder') {
-                    console.log('✅ Starting drag for folder:', asset.name);
                     
                     const dragData = {
                       type: 'asset',
@@ -1545,8 +1510,6 @@ function AssetLibrary() {
                       document.body.removeChild(dragImage);
                     }, 0);
                   }
-                  
-                  console.log('📦 Drag data prepared for:', asset.type, asset.name);
                 }}
                 onDragEnd={() => {
                   // Reset all drag states when drag ends
@@ -1674,7 +1637,6 @@ function AssetLibrary() {
                         // If asset failed to load, retry on click
                         if (failedAssets.includes(asset.id)) {
                           e.preventDefault();
-                          console.log(`🔄 Retrying failed asset: ${asset.name}`);
                           // Remove from failed set and retry with high priority
                           setFailedAssets(prev => {
                             return prev.filter(id => id !== asset.id);
@@ -1685,14 +1647,11 @@ function AssetLibrary() {
                     }}
                     onDoubleClick={() => handleAssetDoubleClick(asset)}
                     onDragStart={(e) => {
-                      console.log('🔥 Drag start triggered for:', asset.name, asset.type);
-                      
                       // Mark this as an internal drag (originating from within the page)
                       setIsInternalDrag(true);
                       
                       // Handle both files and folders
                       if (asset.type === 'file') {
-                        console.log('✅ Starting drag for file:', asset.name);
                         
                         // Determine category based on file extension
                         const getAssetCategory = (extension) => {
@@ -1767,7 +1726,6 @@ function AssetLibrary() {
                         }, 0);
                         
                       } else if (asset.type === 'folder') {
-                        console.log('✅ Starting drag for folder:', asset.name);
                         
                         const dragData = {
                           type: 'asset',
@@ -1811,8 +1769,6 @@ function AssetLibrary() {
                           document.body.removeChild(dragImage);
                         }, 0);
                       }
-                      
-                      console.log('📦 Drag data prepared for:', asset.type, asset.name);
                     }}
                     onDragEnd={() => {
                       // Reset all drag states when drag ends

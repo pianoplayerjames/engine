@@ -1,0 +1,1 @@
+import"./shaderStore-e8RCqiF-.js";import{b as e}from"./bonesVertex-8Ek8xnsc.js";export{e as bonesVertexWGSL};

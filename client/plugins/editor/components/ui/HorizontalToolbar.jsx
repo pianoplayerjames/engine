@@ -8,11 +8,14 @@ function HorizontalToolbar() {
   const [showProjectManager, setShowProjectManager] = useState(false);
   const [flashingTool, setFlashingTool] = useState(null);
   const [isCameraExpanded, setIsCameraExpanded] = useState(false);
+  const [isGridExpanded, setIsGridExpanded] = useState(false);
   const cameraRef = useRef(null);
-  const { selection, ui, camera, viewport } = useSnapshot(globalStore.editor);
+  const gridRef = useRef(null);
+  const { selection, ui, camera, viewport, settings } = useSnapshot(globalStore.editor);
   const { selectedTool } = ui;
   const { transformMode } = selection;
-  const { setSelectedTool, setTransformMode, setCameraSpeed, setCameraSensitivity, setRenderMode, setGridSnapping, setShowGrid } = actions.editor;
+  const { grid: gridSettings } = settings;
+  const { setSelectedTool, setTransformMode, setCameraSpeed, setCameraSensitivity, setRenderMode, setGridSnapping, updateGridSettings } = actions.editor;
   
   // Get current active viewport type for workflow filtering
   const getCurrentWorkflow = () => {
@@ -28,7 +31,6 @@ function HorizontalToolbar() {
   const mouseSensitivity = camera.mouseSensitivity || 0.002;
   const renderMode = viewport.renderMode || 'solid';
   const gridSnapping = viewport.gridSnapping || false;
-  const showGrid = viewport.showGrid !== false;
   
   const renderModes = [
     { id: 'wireframe', label: 'Wireframe', icon: Icons.Grid3x3 },
@@ -60,6 +62,23 @@ function HorizontalToolbar() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isCameraExpanded]);
+
+  // Handle click outside to close grid panel
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (gridRef.current && !gridRef.current.contains(event.target)) {
+        setIsGridExpanded(false);
+      }
+    };
+
+    if (isGridExpanded) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isGridExpanded]);
 
   // Workflow-specific tool sets
   const workflowTools = {
@@ -495,7 +514,10 @@ function HorizontalToolbar() {
                     ? 'bg-blue-600 text-white'
                     : 'text-gray-400 hover:text-gray-200 hover:bg-slate-800'
                 }`}
-                onClick={() => setIsCameraExpanded(!isCameraExpanded)}
+                onClick={() => {
+                  setIsCameraExpanded(!isCameraExpanded);
+                  setIsGridExpanded(false);
+                }}
                 title="Camera Settings"
               >
                 <Icons.Camera className="w-4 h-4" />
@@ -576,57 +598,227 @@ function HorizontalToolbar() {
                   </div>
                 </div>
                 
-                {/* Grid Controls */}
-                <div>
-                  <label className="block font-medium text-gray-300 mb-2">
-                    Grid Settings
-                  </label>
-                  <div className="space-y-2">
-                    <button
-                      onClick={() => setShowGrid(!showGrid)}
-                      className={`w-full flex items-center gap-2 px-3 py-2 text-xs rounded transition-colors ${
-                        showGrid
-                          ? 'bg-green-600 text-white'
-                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                      }`}
-                    >
-                      <Icons.Grid3x3 className="w-3 h-3" />
-                      Show Grid
-                    </button>
-                    
-                    <button
-                      onClick={() => setGridSnapping(!gridSnapping)}
-                      className={`w-full flex items-center gap-2 px-3 py-2 text-xs rounded transition-colors ${
-                        gridSnapping
-                          ? 'bg-yellow-600 text-white'
-                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                      }`}
-                    >
-                      <Icons.Target className="w-3 h-3" />
-                      Grid Snapping
-                    </button>
-                  </div>
-                </div>
                 
               </div>
             )}
             
             {/* Grid and Snap controls - Only show for 3D workflows */}
             {(currentWorkflow === '3d-viewport' || currentWorkflow === 'material-editor') && (
-              <>
+              <div ref={gridRef} className="relative">
+                {/* Grid Settings Button */}
                 <button
-                  className="px-2 py-1 text-xs text-gray-400 hover:text-gray-200 hover:bg-slate-800 rounded transition-colors"
-                  onClick={() => actions.editor.addConsoleMessage('Grid toggled', 'info')}
+                  className={`px-2 py-1 text-xs rounded transition-colors ${
+                    isGridExpanded
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-400 hover:text-gray-200 hover:bg-slate-800'
+                  }`}
+                  onClick={() => {
+                    setIsGridExpanded(!isGridExpanded);
+                    setIsCameraExpanded(false);
+                  }}
+                  title="Grid Settings"
                 >
                   Grid
                 </button>
+                
+                {/* Grid Settings Panel */}
+                {isGridExpanded && (
+                  <div className="absolute top-full right-0 mt-2 w-72 bg-gray-900/95 backdrop-blur-sm border border-gray-700 rounded-lg shadow-xl space-y-4 text-white text-xs pointer-events-auto z-50 p-4">
+                    <div>
+                      <label className="block font-medium text-gray-300 mb-2">
+                        Grid Settings
+                      </label>
+                      <div className="space-y-3">
+                        {/* Grid Toggle */}
+                        <div className="flex items-center justify-between p-2 bg-gray-800/50 rounded border border-gray-700">
+                          <label className="text-xs font-medium text-gray-300">Enable Grid</label>
+                          <button
+                            onClick={() => updateGridSettings({ enabled: !gridSettings.enabled })}
+                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-all duration-200 ${
+                              gridSettings.enabled ? 'bg-blue-500 shadow-lg shadow-blue-500/30' : 'bg-gray-600'
+                            }`}
+                          >
+                            <span
+                              className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform duration-200 shadow-sm ${
+                                gridSettings.enabled ? 'translate-x-5' : 'translate-x-1'
+                              }`}
+                            />
+                          </button>
+                        </div>
+
+                        {/* Grid Settings - show when enabled */}
+                        {gridSettings.enabled && (
+                          <div className="space-y-3 pt-2 border-t border-gray-700">
+                            {/* Grid Size and Cell Size */}
+                            <div className="grid grid-cols-2 gap-2">
+                              {!gridSettings.infiniteGrid && (
+                                <div>
+                                  <label className="block text-xs text-gray-400 mb-1">Size</label>
+                                  <input
+                                    type="number"
+                                    step="10"
+                                    min="10"
+                                    max="1000"
+                                    value={gridSettings.size}
+                                    onChange={(e) => updateGridSettings({ size: parseInt(e.target.value) || 100 })}
+                                    className="w-full bg-gray-800 border border-gray-600 text-white text-xs p-1.5 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                  />
+                                </div>
+                              )}
+                              <div>
+                                <label className="block text-xs text-gray-400 mb-1">Cell Size</label>
+                                <input
+                                  type="number"
+                                  step="0.1"
+                                  min="0.1"
+                                  max="10"
+                                  value={gridSettings.cellSize}
+                                  onChange={(e) => updateGridSettings({ cellSize: parseFloat(e.target.value) || 1 })}
+                                  className="w-full bg-gray-800 border border-gray-600 text-white text-xs p-1.5 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Grid Position */}
+                            <div>
+                              <label className="block text-xs text-gray-400 mb-1">Position</label>
+                              <div className="grid grid-cols-3 gap-1">
+                                <input
+                                  type="number"
+                                  step="0.1"
+                                  value={gridSettings.position[0]}
+                                  onChange={(e) => {
+                                    const newPos = [...gridSettings.position];
+                                    newPos[0] = parseFloat(e.target.value) || 0;
+                                    updateGridSettings({ position: newPos });
+                                  }}
+                                  placeholder="X"
+                                  className="w-full bg-gray-800 border border-gray-600 text-white text-xs p-1.5 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-center"
+                                />
+                                <input
+                                  type="number"
+                                  step="0.1"
+                                  value={gridSettings.position[1]}
+                                  onChange={(e) => {
+                                    const newPos = [...gridSettings.position];
+                                    newPos[1] = parseFloat(e.target.value) || 0;
+                                    updateGridSettings({ position: newPos });
+                                  }}
+                                  placeholder="Y"
+                                  className="w-full bg-gray-800 border border-gray-600 text-white text-xs p-1.5 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-center"
+                                />
+                                <input
+                                  type="number"
+                                  step="0.1"
+                                  value={gridSettings.position[2]}
+                                  onChange={(e) => {
+                                    const newPos = [...gridSettings.position];
+                                    newPos[2] = parseFloat(e.target.value) || 0;
+                                    updateGridSettings({ position: newPos });
+                                  }}
+                                  placeholder="Z"
+                                  className="w-full bg-gray-800 border border-gray-600 text-white text-xs p-1.5 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-center"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Grid Colors */}
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-xs text-gray-400 mb-1">Cell Color</label>
+                                <div className="flex items-center gap-1">
+                                  <input
+                                    type="color"
+                                    value={gridSettings.cellColor}
+                                    onChange={(e) => updateGridSettings({ cellColor: e.target.value })}
+                                    className="w-6 h-6 rounded border border-gray-600 bg-gray-800 cursor-pointer"
+                                  />
+                                  <div className="flex-1 bg-gray-800 border border-gray-600 rounded px-1.5 py-1">
+                                    <div className="text-xs text-gray-300">{gridSettings.cellColor.toUpperCase()}</div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div>
+                                <label className="block text-xs text-gray-400 mb-1">Section Color</label>
+                                <div className="flex items-center gap-1">
+                                  <input
+                                    type="color"
+                                    value={gridSettings.sectionColor}
+                                    onChange={(e) => updateGridSettings({ sectionColor: e.target.value })}
+                                    className="w-6 h-6 rounded border border-gray-600 bg-gray-800 cursor-pointer"
+                                  />
+                                  <div className="flex-1 bg-gray-800 border border-gray-600 rounded px-1.5 py-1">
+                                    <div className="text-xs text-gray-300">{gridSettings.sectionColor.toUpperCase()}</div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Section Size and Infinite Grid */}
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-xs text-gray-400 mb-1">Section Size</label>
+                                <input
+                                  type="number"
+                                  step="1"
+                                  min="1"
+                                  max="50"
+                                  value={gridSettings.sectionSize}
+                                  onChange={(e) => updateGridSettings({ sectionSize: parseInt(e.target.value) || 10 })}
+                                  className="w-full bg-gray-800 border border-gray-600 text-white text-xs p-1.5 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                />
+                              </div>
+                              <div className="flex items-end">
+                                <div className="flex items-center justify-between w-full p-1.5 bg-gray-800/50 rounded border border-gray-700">
+                                  <label className="text-xs font-medium text-gray-300">Infinite</label>
+                                  <button
+                                    onClick={() => updateGridSettings({ infiniteGrid: !gridSettings.infiniteGrid })}
+                                    className={`relative inline-flex h-4 w-8 items-center rounded-full transition-all duration-200 ${
+                                      gridSettings.infiniteGrid ? 'bg-blue-500 shadow-lg shadow-blue-500/30' : 'bg-gray-600'
+                                    }`}
+                                  >
+                                    <span
+                                      className={`inline-block h-2.5 w-2.5 transform rounded-full bg-white transition-transform duration-200 shadow-sm ${
+                                        gridSettings.infiniteGrid ? 'translate-x-4' : 'translate-x-0.5'
+                                      }`}
+                                    />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Grid Snapping */}
+                            <div className="flex items-center justify-between p-2 bg-gray-800/50 rounded border border-gray-700">
+                              <label className="text-xs font-medium text-gray-300">Grid Snapping</label>
+                              <button
+                                onClick={() => setGridSnapping(!gridSnapping)}
+                                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-all duration-200 ${
+                                  gridSnapping ? 'bg-yellow-500 shadow-lg shadow-yellow-500/30' : 'bg-gray-600'
+                                }`}
+                              >
+                                <span
+                                  className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform duration-200 shadow-sm ${
+                                    gridSnapping ? 'translate-x-5' : 'translate-x-1'
+                                  }`}
+                                />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Snap button */}
                 <button
                   className="px-2 py-1 text-xs text-gray-400 hover:text-gray-200 hover:bg-slate-800 rounded transition-colors"
-                  onClick={() => actions.editor.addConsoleMessage('Snap toggled', 'info')}
+                  onClick={() => setGridSnapping(!gridSnapping)}
+                  title="Toggle Grid Snapping"
                 >
                   Snap
                 </button>
-              </>
+              </div>
             )}
           </div>
         </div>

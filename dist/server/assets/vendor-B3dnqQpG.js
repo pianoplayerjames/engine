@@ -1,0 +1,1 @@
+import{createContext as e,createElement as t}from"react";const n=e(null);function r({children:e,value:r}){return t(n.Provider,{value:r},e)}export{r as b};

@@ -1,0 +1,7 @@
+import{b as e}from"./shaderStore-e8RCqiF-.js";const t=`lensFlareVertexShader`,n=`attribute vec2 position;uniform mat4 viewportMatrix;varying vec2 vUV;const vec2 madd=vec2(0.5,0.5);
+#define CUSTOM_VERTEX_DEFINITIONS
+void main(void) {
+#define CUSTOM_VERTEX_MAIN_BEGIN
+vUV=position*madd+madd;gl_Position=viewportMatrix*vec4(position,0.0,1.0);
+#define CUSTOM_VERTEX_MAIN_END
+}`;e.ShadersStore[t]||(e.ShadersStore[t]=n);const r={name:t,shader:n};export{r as b};

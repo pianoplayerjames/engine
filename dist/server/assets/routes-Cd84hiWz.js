@@ -1,0 +1,1 @@
+var e={"/pages/index.jsx":()=>import(`./pages-Bzjr8sVR.js`)};export{e as default};

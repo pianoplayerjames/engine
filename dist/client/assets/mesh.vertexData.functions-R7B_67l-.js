@@ -1,0 +1,1 @@
+import{b as e}from"./mesh.vertexData.functions-isLoXltf.js";export{e as OptimizeIndices};

@@ -320,17 +320,27 @@ export default async function projectRoutes(fastify) {
 
   // Server-Sent Events endpoint for real-time project updates
   fastify.get('/api/projects/:projectName/watch', async (request, reply) => {
-    const { projectName } = request.params
-    console.log(`SSE connection established for project: ${projectName}`)
-    
-    // Set SSE headers
-    reply.raw.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Cache-Control'
-    })
+    try {
+      const { projectName } = request.params
+      console.log(`SSE connection established for project: ${projectName}`)
+      
+      // Check if project exists
+      const projectPath = path.join(PROJECTS_DIR, projectName)
+      try {
+        await fs.access(projectPath)
+      } catch (error) {
+        console.error(`Project not found for SSE: ${projectPath}`)
+        return reply.code(404).send({ error: 'Project not found' })
+      }
+      
+      // Set SSE headers
+      reply.raw.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Cache-Control'
+      })
     
     // Add connection to project connections
     if (!projectSSEConnections.has(projectName)) {
@@ -373,6 +383,10 @@ export default async function projectRoutes(fastify) {
     
     // Don't end the response - keep it open for streaming
     return reply
+    } catch (error) {
+      console.error('SSE endpoint error:', error)
+      reply.code(500).send({ error: 'SSE connection failed', details: error.message })
+    }
   })
 
   // Server-Sent Events endpoint for server logs
@@ -1557,6 +1571,14 @@ async function buildFolderTree(projectPath) {
 async function categorizeAssetsByType(projectPath) {
   const assetsPath = path.join(projectPath, 'assets')
   console.log(`📊 Categorizing assets in: ${assetsPath}`)
+  
+  // Ensure assets directory exists
+  try {
+    await fs.access(assetsPath)
+  } catch (error) {
+    console.log(`Assets directory doesn't exist, creating: ${assetsPath}`)
+    await ensureAssetsDirectory(projectPath)
+  }
   
   const categories = {
     '3d-models': { name: '3D Models', files: [], extensions: ['.glb', '.gltf', '.obj', '.fbx'] },

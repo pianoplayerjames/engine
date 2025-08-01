@@ -10,13 +10,13 @@
     "start": "NODE_ENV=production node server.js",
     "build": "NODE_ENV=production vite build && node scripts/post-build.js",
     "lint": "oxlint",
-    "electron": "NODE_ENV=development electron .",
-    "electron:dev": "node electron/dev.js",
-    "electron:pack": "npm run build && NODE_ENV=production electron .",
-    "electron:dist": "npm run build && electron-builder",
-    "electron:dist-mac": "npm run build && electron-builder --mac",
-    "electron:dist-win": "npm run build && electron-builder --win",
-    "electron:dist-linux": "npm run build && electron-builder --linux"
+    "electron": "BUN_ENV=development electron .",
+    "electron:dev": "bun electron/dev.js",
+    "electron:pack": "bun run build && NODE_ENV=production electron .",
+    "electron:dist": "bun run build && electron-builder",
+    "electron:dist-mac": "bun run build && electron-builder --mac",
+    "electron:dist-win": "bun run build && electron-builder --win",
+    "electron:dist-linux": "bun run build && electron-builder --linux"
   },
   "dependencies": {
     "@babylonjs/core": "^8.20.0",
@@ -45,7 +45,7 @@
     "vite-plugin-inspect": "^11.3.2"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.4",
+    "@vitejs/plugin-react-oxc": "^0.3.0",
     "concurrently": "^9.2.0",
     "electron": "^37.2.4",
     "electron-builder": "^26.0.12",
@@ -53,7 +53,7 @@
     "postcss": "^8.5.3",
     "postcss-preset-env": "^10.1.5",
     "tailwindcss": "^4.1.11",
-    "vite": "^7.0.6",
+    "vite": "npm:rolldown-vite@latest",
     "wait-on": "^8.0.4"
   },
   "build": {
