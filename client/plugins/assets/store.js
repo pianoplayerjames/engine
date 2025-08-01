@@ -1,4 +1,5 @@
 import { proxy, subscribe, useSnapshot } from 'valtio'
+import { devtools } from 'valtio/utils'
 
 // Create the reactive assets state
 export const assetsState = proxy({
@@ -338,6 +339,14 @@ export const assetsActions = {
     assets.forEach(visit)
     return result
   }
+}
+
+// Setup Redux DevTools for debugging
+if (typeof window !== 'undefined' && window.__REDUX_DEVTOOLS_EXTENSION__) {
+  devtools(assetsState, {
+    name: 'Assets Store',
+    enabled: process.env.NODE_ENV === 'development'
+  })
 }
 
 // Set up automatic cache management

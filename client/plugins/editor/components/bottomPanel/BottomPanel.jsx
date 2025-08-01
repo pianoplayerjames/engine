@@ -1,13 +1,5 @@
 import BottomTabs from '@/plugins/editor/components/bottomPanel/BottomTabs';
 import AssetLibrary from '@/plugins/editor/components/bottomPanel/AssetLibrary';
-import ScriptsPanel from '@/plugins/editor/components/bottomPanel/ScriptsPanel';
-import NodeEditor from '@/plugins/editor/components/bottomPanel/NodeEditor';
-import ConsolePanel from '@/plugins/editor/components/bottomPanel/ConsolePanel';
-import TerrainPanel from '@/plugins/editor/components/bottomPanel/TerrainPanel';
-import PhotoPropertiesPanel from '@/plugins/editor/components/bottomPanel/PhotoPropertiesPanel';
-import PathsPanel from '@/plugins/editor/components/bottomPanel/PathsPanel';
-import ActionsPanel from '@/plugins/editor/components/bottomPanel/ActionsPanel';
-import InfoPanel from '@/plugins/editor/components/bottomPanel/InfoPanel';
 
 const BottomPanel = ({
   activeTab,
@@ -28,22 +20,6 @@ const BottomPanel = ({
     switch (activeTab) {
       case 'assets':
         return <AssetLibrary onContextMenu={onContextMenu} />;
-      case 'scripts':
-        return <ScriptsPanel />;
-      case 'node-editor':
-        return <NodeEditor />;
-      case 'console':
-        return <ConsolePanel />;
-      case 'terrain':
-        return <TerrainPanel />;
-      case 'photo-properties':
-        return <PhotoPropertiesPanel />;
-      case 'paths':
-        return <PathsPanel />;
-      case 'actions':
-        return <ActionsPanel />;
-      case 'info':
-        return <InfoPanel />;
       default:
         return null;
     }

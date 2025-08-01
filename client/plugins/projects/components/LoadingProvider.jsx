@@ -1,6 +1,6 @@
 import { useState, useEffect, createContext, useContext } from 'react'
 import { useSnapshot } from 'valtio'
-import { editorState } from '@/plugins/editor/store.js'
+import { editorState } from "@/store.js"
 import { projectManager } from '../projectManager.js'
 import AssetLoader from './AssetLoader.jsx'
 

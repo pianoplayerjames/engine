@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'react'
 import * as BABYLON from '@babylonjs/core'
 import '@babylonjs/core/Cameras/arcRotateCamera'
-import { editorActions } from '@/plugins/editor/store.js'
+import { editorActions } from '@/store.js'
 
 function Viewport({ children, style = {}, onContextMenu }) {
   const canvasRef = useRef()
@@ -126,3 +126,6 @@ export default function RenderPlugin({ children, embedded = false, style = {}, o
 }
 
 export { Viewport as ViewportCanvas }
+
+// Export the render store for other plugins to use
+export { renderState, renderActions } from '@/store.js'

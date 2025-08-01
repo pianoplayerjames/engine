@@ -1,66 +1,25 @@
 import { useState, useRef, useEffect } from 'react';
 import { Icons } from '@/plugins/editor/components/Icons';
-import { useSnapshot } from 'valtio';
-import { editorState, editorActions } from '@/plugins/editor/store.js';
+import { useBottomTabsState, useEditorViewport } from '@/hooks/useStoreSnapshot.js';
+import { editorActions } from "@/store.js";
 
 const defaultTabs = [
   { id: 'assets', label: 'Assets', icon: Icons.Cube },
-  { id: 'scripts', label: 'Scripts', icon: Icons.CodeBracket },
-  { id: 'animation', label: 'Animation', icon: Icons.Play },
-  { id: 'node-editor', label: 'Node Editor', icon: Icons.AdjustmentsHorizontal },
-  { id: 'timeline', label: 'Timeline', icon: Icons.Clock },
-  { id: 'console', label: 'Console', icon: Icons.CommandLine },
-  { id: 'terrain', label: 'Terrain', icon: Icons.Terrain },
-  { id: 'mixer', label: 'Mixer', icon: Icons.Mixer },
-  { id: 'video-timeline', label: 'Video Timeline', icon: Icons.Film },
-  { id: 'media-bin', label: 'Media Bin', icon: Icons.Archive },
-  { id: 'color-grading', label: 'Color Grading', icon: Icons.ColorSwatch },
-  { id: 'audio-tracks', label: 'Audio Tracks', icon: Icons.SpeakerWave },
-  { id: 'photo-properties', label: 'Properties', icon: Icons.Cog },
-  { id: 'channels', label: 'Channels', icon: Icons.Layers },
-  { id: 'paths', label: 'Paths', icon: Icons.BezierCurve },
-  { id: 'actions', label: 'Actions', icon: Icons.Play },
-  { id: 'info', label: 'Info', icon: Icons.InformationCircle },
 ];
 
 // Workflow-based tab configurations
 const workflowTabs = {
   '3d-viewport': [
-    'assets', 'scripts', 'animation', 'terrain', 'console'
-  ],
-  'daw-editor': [
-    'assets', 'mixer', 'timeline', 'console'
-  ],
-  'material-editor': [
-    'assets', 'console'
-  ],
-  'node-editor': [
-    'assets', 'node-editor', 'console'
-  ],
-  'animation-editor': [
-    'assets', 'animation', 'timeline', 'console'
-  ],
-  'text-editor': [
-    'assets', 'scripts', 'console'
-  ],
-  'video-editor': [
-    'media-bin', 'video-timeline', 'color-grading', 'audio-tracks', 'console'
-  ],
-  'photo-editor': [
-    'assets', 'channels', 'paths', 'actions', 'info', 'console'
-  ],
-  'model-preview': [
-    'assets', 'animation', 'info', 'console'
+    'assets'
   ],
   'default': [
-    'assets', 'scripts', 'animation', 'node-editor', 'timeline', 'console',
-    'terrain', 'mixer', 'video-timeline', 'media-bin', 'color-grading', 'audio-tracks'
+    'assets'
   ]
 };
 
 function BottomTabs({ activeTab, onTabChange, isAssetPanelOpen, onToggleAssetPanel, rightPanelWidth, isScenePanelOpen }) {
-  const { ui, viewport } = useSnapshot(editorState);
-  const { bottomTabOrder } = ui;
+  const { selectedBottomTab, bottomTabOrder } = useBottomTabsState();
+  const viewport = useEditorViewport();
   const { setBottomTabOrder, hydrateFromLocalStorage } = editorActions;
   
   // Get current active viewport type for workflow filtering

@@ -1142,29 +1142,11 @@ Timeline: (props) => (
   </svg>
 ),
 
-Monitor: (props) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-    <line x1="8" y1="21" x2="16" y2="21"/>
-    <line x1="12" y1="17" x2="12" y2="21"/>
-  </svg>
-),
 
-Audio: (props) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <polygon points="11 5,6 9,2 9,2 15,6 15,11 19"/>
-    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
-  </svg>
-),
 
-Mixer: (props) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <rect x="3" y="3" width="18" height="18" rx="2"/>
-    <circle cx="9" cy="9" r="2"/>
-    <path d="M21 15l-4.35-4.35a2 2 0 0 0-2.83 0L9.17 15"/>
-    <circle cx="15" cy="9" r="2"/>
-  </svg>
-),
+
+
+
 
 Outline: (props) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -1180,12 +1162,7 @@ SparkMini: (props) => (
   </svg>
 ),
 
-Search: (props) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <circle cx="11" cy="11" r="8"/>
-    <path d="M21 21l-4.35-4.35"/>
-  </svg>
-),
+
 
 Video: (props) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -1568,14 +1545,7 @@ LayerMask: (props) => (
   </svg>
 ),
 
-Scale: (props) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <path d="M16 12l4-4v3h3"/>
-    <path d="M12 16l-4 4h3v3"/>
-    <path d="M8 8l-4-4v3H1"/>
-    <path d="M20 20l4-4v3h3" transform="rotate(180 22 20)"/>
-  </svg>
-),
+
 
 Table: (props) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>

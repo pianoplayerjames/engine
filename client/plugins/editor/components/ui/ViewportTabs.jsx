@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Icons } from '@/plugins/editor/components/Icons';
-import { useSnapshot } from 'valtio';
-import { editorState, editorActions } from '@/plugins/editor/store.js';
+import { useViewportTabs } from '@/hooks/useStoreSnapshot.js';
+import { editorActions } from "@/store.js";
 
 const ViewportTabs = () => {
   const [isAddDropdownOpen, setIsAddDropdownOpen] = useState(false);
@@ -9,8 +9,8 @@ const ViewportTabs = () => {
   const [contextMenu, setContextMenu] = useState(null);
   const [editingTab, setEditingTab] = useState(null);
   const [editingName, setEditingName] = useState('');
-  const { viewport } = useSnapshot(editorState);
-  const { tabs, activeTabId, suspendedTabs } = viewport;
+  const { tabs, activeTabId } = useViewportTabs();
+  const suspendedTabs = new Set(); // Get suspended tabs from viewport state if needed
   
   const {
     addViewportTab,
@@ -28,30 +28,6 @@ const ViewportTabs = () => {
       label: 'New Scene',
       icon: Icons.Cube,
       description: 'Create a new 3D scene viewport'
-    },
-    {
-      id: 'node-editor',
-      label: 'Node Editor',
-      icon: Icons.Network,
-      description: 'Create a new node-based editor'
-    },
-    {
-      id: 'text-editor',
-      label: 'Text Editor',
-      icon: Icons.FileText,
-      description: 'Create a new script editor'
-    },
-    {
-      id: 'photo-editor',
-      label: 'Photo Editor',
-      icon: Icons.Photo,
-      description: 'Create a new photo editing workspace'
-    },
-    {
-      id: 'model-preview',
-      label: 'Model Preview',
-      icon: Icons.Cube,
-      description: 'Preview and analyze 3D models'
     }
   ];
 

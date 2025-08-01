@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Icons } from '@/plugins/editor/components/Icons';
 import { useSnapshot } from 'valtio';
-import { editorState, editorActions } from '@/plugins/editor/store.js';
+import { editorState, editorActions } from "@/store.js";
 
 export default function CameraHelpers() {
   const [isExpanded, setIsExpanded] = useState(false);

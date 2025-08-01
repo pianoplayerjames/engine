@@ -5,3 +5,6 @@ function EditorPlugin() {
 }
 
 export default EditorPlugin;
+
+// Export store references for backward compatibility
+export { editorState, editorActions } from '@/store.js'

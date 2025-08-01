@@ -1,7 +1,8 @@
-import { proxy, useSnapshot, ref, subscribe } from 'valtio'
+import { proxy, useSnapshot, ref } from 'valtio'
 import { devtools } from 'valtio/utils'
 import { autoSaveManager } from '@/plugins/core/AutoSaveManager.js'
 import { updateUISetting } from '@/plugins/editor/utils/localStorage.js'
+import { sceneActions } from '@/plugins/scene/store.js'
 
 // Default UI settings (no longer from localStorage)
 const defaultUISettings = {
@@ -150,64 +151,8 @@ export const editorState = proxy({
         hasUnsavedChanges: false,
         instance: 1,
         data: {
-          // Scene-specific data for 3D viewports
-          sceneObjects: [
-            // Default scene objects for Scene 1
-            // Folder: Environment
-            {
-              id: 'folder-environment',
-              name: 'Environment',
-              type: 'folder',
-              expanded: true,
-              visible: true,
-              children: ['default-platform-1']
-            },
-            {
-              id: 'default-platform-1',
-              name: 'Main Platform',
-              type: 'mesh',
-              position: [0, -2.5, 0],
-              rotation: [0, 0, 0],
-              scale: [100, 5, 100],
-              geometry: 'box',
-              material: { 
-                color: '#3a3a3a',
-                roughness: 0.9,
-                metalness: 0.05
-              },
-              visible: true,
-              isDefaultPlatform: true,
-              parentId: 'folder-environment'
-            },
-            // Default lighting
-            {
-              id: 'folder-lighting',
-              name: 'Lighting',
-              type: 'folder',
-              expanded: true,
-              visible: true,
-              children: ['sun-light-1']
-            },
-            {
-              id: 'sun-light-1',
-              name: 'Sun Light',
-              type: 'light',
-              lightType: 'directional',
-              position: [10, 10, 5],
-              rotation: [-0.785, 0.524, 0],
-              color: '#ffffff',
-              intensity: 1.2,
-              castShadow: true,
-              visible: true,
-              shadowMapSize: [2048, 2048],
-              shadowCameraFar: 50,
-              shadowCameraLeft: -20,
-              shadowCameraRight: 20,
-              shadowCameraTop: 20,
-              shadowCameraBottom: -20,
-              parentId: 'folder-lighting'
-            }
-          ],
+          // Scene ID for linking to scene store
+          sceneId: 'viewport-1',
           camera: {
             position: [0, 0, 5],
             target: [0, 0, 0],
@@ -256,9 +201,6 @@ export const editorState = proxy({
   // Babylon.js scene reference (wrapped in ref() to prevent reactivity)
   babylonScene: ref({ current: null }),
   
-  // Scene objects (now managed by Babylon.js - no mock data)
-  sceneObjects: [],
-  
   // Editor settings
   settings: {
     grid: defaultUISettings.settings.gridSettings,
@@ -281,7 +223,6 @@ export const editorState = proxy({
 })
 
 // Actions that mutate the state directly
-// Create base actions without DevTools
 const baseEditorActions = {
   // Basic editor actions
   toggle: () => {
@@ -465,82 +406,13 @@ const baseEditorActions = {
     editorState.viewport.activeTab = tab
   },
 
-  // Helper function to create default scene data
-  createDefaultSceneData: () => {
-    const timestamp = Date.now();
-    const envFolderId = `folder-environment-${timestamp}`;
-    const platformId = `default-platform-${timestamp}`;
-    const lightFolderId = `folder-lighting-${timestamp}`;
-    const lightId = `default-light-${timestamp}`;
-    
+  // Helper function to create default scene data (now uses scene store)
+  createDefaultSceneData: (sceneId) => {
+    const sceneData = sceneActions.createScene(sceneId)
     return {
-      sceneObjects: [
-        // Default environment folder
-        {
-          id: envFolderId,
-          name: 'Environment',
-          type: 'folder',
-          expanded: true,
-          visible: true,
-          children: [platformId]
-        },
-        {
-          id: platformId,
-          name: 'Ground Plane',
-          type: 'mesh',
-          position: [0, -2.5, 0],
-          rotation: [0, 0, 0],
-          scale: [20, 1, 20],
-          geometry: 'box',
-          material: { 
-            color: '#4a5568',
-            roughness: 0.8,
-            metalness: 0.1
-          },
-          visible: true,
-          isDefaultPlatform: true,
-          parentId: envFolderId
-        },
-        // Default lighting folder
-        {
-          id: lightFolderId,
-          name: 'Lighting',
-          type: 'folder',
-          expanded: true,
-          visible: true,
-          children: [lightId]
-        },
-        {
-          id: lightId,
-          name: 'Main Light',
-          type: 'light',
-          lightType: 'directional',
-          position: [5, 8, 5],
-          rotation: [-0.6, 0.4, 0],
-          color: '#ffffff',
-          intensity: 1.0,
-          castShadow: true,
-          visible: true,
-          shadowMapSize: [1024, 1024],
-          shadowCameraFar: 30,
-          shadowCameraLeft: -15,
-          shadowCameraRight: 15,
-          shadowCameraTop: 15,
-          shadowCameraBottom: -15,
-          parentId: lightFolderId
-        }
-      ],
-      camera: {
-        position: [0, 2, 8],
-        target: [0, 0, 0],
-        zoom: 1,
-        fov: 75
-      },
-      selection: {
-        entity: null,
-        object: null,
-        transformMode: 'select'
-      }
+      sceneId: sceneId,
+      camera: sceneData.camera,
+      selection: sceneData.selection
     };
   },
 
@@ -574,7 +446,8 @@ const baseEditorActions = {
     let tabData = { ...data };
     if (type === '3d-viewport') {
       // Create new scene data for 3D viewports
-      tabData = editorActions.createDefaultSceneData();
+      const sceneId = `viewport-${editorState.viewport.nextTabId}`;
+      tabData = editorActions.createDefaultSceneData(sceneId);
     }
 
     const newTab = {
@@ -597,6 +470,11 @@ const baseEditorActions = {
     if (tab) {
       const previousActiveTab = editorState.viewport.activeTabId;
       editorState.viewport.activeTabId = tabId;
+      
+      // Set active scene if it's a 3D viewport
+      if (tab.type === '3d-viewport' && tab.data?.sceneId) {
+        sceneActions.setActiveScene(tab.data.sceneId);
+      }
       
       // Resume the newly active tab immediately
       editorActions.resumeTab(tabId);
@@ -621,6 +499,11 @@ const baseEditorActions = {
     if (editorState.viewport.tabs.length === 1) return;
 
     const tab = editorState.viewport.tabs[tabIndex];
+
+    // Clean up scene data if it's a 3D viewport
+    if (tab.type === '3d-viewport' && tab.data?.sceneId) {
+      sceneActions.deleteScene(tab.data.sceneId);
+    }
 
     // If closing the active tab, switch to another tab
     if (editorState.viewport.activeTabId === tabId) {
@@ -810,81 +693,23 @@ const baseEditorActions = {
 // Export the actions directly
 export const editorActions = baseEditorActions
 
-// Enable Redux DevTools integration
-if (typeof window !== 'undefined') {
-  // Wait for DOM to be ready
-  setTimeout(() => {
-    // Check if Redux DevTools extension is available
-    if (window.__REDUX_DEVTOOLS_EXTENSION__) {
-      // Create a Redux DevTools connection
-      const devToolsConnection = window.__REDUX_DEVTOOLS_EXTENSION__.connect({
-        name: 'Game Engine Editor',
-        features: {
-          pause: true,
-          lock: true,
-          persist: true,
-          export: true,
-          import: 'custom',
-          jump: true,
-          skip: true,
-          reorder: true,
-          dispatch: true,
-          test: true
-        }
-      })
 
-      // Initialize with current state
-      devToolsConnection.init(editorState)
-
-      // Track action names for better debugging
-      let actionCounter = 0
-
-      // Subscribe to all state changes
-      const unsubscribe = subscribe(editorState, (ops) => {
-        actionCounter++
-        
-        // Create a descriptive action name based on the operations
-        let actionName = 'STATE_UPDATE'
-        if (ops && ops.length > 0) {
-          const op = ops[0]
-          if (op && op.path && op.path.length > 0) {
-            actionName = `UPDATE_${op.path.join('_').toUpperCase()}`
-          }
-        }
-
-        // Send the action and new state to DevTools
-        devToolsConnection.send({
-          type: actionName,
-          payload: ops
-        }, editorState)
-      })
-
-      // Handle DevTools actions (like time travel)
-      devToolsConnection.subscribe((message) => {
-        if (message.type === 'DISPATCH' && message.state) {
-          // Handle time travel debugging
-          try {
-            const newState = JSON.parse(message.state)
-            Object.assign(editorState, newState)
-          } catch (e) {
-            console.warn('Failed to parse DevTools state:', e)
-          }
-        }
-      })
-
-      console.log('🎉 Redux DevTools connected successfully!')
-      
-      // Store unsubscribe function globally for cleanup if needed
-      window.__VALTIO_DEVTOOLS_UNSUBSCRIBE__ = unsubscribe
-    } else {
-      console.warn('Redux DevTools Extension not found. Install it from: https://github.com/reduxjs/redux-devtools')
-    }
-  }, 500)
+// Setup Redux DevTools for debugging
+let devtoolsUnsubscribe = null
+if (typeof window !== 'undefined' && window.__REDUX_DEVTOOLS_EXTENSION__) {
+  devtoolsUnsubscribe = devtools(editorState, {
+    name: 'Editor Store',
+    enabled: process.env.NODE_ENV === 'development'
+  })
 }
 
 // Register editor store with AutoSaveManager (no localStorage)
 if (typeof window !== 'undefined') {
   setTimeout(() => {
+    // Initialize default scene for viewport-1
+    sceneActions.createScene('viewport-1');
+    sceneActions.setActiveScene('viewport-1');
+    
     // Run migration for existing projects
     editorActions.migrateTabOrders();
     
@@ -893,16 +718,15 @@ if (typeof window !== 'undefined') {
         ui: { ...editorState.ui },
         camera: { ...editorState.camera },
         settings: { ...editorState.settings },
-        panels: { ...editorState.panels },
-        sceneObjects: [...editorState.sceneObjects]
-        // Don't save console messages, or selection state
+        panels: { ...editorState.panels }
+        // Don't save console messages, selection state, or scene objects (now in scene store)
       }),
       restoreData: (data) => {
         if (data.ui) Object.assign(editorState.ui, data.ui)
         if (data.camera) Object.assign(editorState.camera, data.camera)
         if (data.settings) Object.assign(editorState.settings, data.settings)
         if (data.panels) Object.assign(editorState.panels, data.panels)
-        if (data.sceneObjects) editorState.sceneObjects = data.sceneObjects
+        // sceneObjects are now managed by the scene store
         
         // Run migration after loading saved data
         editorActions.migrateTabOrders();
@@ -910,3 +734,6 @@ if (typeof window !== 'undefined') {
     })
   }, 100)
 }
+
+// Export devtools unsubscribe function for cleanup
+export { devtoolsUnsubscribe }

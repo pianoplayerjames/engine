@@ -1,9 +1,14 @@
 import { proxy, useSnapshot } from 'valtio'
+import { devtools } from 'valtio/utils'
 import { autoSaveManager } from '@/plugins/core/AutoSaveManager.js'
 
 // Create the reactive scene state
 export const sceneState = proxy({
-  // Entity management
+  // Multi-scene support (one scene per viewport)
+  scenes: new Map(), // viewportId -> scene data
+  activeSceneId: null,
+  
+  // Legacy ECS system (kept for compatibility)
   entities: new Map(),
   entityCounter: 0,
   
@@ -32,6 +37,157 @@ export const sceneState = proxy({
 
 // Actions that mutate the state directly
 export const sceneActions = {
+  // Scene management
+  createScene: (sceneId, initialData = null) => {
+    const defaultSceneData = {
+      id: sceneId,
+      name: `Scene ${sceneId}`,
+      objects: [
+        // Default environment folder
+        {
+          id: 'folder-environment',
+          name: 'Environment',
+          type: 'folder',
+          expanded: true,
+          visible: true,
+          children: ['default-platform-1']
+        },
+        {
+          id: 'default-platform-1',
+          name: 'Main Platform',
+          type: 'mesh',
+          position: [0, -2.5, 0],
+          rotation: [0, 0, 0],
+          scale: [100, 5, 100],
+          geometry: 'box',
+          material: { 
+            color: '#3a3a3a',
+            roughness: 0.9,
+            metalness: 0.05
+          },
+          visible: true,
+          isDefaultPlatform: true,
+          parentId: 'folder-environment'
+        },
+        // Default lighting folder
+        {
+          id: 'folder-lighting',
+          name: 'Lighting',
+          type: 'folder',
+          expanded: true,
+          visible: true,
+          children: ['sun-light-1']
+        },
+        {
+          id: 'sun-light-1',
+          name: 'Sun Light',
+          type: 'light',
+          lightType: 'directional',
+          position: [10, 10, 5],
+          rotation: [-0.785, 0.524, 0],
+          color: '#ffffff',
+          intensity: 1.2,
+          castShadow: true,
+          visible: true,
+          shadowMapSize: [2048, 2048],
+          shadowCameraFar: 50,
+          shadowCameraLeft: -20,
+          shadowCameraRight: 20,
+          shadowCameraTop: 20,
+          shadowCameraBottom: -20,
+          parentId: 'folder-lighting'
+        }
+      ],
+      camera: {
+        position: [0, 0, 5],
+        target: [0, 0, 0],
+        zoom: 1,
+        fov: 75
+      },
+      selection: {
+        entity: null,
+        object: null,
+        transformMode: 'select'
+      }
+    }
+    
+    const sceneData = initialData || defaultSceneData
+    sceneState.scenes.set(sceneId, sceneData)
+    return sceneData
+  },
+
+  deleteScene: (sceneId) => {
+    sceneState.scenes.delete(sceneId)
+    if (sceneState.activeSceneId === sceneId) {
+      sceneState.activeSceneId = null
+    }
+  },
+
+  setActiveScene: (sceneId) => {
+    if (sceneState.scenes.has(sceneId)) {
+      sceneState.activeSceneId = sceneId
+    }
+  },
+
+  getActiveScene: () => {
+    return sceneState.scenes.get(sceneState.activeSceneId)
+  },
+
+  getScene: (sceneId) => {
+    return sceneState.scenes.get(sceneId)
+  },
+
+  // Scene object management
+  addSceneObject: (sceneId, object) => {
+    const scene = sceneState.scenes.get(sceneId)
+    if (scene) {
+      scene.objects.push(object)
+    }
+  },
+
+  removeSceneObject: (sceneId, objectId) => {
+    const scene = sceneState.scenes.get(sceneId)
+    if (scene) {
+      scene.objects = scene.objects.filter(obj => obj.id !== objectId)
+    }
+  },
+
+  updateSceneObject: (sceneId, objectId, updates) => {
+    const scene = sceneState.scenes.get(sceneId)
+    if (scene) {
+      const objectIndex = scene.objects.findIndex(obj => obj.id === objectId)
+      if (objectIndex !== -1) {
+        Object.assign(scene.objects[objectIndex], updates)
+      }
+    }
+  },
+
+  getSceneObject: (sceneId, objectId) => {
+    const scene = sceneState.scenes.get(sceneId)
+    if (scene) {
+      return scene.objects.find(obj => obj.id === objectId)
+    }
+    return null
+  },
+
+  // Scene selection
+  setSceneSelection: (sceneId, entityId, object = null) => {
+    const scene = sceneState.scenes.get(sceneId)
+    if (scene) {
+      scene.selection.entity = entityId
+      scene.selection.object = object
+    }
+  },
+
+  // Scene camera
+  setSceneCamera: (sceneId, cameraData) => {
+    const scene = sceneState.scenes.get(sceneId)
+    if (scene) {
+      Object.assign(scene.camera, cameraData)
+    }
+  },
+
+  // Legacy ECS system methods (kept for compatibility)
   createEntity: (name = 'Entity') => {
     const id = sceneState.entityCounter + 1
     const entity = {
@@ -309,11 +465,24 @@ function boundsIntersect(a, b) {
            a.max.z < b.min.z || a.min.z > b.max.z)
 }
 
+// Setup Redux DevTools for debugging
+if (typeof window !== 'undefined' && window.__REDUX_DEVTOOLS_EXTENSION__) {
+  devtools(sceneState, {
+    name: 'Scene Store',
+    enabled: process.env.NODE_ENV === 'development'
+  })
+}
+
 // Register scene store with AutoSaveManager (no localStorage)
 if (typeof window !== 'undefined') {
   setTimeout(() => {
     autoSaveManager.registerStore('scene', sceneState, {
       extractSaveData: () => ({
+        // New scene system
+        scenes: Array.from(sceneState.scenes.entries()),
+        activeSceneId: sceneState.activeSceneId,
+        
+        // Legacy ECS system
         entities: Array.from(sceneState.entities.entries()).map(([id, entity]) => [
           id,
           {
@@ -332,6 +501,15 @@ if (typeof window !== 'undefined') {
         )
       }),
       restoreData: (data) => {
+        // Restore new scene system
+        if (data.scenes) {
+          sceneState.scenes = new Map(data.scenes)
+        }
+        if (data.activeSceneId !== undefined) {
+          sceneState.activeSceneId = data.activeSceneId
+        }
+        
+        // Restore legacy ECS system
         if (data.entities) {
           sceneState.entities = new Map(data.entities.map(([id, entity]) => [
             id,

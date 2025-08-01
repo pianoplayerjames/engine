@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Icons } from '@/plugins/editor/components/Icons';
 import { useSnapshot } from 'valtio';
-import { editorState, editorActions } from '@/plugins/editor/store.js';
+import { editorState, editorActions } from "@/store.js";
 import { autoSaveManager } from '@/plugins/core/AutoSaveManager.js';
 import { projectManager } from '@/plugins/projects/projectManager.js';
 import ProjectManager from '@/plugins/projects/components/ProjectManager.jsx';
-import SettingsPanel from '@/plugins/editor/components/settings/SettingsPanel.jsx';
 
 function TopBarMenu() {
   const [activeMenu, setActiveMenu] = useState(null);
@@ -14,7 +13,6 @@ function TopBarMenu() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showSyncTooltip, setShowSyncTooltip] = useState(false);
   const [showProjectManager, setShowProjectManager] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
   const [selectedTool, setSelectedTool] = useState('select');
   const [flashingTool, setFlashingTool] = useState(null);
   const [menuPosition, setMenuPosition] = useState(null);
@@ -207,8 +205,7 @@ function TopBarMenu() {
       editorActions.addConsoleMessage('Mirror Modifier applied to selected object', 'success');
     } else if (item.id === 'settings') {
       // Handle settings
-      setShowSettings(true);
-      editorActions.addConsoleMessage('Settings panel opened', 'info');
+      editorActions.addConsoleMessage('Settings functionality removed', 'info');
     } else {
       console.log('Menu item clicked:', item.id);
       editorActions.addConsoleMessage(`Menu action: ${item.label}`, 'info');
@@ -341,12 +338,6 @@ function TopBarMenu() {
         />
       )}
       
-      {/* Settings Panel Modal */}
-      {showSettings && (
-        <SettingsPanel
-          onClose={() => setShowSettings(false)}
-        />
-      )}
     </>
   );
 }

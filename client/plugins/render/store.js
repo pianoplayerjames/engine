@@ -1,4 +1,5 @@
 import { proxy, subscribe, useSnapshot } from 'valtio'
+import { devtools } from 'valtio/utils'
 import { autoSaveManager } from '@/plugins/core/AutoSaveManager.js'
 
 // Non-serializable objects stored outside proxy (updated for Babylon.js)
@@ -177,7 +178,7 @@ export const renderActions = {
     renderRefs.engine = engine
   },
   
-  setCamera: (camera) => {
+  setCameraRef: (camera) => {
     renderRefs.camera = camera
   },
   
@@ -273,6 +274,14 @@ if (typeof window !== 'undefined') {
   }
   
   requestAnimationFrame(updatePerformanceStats)
+}
+
+// Setup Redux DevTools for debugging
+if (typeof window !== 'undefined' && window.__REDUX_DEVTOOLS_EXTENSION__) {
+  devtools(renderState, {
+    name: 'Render Store',
+    enabled: process.env.NODE_ENV === 'development'
+  })
 }
 
 // Register render store with AutoSaveManager (no localStorage)

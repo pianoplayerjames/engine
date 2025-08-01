@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSnapshot } from 'valtio';
 import { editorState, editorActions } from '../store.js';
-import { PanelResizer } from '@/plugins/editor/components/layout';
+import PanelResizer from '@/plugins/editor/components/ui/PanelResizer.jsx';
 import RightPanel from '@/plugins/editor/components/propertiesPanel/RightPanel';
 import BottomPanel from '@/plugins/editor/components/bottomPanel/BottomPanel';
 import { PanelToggleButton, ContextMenu } from '@/plugins/editor/components/ui';
@@ -139,7 +139,7 @@ const EditorLayout = () => {
       {!isScenePanelOpen && (
         <PanelToggleButton
           onClick={() => setIsScenePanelOpen(true)}
-          position={{ right: 0 }}
+          position={{ right: rightPanelWidth }}
         />
       )}
       

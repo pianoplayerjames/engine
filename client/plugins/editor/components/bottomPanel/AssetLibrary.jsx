@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Icons } from '@/plugins/editor/components/Icons';
 import { useSnapshot } from 'valtio';
-import { editorState, editorActions } from '@/plugins/editor/store.js';
+import { editorState, editorActions } from "@/store.js";
 import { projectManager } from '@/plugins/projects/projectManager.js';
 import { assetManager, PRIORITY } from '@/plugins/assets/OptimizedAssetManager.js';
-import ModelPreview from './ModelPreview.jsx';
 import ContextMenu from '@/plugins/editor/components/ui/ContextMenu.jsx';
 import { useContextMenuActions } from '@/plugins/editor/components/actions/ContextMenuActions.jsx';
 
@@ -198,12 +197,44 @@ function AssetLibrary() {
   // Fetch data based on view mode
   useEffect(() => {
     const currentProject = projectManager.getCurrentProject();
-    if (!currentProject.name) {
-      setError('No project loaded');
-      return;
+    
+    // Add debugging to understand the project state
+    console.log('🔍 AssetLibrary checking project:', {
+      viewMode,
+      projectName: currentProject?.name,
+      projectPath: currentProject?.path,
+      hasProject: projectManager.hasCurrentProject()
+    });
+    
+    if (!currentProject?.name) {
+      // Try again after a short delay in case project is still loading
+      setLoading(true);
+      const retryTimeout = setTimeout(() => {
+        const retryProject = projectManager.getCurrentProject();
+        console.log('🔄 Retry project check:', retryProject);
+        
+        if (retryProject?.name) {
+          // Project loaded, retry the effect
+          setError(null);
+          if (viewMode === 'folder') {
+            fetchFolderTree(retryProject);
+            fetchAssets(retryProject);
+          } else {
+            fetchAssetCategories(retryProject);
+          }
+        } else {
+          setError('No project loaded');
+          setLoading(false);
+        }
+      }, 100);
+
+      return () => clearTimeout(retryTimeout);
     }
 
     clearCacheIfProjectChanged(currentProject);
+    
+    // Clear any previous errors when switching views
+    setError(null);
 
     if (viewMode === 'folder') {
       fetchFolderTree(currentProject);
@@ -251,7 +282,7 @@ function AssetLibrary() {
     return () => {
       projectManager.removeFileChangeListener(handleFileChange);
     };
-  }, [currentPath, viewMode, selectedCategory, assetCategories]);
+  }, [currentPath, viewMode, selectedCategory]);
 
   // Handle currentPath changes for folder view
   useEffect(() => {
@@ -1601,18 +1632,15 @@ function AssetLibrary() {
                     {asset.type === 'folder' ? (
                       <Icons.Folder className="w-12 h-12 text-yellow-400 group-hover:scale-110 transition-all" />
                     ) : (
-                      <ModelPreview
-                        asset={asset}
-                        className={`w-14 h-14 transition-all group-hover:scale-110 ${
+                      <div className={`w-14 h-14 bg-gray-700 rounded flex items-center justify-center transition-all group-hover:scale-110 ${
                           loadedAssets.has(asset.id) 
                             ? 'opacity-100' 
                             : failedAssets.has(asset.id) 
                               ? 'opacity-40 grayscale' 
                               : 'opacity-60'
-                        }`}
-                        isHovered={hoveredItem === asset.id}
-                        priority={hoveredItem === asset.id ? PRIORITY.CRITICAL : PRIORITY.MEDIUM}
-                      />
+                        }`}>
+                        <Icons.Cube className="w-8 h-8 text-gray-400" />
+                      </div>
                     )}
                     
                     {/* Extension Badge - Top right over the cube (files only) */}
@@ -1870,18 +1898,15 @@ function AssetLibrary() {
                       {asset.type === 'folder' ? (
                         <Icons.Folder className="w-6 h-6 text-yellow-400" />
                       ) : (
-                        <ModelPreview
-                          asset={asset}
-                          className={`w-6 h-6 ${
+                        <div className={`w-6 h-6 bg-gray-700 rounded flex items-center justify-center ${
                             loadedAssets.has(asset.id) 
                               ? 'opacity-100' 
                               : failedAssets.has(asset.id) 
                                 ? 'opacity-40 grayscale' 
                                 : 'opacity-60'
-                          }`}
-                          isHovered={hoveredItem === asset.id}
-                          priority={hoveredItem === asset.id ? PRIORITY.CRITICAL : PRIORITY.MEDIUM}
-                        />
+                          }`}>
+                          <Icons.Cube className="w-4 h-4 text-gray-400" />
+                        </div>
                       )}
 
                       {/* Status Indicator */}

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Icons } from '@/plugins/editor/components/Icons';
 import { useSnapshot } from 'valtio';
-import { editorState, editorActions } from '@/plugins/editor/store.js';
+import { editorState, editorActions } from "@/store.js";
 
 const defaultTools = [
   { id: 'scene', icon: Icons.Scene, title: 'Scene' },

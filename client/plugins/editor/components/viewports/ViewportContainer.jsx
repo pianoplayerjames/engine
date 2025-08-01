@@ -1,14 +1,10 @@
 import { useRef, useEffect } from 'react';
 import { useSnapshot } from 'valtio';
-import { editorState, editorActions } from '@/plugins/editor/store.js';
+import { editorState, editorActions } from "@/store.js";
 import { Icons } from '@/plugins/editor/components/Icons';
 
 // Import viewport components
 import ViewportTabs from '@/plugins/editor/components/ui/ViewportTabs.jsx';
-import NodeEditor from './NodeEditor.jsx';
-import TextEditor from './TextEditor.jsx';
-import PhotoEditor from './PhotoEditor.jsx';
-import ModelPreview from './ModelPreview.jsx';
 import ErrorBoundary from '../ErrorBoundary.jsx';
 
 // Import 3D viewport components
@@ -93,22 +89,6 @@ const ViewportContainer = ({
             contextMenuHandler={contextMenuHandler}
             showGrid={showGrid}
           />
-        );
-        
-      case 'node-editor':
-        return <NodeEditor />;
-        
-      case 'text-editor':
-        return <TextEditor />;
-        
-      case 'photo-editor':
-        return <PhotoEditor />;
-        
-      case 'model-preview':
-        return (
-          <ErrorBoundary>
-            <ModelPreview />
-          </ErrorBoundary>
         );
         
       default:

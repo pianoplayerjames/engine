@@ -1,14 +1,17 @@
 import { resolve } from 'node:path'
-import viteReact from '@vitejs/plugin-react-oxc'
+
+import viteReact from '@vitejs/plugin-react'
 import viteFastifyReact from '@fastify/react/plugin'
 import tailwindcss from '@tailwindcss/vite'
+import Inspect from 'vite-plugin-inspect'
 
 export default {
   root: resolve(import.meta.dirname, 'client'),
   plugins: [
     viteReact(),
     viteFastifyReact(),
-    tailwindcss()
+    tailwindcss(),
+    Inspect()
   ],
   resolve: {
     alias: {
@@ -23,6 +26,7 @@ export default {
     rollupOptions: {
       output: {
         assetFileNames: (assetInfo) => {
+          // Keep worker files in assets directory
           if (assetInfo.name && assetInfo.name.includes('Worker')) {
             return 'assets/[name]-[hash][extname]'
           }

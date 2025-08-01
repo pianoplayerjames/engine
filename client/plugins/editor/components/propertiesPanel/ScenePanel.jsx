@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { Icons } from '@/plugins/editor/components/Icons.jsx';
 import SliderWithTooltip from '@/plugins/editor/components/ui/SliderWithTooltip.jsx';
 import CollapsibleSection from '@/plugins/editor/components/ui/CollapsibleSection.jsx';
-import EffectsLibraryPanel from './EffectsLibraryPanel.jsx';
 import ExportSettingsPanel from './ExportSettingsPanel.jsx';
 import LayersPanel from './LayersPanel.jsx';
 import AdjustmentsPanel from './AdjustmentsPanel.jsx';
@@ -10,7 +9,7 @@ import HistoryPanel from './HistoryPanel.jsx';
 import ColorsPanel from './ColorsPanel.jsx';
 import BrushesPanel from './BrushesPanel.jsx';
 import { useSnapshot } from 'valtio';
-import { editorState, editorActions } from '@/plugins/editor/store.js';
+import { editorState, editorActions } from "@/store.js";
 
 function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selectedTool, onToolSelect, onContextMenu }) {
   const [expandedItems, setExpandedItems] = useState(['scene']);
@@ -239,6 +238,22 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
     return color || '#ff0000';
   };
   
+  // Force hierarchy update with state changes
+  const [sceneUpdateTrigger, setSceneUpdateTrigger] = useState(0);
+  
+  // Poll for scene changes since valtio refs don't trigger reactivity
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const scene = babylonScene?.current;
+      if (scene && scene.meshes) {
+        // Trigger update if scene has objects
+        setSceneUpdateTrigger(prev => prev + 1);
+      }
+    }, 1000); // Check every second
+    
+    return () => clearInterval(interval);
+  }, [babylonScene]);
+
   // Convert Babylon.js scene to hierarchy format
   const hierarchyData = useMemo(() => {
     const scene = babylonScene?.current;
@@ -331,7 +346,7 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
         children: babylonObjects
       }
     ];
-  }, [babylonScene]);
+  }, [babylonScene, sceneUpdateTrigger]);
   
   const containerRef = useRef(null);
   const headerRef = useRef(null);
@@ -528,21 +543,9 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
       return;
     }
 
-    // Remove item from current position
-    let newHierarchy = removeItemFromHierarchy(hierarchyData, dragState.draggedItem.id);
-    
-    // Insert item at new position
-    if (dragState.dropPosition === 'above') {
-      newHierarchy = insertItemAtPosition(newHierarchy, dropItem.id, dragState.draggedItem, 'before');
-    } else if (dragState.dropPosition === 'below') {
-      newHierarchy = insertItemAtPosition(newHierarchy, dropItem.id, dragState.draggedItem, 'after');
-    } else if (dragState.dropPosition === 'inside') {
-      newHierarchy = insertItemInHierarchy(newHierarchy, dropItem.id, dragState.draggedItem, 'inside');
-      // Auto-expand the parent to show the new child
-      setExpandedItems(prev => [...new Set([...prev, dropItem.id])]);
-    }
-    
-    setHierarchyData(newHierarchy);
+    // This drag-and-drop functionality would need integration with Babylon.js
+    // For now, we'll just show a console message
+    console.log('Drag and drop not yet implemented for Babylon.js scene objects');
     resetDragState();
   };
 
@@ -692,7 +695,6 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
       case 'settings': return 'Settings';
       case 'audio-devices': return 'Audio Devices';
       case 'mixer-settings': return 'Mixer Settings';
-      case 'effects-panel': return 'Effects Panel';
       case 'export-settings': return 'Export Settings';
       case 'layers': return 'Layers';
       case 'adjustments': return 'Adjustments';
@@ -1451,8 +1453,6 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
           </div>
         );
 
-      case 'effects-panel':
-        return <EffectsLibraryPanel />;
       case 'export-settings':
         return <ExportSettingsPanel />;
       case 'layers':
