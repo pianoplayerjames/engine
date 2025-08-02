@@ -29,6 +29,7 @@ const syncSceneToStore = (scene) => {
     id: light.uniqueId || light.name || `light-${Math.random()}`,
     name: light.name || 'Unnamed Light',
     type: 'light',
+    visible: light.isEnabled !== undefined ? light.isEnabled() : true,
     intensity: light.intensity !== undefined ? light.intensity : 1
   }))
 
@@ -37,6 +38,7 @@ const syncSceneToStore = (scene) => {
     id: camera.uniqueId || camera.name || `camera-${Math.random()}`,
     name: camera.name || 'Unnamed Camera',
     type: 'camera',
+    visible: true, // Cameras are typically always visible in the hierarchy
     active: scene.activeCamera === camera
   }))
 
@@ -157,7 +159,12 @@ export const globalStore = proxy({
       grid: {
         enabled: true,
         size: 100,
-        cellSize: 1
+        cellSize: 1,
+        position: [0, 0, 0],
+        cellColor: '#555555',
+        sectionColor: '#888888',
+        sectionSize: 10,
+        infiniteGrid: false
       }
     },
     
@@ -363,8 +370,18 @@ export const actions = {
           const babylonObject = [...(scene.meshes || []), ...(scene.lights || []), ...(scene.cameras || [])]
             .find(obj => (obj.uniqueId || obj.name) === objectId)
           
-          if (babylonObject && property === 'visible' && 'isVisible' in babylonObject) {
-            babylonObject.isVisible = value
+          if (babylonObject && property === 'visible') {
+            // Handle visibility for different object types
+            if ('isVisible' in babylonObject) {
+              // Meshes, cameras, etc.
+              babylonObject.isVisible = value
+            } else if ('setEnabled' in babylonObject) {
+              // Lights
+              babylonObject.setEnabled(value)
+            }
+            
+            // The store object was already updated above - no need for full scene sync
+            // Valtio will automatically trigger reactivity for the changed property
           }
         }
       }

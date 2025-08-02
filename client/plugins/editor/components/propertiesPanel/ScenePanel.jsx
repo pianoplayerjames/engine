@@ -6,23 +6,13 @@ import { globalStore, actions, babylonScene } from "@/store.js";
 import { useSnapshot } from 'valtio';
 
 function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selectedTool, onToolSelect, onContextMenu }) {
-  const [expandedItems, setExpandedItems] = useState(['scene']);
+  const [expandedItems, setExpandedItems] = useState(['scene-root']);
   const ui = useSnapshot(globalStore.editor.ui);
   const { scenePropertiesHeight: bottomPanelHeight } = ui;
   const { setScenePropertiesHeight: setBottomPanelHeight } = actions.editor;
   const [isResizing, setIsResizing] = useState(false);
-  const [isTestToggleOn, setIsTestToggleOn] = useState(false);
-  const [roughness, setRoughness] = useState(0.5);
-  const [metalness, setMetalness] = useState(0.5);
   const [intensity, setIntensity] = useState(1);
   const [ambientOcclusion, setAmbientOcclusion] = useState(0.5);
-  const [dragState, setDragState] = useState({
-    isDragging: false,
-    draggedItem: null,
-    dragOverItem: null,
-    dropPosition: null, // 'above', 'below', 'inside'
-    dragStartDepth: 0
-  });
   
   const settings = useSnapshot(globalStore.editor.settings);
   const sceneData = useSnapshot(globalStore.editor.scene);
@@ -171,74 +161,6 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
     }
   };
 
-  // Handle material color changes
-  const handleColorChange = (colorValue) => {
-    if (selectedObjectData) {
-      updateSceneObject(selectedObject, { 
-        material: { 
-          ...selectedObjectData.material, 
-          color: colorValue 
-        } 
-      });
-    }
-  };
-
-  // Convert HSL to Hex
-  const hslToHex = (hslString) => {
-    // Parse HSL string like "hsl(120, 70%, 50%)"
-    const match = hslString.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
-    if (!match) return '#ff0000';
-    
-    const h = parseInt(match[1]) / 360;
-    const s = parseInt(match[2]) / 100;
-    const l = parseInt(match[3]) / 100;
-    
-    const hue2rgb = (p, q, t) => {
-      if (t < 0) t += 1;
-      if (t > 1) t -= 1;
-      if (t < 1/6) return p + (q - p) * 6 * t;
-      if (t < 1/2) return q;
-      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-      return p;
-    };
-    
-    let r, g, b;
-    if (s === 0) {
-      r = g = b = l; // achromatic
-    } else {
-      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-      const p = 2 * l - q;
-      r = hue2rgb(p, q, h + 1/3);
-      g = hue2rgb(p, q, h);
-      b = hue2rgb(p, q, h - 1/3);
-    }
-    
-    const toHex = (c) => {
-      const hex = Math.round(c * 255).toString(16);
-      return hex.length === 1 ? '0' + hex : hex;
-    };
-    
-    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-  };
-
-  // Convert color to hex format for display
-  const getColorHex = () => {
-    if (!selectedObjectData?.material?.color) return '#ff0000';
-    
-    const color = selectedObjectData.material.color;
-    
-    // If it's already a hex color, return it
-    if (typeof color === 'string' && color.startsWith('#')) {
-      return color;
-    }
-    
-    // If it's an HSL color, convert to hex
-    if (typeof color === 'string' && color.startsWith('hsl')) {
-      return hslToHex(color);
-    }
-    
-    return color || '#ff0000';
-  };
   
   // Force hierarchy update with state changes
   const [sceneUpdateTrigger, setSceneUpdateTrigger] = useState(0);
@@ -291,7 +213,7 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
         name: light.name,
         type: 'light',
         lightType: light.lightType || 'point',
-        visible: true,
+        visible: light.visible,
         children: []
       });
     });
@@ -302,7 +224,7 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
         id: camera.id,
         name: camera.name,
         type: 'camera',
-        visible: true,
+        visible: camera.visible,
         children: []
       });
     });
@@ -316,7 +238,7 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
         children: babylonObjects
       }
     ];
-  }, [sceneData.isLoaded, sceneData.objects.meshes.length, sceneData.objects.lights.length, sceneData.objects.cameras.length, sceneData.name]);
+  }, [sceneData.isLoaded, sceneData.objects.meshes, sceneData.objects.lights, sceneData.objects.cameras, sceneData.name]);
   
   const containerRef = useRef(null);
   const headerRef = useRef(null);
@@ -372,166 +294,6 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
     );
   };
 
-  // Hierarchical drag and drop handlers
-  const handleDragStart = (e, item, depth) => {
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/html', '');
-    
-    setDragState({
-      isDragging: true,
-      draggedItem: item,
-      dragOverItem: null,
-      dropPosition: null,
-      dragStartDepth: depth
-    });
-  };
-
-  const getDragDropPosition = (e, targetItem, targetDepth) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const y = e.clientY - rect.top;
-    const height = rect.height;
-    const thirdHeight = height / 3;
-    
-    // Determine drop position based on mouse position
-    if (y < thirdHeight) {
-      return 'above';
-    } else if (y > height - thirdHeight && targetItem.children && targetItem.children.length > 0) {
-      return 'inside';
-    } else if (y > height - thirdHeight) {
-      return 'below';
-    } else {
-      return 'inside'; // Middle third - nest inside
-    }
-  };
-
-  const handleDragOver = (e, item, depth) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    
-    if (dragState.draggedItem && dragState.draggedItem.id !== item.id) {
-      // Don't allow dropping on descendants
-      if (isDescendant(dragState.draggedItem, item)) {
-        return;
-      }
-      
-      const position = getDragDropPosition(e, item, depth);
-      setDragState(prev => ({
-        ...prev,
-        dragOverItem: item,
-        dropPosition: position
-      }));
-    }
-  };
-
-  const handleDragLeave = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const { clientX, clientY } = e;
-    
-    if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) {
-      setDragState(prev => ({ ...prev, dragOverItem: null, dropPosition: null }));
-    }
-  };
-
-  const isDescendant = (ancestor, potentialDescendant) => {
-    if (!ancestor.children) return false;
-    
-    for (const child of ancestor.children) {
-      if (child.id === potentialDescendant.id) return true;
-      if (isDescendant(child, potentialDescendant)) return true;
-    }
-    return false;
-  };
-
-  const removeItemFromHierarchy = (items, itemId) => {
-    return items.reduce((acc, item) => {
-      if (item.id === itemId) {
-        return acc; // Don't include this item
-      }
-      
-      const newItem = { ...item };
-      if (item.children) {
-        newItem.children = removeItemFromHierarchy(item.children, itemId);
-      }
-      acc.push(newItem);
-      return acc;
-    }, []);
-  };
-
-  const insertItemInHierarchy = (items, targetId, draggedItem, position) => {
-    return items.map(item => {
-      if (item.id === targetId) {
-        const newItem = { ...item };
-        
-        if (position === 'inside') {
-          newItem.children = [...(item.children || []), draggedItem];
-        }
-        return newItem;
-      }
-      
-      if (item.children) {
-        const newChildren = insertItemInHierarchy(item.children, targetId, draggedItem, position);
-        return { ...item, children: newChildren };
-      }
-      
-      return item;
-    });
-  };
-
-  const insertItemAtPosition = (items, targetId, draggedItem, position) => {
-    for (let i = 0; i < items.length; i++) {
-      if (items[i].id === targetId) {
-        const newItems = [...items];
-        const insertIndex = position === 'before' ? i : i + 1;
-        newItems.splice(insertIndex, 0, draggedItem);
-        return newItems;
-      }
-      
-      if (items[i].children) {
-        const newChildren = insertItemAtPosition(items[i].children, targetId, draggedItem, position);
-        if (newChildren !== items[i].children) {
-          const newItems = [...items];
-          newItems[i] = { ...items[i], children: newChildren };
-          return newItems;
-        }
-      }
-    }
-    return items;
-  };
-
-  const handleDrop = (e, dropItem) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (!dragState.draggedItem || !dragState.dropPosition) {
-      resetDragState();
-      return;
-    }
-
-    // Don't allow dropping on self or descendants
-    if (dragState.draggedItem.id === dropItem.id || isDescendant(dragState.draggedItem, dropItem)) {
-      resetDragState();
-      return;
-    }
-
-    // This drag-and-drop functionality would need integration with Babylon.js
-    // For now, we'll just show a console message
-    console.log('Drag and drop not yet implemented for Babylon.js scene objects');
-    resetDragState();
-  };
-
-  const resetDragState = () => {
-    setDragState({
-      isDragging: false,
-      draggedItem: null,
-      dragOverItem: null,
-      dropPosition: null,
-      dragStartDepth: 0
-    });
-  };
-
-  const handleDragEnd = () => {
-    resetDragState();
-  };
 
   
 
@@ -579,23 +341,10 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
     return (
       <div 
         key={item.id}
-        className={`relative rounded-sm transition-all duration-100 ${
-          dragState.isDragging && dragState.draggedItem?.id === item.id ? 'opacity-50' : ''
-        } ${
-          dragState.dragOverItem?.id === item.id && dragState.dropPosition ? 
-            (dragState.dropPosition === 'above' ? 'border-t-2 border-blue-500' : 
-             dragState.dropPosition === 'below' ? 'border-b-2 border-blue-500' : 
-             'bg-blue-800/30') : ''
-        }`}
+        className="relative rounded-sm transition-all duration-100"
         onContextMenu={(e) => onContextMenu(e, item)}
       >
         <div 
-          draggable="true"
-          onDragStart={(e) => handleDragStart(e, item, depth)}
-          onDragOver={(e) => handleDragOver(e, item, depth)}
-          onDragLeave={handleDragLeave}
-          onDrop={(e) => handleDrop(e, item)}
-          onDragEnd={handleDragEnd}
           className={`flex items-center py-0.5 px-2 cursor-pointer transition-colors text-xs group ${
             isSelected ? 'bg-blue-800/60' : 'hover:bg-slate-700'
           }`}
@@ -853,102 +602,6 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
                           </div>
                         </div>
                       )}
-                    </div>
-                  </CollapsibleSection>
-                  <CollapsibleSection title="Material" defaultOpen={true} index={1}>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">Material Type</label>
-                        <select className="w-full bg-slate-800/80 border border-slate-600 text-white text-xs p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all cursor-pointer">
-                          <option>Standard</option>
-                          <option>Toon</option>
-                          <option>Glass</option>
-                          <option>Emissive</option>
-                          <option>Metallic</option>
-                        </select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">Base Color</label>
-                        <div className="flex items-center gap-2">
-                          <input 
-                            type="color" 
-                            value={getColorHex()} 
-                            onChange={(e) => handleColorChange(e.target.value)}
-                            className="w-10 h-10 rounded-lg border border-slate-600 bg-slate-800 cursor-pointer" 
-                          />
-                          <div className="flex-1 bg-slate-800/80 border border-slate-600 rounded-lg p-2">
-                            <div className="text-xs text-gray-300">{getColorHex().toUpperCase()}</div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="space-y-3">
-                        <SliderWithTooltip 
-                          label="Roughness"
-                          min={0}
-                          max={1}
-                          step={0.1}
-                          defaultValue={roughness}
-                          onChange={setRoughness}
-                        />
-                        <SliderWithTooltip 
-                          label="Metalness"
-                          min={0}
-                          max={1}
-                          step={0.1}
-                          defaultValue={metalness}
-                          onChange={setMetalness}
-                        />
-                      </div>
-                    </div>
-                  </CollapsibleSection>
-                  <CollapsibleSection title="Scripts" index={2}>
-                    <div className="space-y-3">
-                      <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">Attached Scripts</label>
-                      <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/80 border-2 border-dashed border-slate-600 hover:border-blue-500/50 rounded-xl p-6 text-center transition-all duration-200 group">
-                        <div className="flex flex-col items-center gap-2">
-                          <Icons.CodeBracket className="w-8 h-8 text-slate-500 group-hover:text-blue-400 transition-colors" />
-                          <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors">Drag scripts here or click to browse</p>
-                          <button className="text-xs text-blue-400 hover:text-blue-300 transition-colors">+ Add Script</button>
-                        </div>
-                      </div>
-                    </div>
-                  </CollapsibleSection>
-                  <CollapsibleSection title="Custom Properties" index={3}>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-3 bg-slate-800/40 rounded-lg border border-slate-700/50">
-                        <label className="text-xs font-medium text-gray-300">Enable Features</label>
-                        <button
-                          onClick={() => setIsTestToggleOn(!isTestToggleOn)}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-200 ${isTestToggleOn ? 'bg-blue-500 shadow-lg shadow-blue-500/30' : 'bg-slate-600'}`}
-                        >
-                          <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 shadow-sm ${isTestToggleOn ? 'translate-x-6' : 'translate-x-1'}`}
-                          />
-                        </button>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">Object Name</label>
-                        <input type="text" className="w-full bg-slate-800/80 border border-slate-600 text-white text-xs p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all" placeholder="Enter object name" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">Description</label>
-                        <textarea className="w-full bg-slate-800/80 border border-slate-600 text-white text-xs p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all resize-none" rows="3" placeholder="Enter description"></textarea>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                          <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">Category</label>
-                          <select className="w-full bg-slate-800/80 border border-slate-600 text-white text-xs p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all cursor-pointer">
-                            <option>Environment</option>
-                            <option>Character</option>
-                            <option>Prop</option>
-                            <option>Effect</option>
-                          </select>
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-xs font-medium text-gray-300 uppercase tracking-wide">Created</label>
-                          <input type="date" className="w-full bg-slate-800/80 border border-slate-600 text-white text-xs p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all" />
-                        </div>
-                      </div>
                     </div>
                   </CollapsibleSection>
                 </div>
