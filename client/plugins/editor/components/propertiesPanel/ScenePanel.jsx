@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { Icons } from '@/plugins/editor/components/Icons.jsx';
 import SliderWithTooltip from '@/plugins/editor/components/ui/SliderWithTooltip.jsx';
 import CollapsibleSection from '@/plugins/editor/components/ui/CollapsibleSection.jsx';
-import { globalStore, actions } from "@/store.js";
+import { globalStore, actions, babylonScene } from "@/store.js";
 import { useSnapshot } from 'valtio';
 
 function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selectedTool, onToolSelect, onContextMenu }) {
@@ -25,11 +25,11 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
   });
   
   const settings = useSnapshot(globalStore.editor.settings);
-  const babylonScene = globalStore.editor.babylonScene;
+  const sceneData = useSnapshot(globalStore.editor.scene);
   const { viewport: viewportSettings } = settings;
   const { setSelectedEntity, setTransformMode, updateViewportSettings } = actions.editor;
   
-  // Get selected object data from Babylon.js scene
+  // Get selected object data from Babylon.js scene using external reference
   const selectedObjectData = useMemo(() => {
     if (!selectedObject) return null;
     
@@ -153,10 +153,17 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
       if (axis === 'x') babylonObj.position.x = numValue;
       else if (axis === 'y') babylonObj.position.y = numValue;
       else if (axis === 'z') babylonObj.position.z = numValue;
+      
+      // Update lightweight store metadata
+      actions.editor.updateSceneObjectProperty(selectedObject, 'position', 
+        [babylonObj.position.x, babylonObj.position.y, babylonObj.position.z]
+      );
+      
     } else if (property === 'rotation' && babylonObj.rotation) {
       if (axis === 'x') babylonObj.rotation.x = numValue;
       else if (axis === 'y') babylonObj.rotation.y = numValue;
       else if (axis === 'z') babylonObj.rotation.z = numValue;
+      
     } else if (property === 'scale' && babylonObj.scaling) {
       if (axis === 'x') babylonObj.scaling.x = numValue;
       else if (axis === 'y') babylonObj.scaling.y = numValue;
@@ -249,99 +256,67 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
     return () => clearInterval(interval);
   }, [babylonScene]);
 
-  // Convert Babylon.js scene to hierarchy format
+  // Generate hierarchy data from lightweight store (reactive!)
   const hierarchyData = useMemo(() => {
-    const scene = babylonScene?.current;
-    if (!scene) {
+    if (!sceneData.isLoaded) {
       return [
         {
-          id: 'scene',
-          name: 'Scene',
+          id: 'scene-root',
+          name: sceneData.name,
           type: 'scene',
           visible: true,
           children: []
         }
       ];
     }
-
-    // Extract hierarchy from Babylon.js scene
+    
+    const { objects } = sceneData;
     const babylonObjects = [];
     
-    // Add all meshes
-    if (scene.meshes) {
-      scene.meshes.forEach(mesh => {
-        if (mesh.name && mesh.name !== '__root__') {
-          babylonObjects.push({
-            id: mesh.uniqueId || mesh.name,
-            name: mesh.name,
-            type: 'mesh',
-            visible: mesh.isVisible !== false,
-            babylonObject: mesh,
-            children: []
-          });
-        }
+    // Add meshes from lightweight store
+    objects.meshes.forEach(mesh => {
+      babylonObjects.push({
+        id: mesh.id,
+        name: mesh.name,
+        type: 'mesh',
+        visible: mesh.visible,
+        children: []
       });
-    }
+    });
     
-    // Add all lights
-    if (scene.lights) {
-      scene.lights.forEach(light => {
-        if (light.name && !light.name.startsWith('Default')) {
-          babylonObjects.push({
-            id: light.uniqueId || light.name,
-            name: light.name,
-            type: 'light',
-            lightType: light.getClassName().toLowerCase().replace('light', ''),
-            visible: light.isEnabled(),
-            babylonObject: light,
-            children: []
-          });
-        }
+    // Add lights from lightweight store
+    objects.lights.forEach(light => {
+      babylonObjects.push({
+        id: light.id,
+        name: light.name,
+        type: 'light',
+        lightType: light.lightType || 'point',
+        visible: true,
+        children: []
       });
-    }
+    });
     
-    // Add all cameras
-    if (scene.cameras) {
-      scene.cameras.forEach(camera => {
-        if (camera.name && camera.name !== 'camera') {
-          babylonObjects.push({
-            id: camera.uniqueId || camera.name,
-            name: camera.name,
-            type: 'camera',
-            visible: true,
-            babylonObject: camera,
-            children: []
-          });
-        }
+    // Add cameras from lightweight store
+    objects.cameras.forEach(camera => {
+      babylonObjects.push({
+        id: camera.id,
+        name: camera.name,
+        type: 'camera',
+        visible: true,
+        children: []
       });
-    }
-    
-    // Add transform nodes
-    if (scene.transformNodes) {
-      scene.transformNodes.forEach(node => {
-        if (node.name && node.name !== '__root__') {
-          babylonObjects.push({
-            id: node.uniqueId || node.name,
-            name: node.name,
-            type: 'transform',
-            visible: true,
-            babylonObject: node,
-            children: []
-          });
-        }
-      });
-    }
+    });
 
     return [
       {
-        id: 'scene',
-        name: 'Scene',
+        id: 'scene-root',
+        name: sceneData.name,
         type: 'scene',
         visible: true,
         children: babylonObjects
       }
     ];
-  }, [babylonScene, sceneUpdateTrigger]);
+  }, [sceneData.isLoaded, sceneData.objects.meshes.length, sceneData.objects.lights.length, sceneData.objects.cameras.length, sceneData.name]);
   
   const containerRef = useRef(null);
   const headerRef = useRef(null);
@@ -625,7 +600,12 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
             isSelected ? 'bg-blue-800/60' : 'hover:bg-slate-700'
           }`}
           style={{ paddingLeft: `${8 + depth * 20}px` }}
-          onClick={() => onObjectSelect(item.id)}
+          onClick={() => {
+            // Update selection in store
+            actions.editor.selectSceneObject(item.id);
+            // Also call parent callback
+            onObjectSelect(item.id);
+          }}
         >
           {hasChildren && (
             <button
@@ -645,7 +625,11 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
           
           <button 
             className="mr-1 p-0.5 rounded transition-colors opacity-70 hover:opacity-100"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              // Toggle visibility in both store and Babylon.js scene
+              actions.editor.updateSceneObjectProperty(item.id, 'visible', !item.visible);
+            }}
           >
             {item.visible ? (
               <Icons.Eye className="w-4 h-4 text-gray-300" />
@@ -1315,7 +1299,7 @@ function ScenePanel({ selectedObject, onObjectSelect, isOpen, onToggle, selected
         </div>
         {selectedTool === 'scene' && (
           <div className="text-xs text-gray-400 uppercase tracking-wide">
-            SCENE OBJECTS ({hierarchyData[0]?.children?.length || 0})
+            SCENE OBJECTS ({sceneData.objects.meshes.length + sceneData.objects.lights.length + sceneData.objects.cameras.length})
           </div>
         )}
       </div>

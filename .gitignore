@@ -1,5 +1,13 @@
 node_modules
 projects
+dist/
+dist-electron/
+client/dist/
+client/electron-dist/
 .DS_Store
-client/dist/*
-client/electron-dist/*
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

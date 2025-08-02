@@ -126,6 +126,3 @@ export default function RenderPlugin({ children, embedded = false, style = {}, o
 }
 
 export { Viewport as ViewportCanvas }
-
-// Render functionality is now part of the unified store
-// Access via: globalStore.render and actions.render
